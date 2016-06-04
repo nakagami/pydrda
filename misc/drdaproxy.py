@@ -81,7 +81,7 @@ if __name__ == '__main__':
     server = sys.argv[1].split(':')
     server_name = server[0]
     if len(server) == 1:
-        server_port = 3050
+        server_port = 1527
     else:
         server_port = int(server[1])
 
