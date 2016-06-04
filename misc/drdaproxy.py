@@ -44,19 +44,38 @@ def recv_from_sock(sock, nbytes):
     return recieved
 
 def relay_packets(indicator, read_sock, write_sock):
-    head = blen + recv_from_sock(read_sock, 6)
-    print("%s %s" % (indicator, binascii.b2a_hex(head).decode('ascii')))
+    DSS_type = {
+        1: 'Request DSS',
+        2: 'Reply DSS',
+        3: 'Object DSS',
+        4: 'Communication DSS',
+        5: 'Request DSS where no reply is expected',
+    }
+    head = recv_from_sock(read_sock, 6)
+    assert head[2] == 0xD0
+    print("%s %d,%s,%s,%s,%s" % (
+        indicator,
+        int.from_bytes(head[:2], byteorder='big'),   # length
+        'chained' if head[3] & 0b01000000 else 'unchained',
+        'continue on error' if head[3] & 0b00100000 else '',
+        'next DDS has same correlator' if head[3] & 0b00010000 else '',
+        DSS_type[head[3] & 0b1111]),
+        end=''
+    )
     body = recv_from_sock(read_sock, int.from_bytes(head[:2], byteorder='big'))
 
-    rest = read_sock.recv(36635)
+    cont_head = recv_from_sock(read_sock, 2)
+    cont_body = recv_from_sock(read_sock, int.from_bytes(cont_head, byteorder='big') - 2)
 
     write_sock.send(head)
     write_sock.send(body)
-    write_sock.send(rest)
+    write_sock.send(cont_head)
+    write_sock.send(cont_body)
 
-    print("\t%s\n\t%s\n" % (binascii.b2a_hex(body).decode('ascii'), binascii.b2a_hex(rest).decode('ascii')))
+    print(" %s" % (binascii.b2a_hex(body).decode('ascii'),))
     asc_dump(body)
-    asc_dump(rest)
+    print("\t%s" % (binascii.b2a_hex(cont_body).decode('ascii'),))
+    asc_dump(cont_body)
 
 
 def proxy_wire(server_name, server_port, listen_host, listen_port):
@@ -68,10 +87,8 @@ def proxy_wire(server_name, server_port, listen_host, listen_port):
     server_sock.connect((server_name, server_port))
 
     while True:
-        relay_packets('>>', client_sock, server_sock)
-
-        relay_packets('<<', server_sock, client_sock)
-
+        relay_packets('C->S:', client_sock, server_sock)
+        relay_packets('S->C:', server_sock, client_sock)
 
 if __name__ == '__main__':
     if len(sys.argv) < 3:
