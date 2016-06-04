@@ -52,30 +52,39 @@ def relay_packets(indicator, read_sock, write_sock):
         5: 'Request DSS where no reply is expected',
     }
     head = recv_from_sock(read_sock, 6)
+    ln = int.from_bytes(head[:2], byteorder='big')
     assert head[2] == 0xD0
     print("%s %d,%s,%s,%s,%s" % (
         indicator,
-        int.from_bytes(head[:2], byteorder='big'),   # length
+        ln,
         'chained' if head[3] & 0b01000000 else 'unchained',
         'continue on error' if head[3] & 0b00100000 else '',
         'next DDS has same correlator' if head[3] & 0b00010000 else '',
         DSS_type[head[3] & 0b1111]),
         end=''
     )
-    body = recv_from_sock(read_sock, int.from_bytes(head[:2], byteorder='big'))
+    body = recv_from_sock(read_sock, ln)
+    assert ln == int.from_bytes(body[:2], byteorder='big') + 6
+
+    code_point = int.from_bytes(body[2:4], byteorder='big')
+    print(" %s:%s" % (code_point, binascii.b2a_hex(body[4:]).decode('ascii')))
+    asc_dump(body[4:])
 
     cont_head = recv_from_sock(read_sock, 2)
     cont_body = recv_from_sock(read_sock, int.from_bytes(cont_head, byteorder='big') - 2)
+    print("\t%s" % (binascii.b2a_hex(cont_body).decode('ascii'),))
+    asc_dump(cont_body)
 
     write_sock.send(head)
     write_sock.send(body)
     write_sock.send(cont_head)
     write_sock.send(cont_body)
 
-    print(" %s" % (binascii.b2a_hex(body).decode('ascii'),))
-    asc_dump(body)
-    print("\t%s" % (binascii.b2a_hex(cont_body).decode('ascii'),))
-    asc_dump(cont_body)
+    if code_point == 0x1219:
+        b = read_sock.recv(32000)
+        print("\t SECURITY_INFO:%s" % (binascii.b2a_hex(b).decode('ascii'),))
+        write_sock.send(b)
+
 
 
 def proxy_wire(server_name, server_port, listen_host, listen_port):
