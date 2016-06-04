@@ -43,6 +43,21 @@ def recv_from_sock(sock, nbytes):
         n -= len(bs)
     return recieved
 
+def relay_packets(indicator, read_sock, write_sock):
+    head = blen + recv_from_sock(read_sock, 6)
+    print("%s %s" % (indicator, binascii.b2a_hex(head).decode('ascii')))
+    body = recv_from_sock(read_sock, int.from_bytes(head[:2], byteorder='big'))
+
+    rest = read_sock.recv(36635)
+
+    write_sock.send(head)
+    write_sock.send(body)
+    write_sock.send(rest)
+
+    print("\t%s\n\t%s\n" % (binascii.b2a_hex(body).decode('ascii'), binascii.b2a_hex(rest).decode('ascii')))
+    asc_dump(body)
+    asc_dump(rest)
+
 
 def proxy_wire(server_name, server_port, listen_host, listen_port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -53,21 +68,9 @@ def proxy_wire(server_name, server_port, listen_host, listen_port):
     server_sock.connect((server_name, server_port))
 
     while True:
-        client_head = int.from_bytes(recv_from_sock(client_sock, 2), byteorder='big')
-        client_code_point = recv_from_sock(client_sock, 2)
-        client_object = recv_from_sock(client_sock, int.from_bytes(client_head, byteorder='big')-4)
+        relay_packets('>>', client_sock, server_sock)
 
-        server_sock.send(client_head)
-        server_sock.send(client_code_point)
-        server_sock.send(client_object)
-
-        server_head = int.from_bytes(recv_from_sock(server_sock, 2), byteorder='big')
-        server_code_point = recv_from_sock(server_sock, 2)
-        server_object = recv_from_sock(server_sock, int.from_bytes(server_head, byteorder='big')-4)
-
-        client_sock.send(server_head)
-        client_sock.send(server_code_point)
-        client_sock.send(server_object)
+        relay_packets('<<', server_sock, client_sock)
 
 
 if __name__ == '__main__':
