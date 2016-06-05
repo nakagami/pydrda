@@ -284,7 +284,7 @@ def relay_packets(indicator, read_sock, write_sock):
     write_sock.send(head)
     write_sock.send(body)
 
-    if CODE_POINT[code_point] != 'QRYDTA':
+    if not CODE_POINT[code_point] in ('QRYDTA', 'RDBCMM'):
         cont_head = recv_from_sock(read_sock, 2)
         cont_body = recv_from_sock(read_sock, int.from_bytes(cont_head, byteorder='big') - 2)
         print("\t%s" % (binascii.b2a_hex(cont_body).decode('ascii'),))
