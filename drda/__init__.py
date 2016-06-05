@@ -1,0 +1,156 @@
+##############################################################################
+# The MIT License (MIT)
+#
+# Copyright (c) 2016 Hajime Nakagami
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+##############################################################################
+
+import datetime
+import decimal
+from .connection import Connection
+
+VERSION = (0, 0, 1)
+__version__ = '%s.%s.%s' % VERSION
+apilevel = '2.0'
+threadsafety = 1
+paramstyle = 'format'
+
+
+Date = datetime.date
+Time = datetime.time
+TimeDelta = datetime.timedelta
+Timestamp = datetime.datetime
+
+
+def Binary(b):
+    return bytearray(b)
+
+
+class DBAPITypeObject:
+    def __init__(self, *values):
+        self.values = values
+
+    def __cmp__(self, other):
+        if other in self.values:
+            return 0
+        if other < self.values:
+            return 1
+        else:
+            return -1
+
+
+STRING = DBAPITypeObject(str)
+BINARY = DBAPITypeObject(bytes)
+NUMBER = DBAPITypeObject(int, decimal.Decimal)
+DATETIME = DBAPITypeObject(datetime.datetime, datetime.date, datetime.time)
+DATE = DBAPITypeObject(datetime.date)
+TIME = DBAPITypeObject(datetime.time)
+ROWID = DBAPITypeObject()
+
+
+class Error(Exception):
+    def __init__(self, *args):
+        if len(args) > 0:
+            self.message = args[0]
+        else:
+            self.message = 'Database Error'
+        super(Error, self).__init__(*args)
+
+    def __str__(self):
+        return self.message
+
+    def __repr__(self):
+        return self.message
+
+
+class Warning(Exception):
+    pass
+
+
+class InterfaceError(Error):
+    pass
+
+
+class DatabaseError(Error):
+    pass
+
+
+class DisconnectByPeer(Warning):
+    pass
+
+
+class InternalError(DatabaseError):
+    def __init__(self):
+        DatabaseError.__init__(self, 'InternalError')
+
+
+class OperationalError(DatabaseError):
+    pass
+
+
+class ProgrammingError(DatabaseError):
+    pass
+
+
+class IntegrityError(DatabaseError):
+    pass
+
+
+class DataError(DatabaseError):
+    pass
+
+
+class NotSupportedError(DatabaseError):
+    def __init__(self):
+        DatabaseError.__init__(self, 'NotSupportedError')
+
+
+class Connection(object):
+    def __init__(self):
+        pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc, value, traceback):
+        self.close()
+
+    def is_connect(self):
+            return bool(self.sock)
+
+    def cursor(self):
+        return Cursor(self)
+
+
+    def begin(self):
+        pass
+
+    def commit(self):
+        pass
+
+    def rollback(self):
+        pass
+
+    def close(self):
+        pass
+
+def connect(host, dsn, port):
+    return Connection(host, dsn, port)
+
