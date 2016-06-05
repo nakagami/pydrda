@@ -299,10 +299,9 @@ def relay_packets(indicator, read_sock, write_sock):
         print("\t SECURITY_INFO:%s" % (binascii.b2a_hex(b).decode('ascii'),))
         write_sock.send(b)
 
-    if CODE_POINT[code_point] in ('PRPSQLSTT', 'EXCSQLIMM'):
-        relay_packets(indicator, read_sock, write_sock)
-
-    if CODE_POINT[code_point] in ('RSLSETRM', 'SQLRSLRD', 'SQLCINRD'):
+    if CODE_POINT[code_point] in (
+        'PRPSQLSTT', 'EXCSQLIMM', 'RSLSETRM', 'SQLRSLRD', 'SQLCINRD',
+    ):
         relay_packets(indicator, read_sock, write_sock)
 
     if CODE_POINT[code_point] == '':
