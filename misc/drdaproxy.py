@@ -241,8 +241,10 @@ def recv_from_sock(sock, nbytes):
     while n:
         bs = sock.recv(n)
         recieved += bs
+
         n -= len(bs)
     return recieved
+
 
 def relay_packets(indicator, read_sock, write_sock):
     DSS_type = {
@@ -255,35 +257,41 @@ def relay_packets(indicator, read_sock, write_sock):
     head = recv_from_sock(read_sock, 6)
     ln = int.from_bytes(head[:2], byteorder='big')
     assert head[2] == 0xD0
-    print("%s %d,%s,%s,%s,%s" % (
+
+    same_correlator = head[3] & 0b00010000
+    dss_type = DSS_type[head[3] & 0b1111]
+    print("%s(%d) %s,%s,%s,%s" % (
         indicator,
         ln,
+        dss_type,
         'chained' if head[3] & 0b01000000 else 'unchained',
         'continue on error' if head[3] & 0b00100000 else '',
-        'next DDS has same correlator' if head[3] & 0b00010000 else '',
-        DSS_type[head[3] & 0b1111]),
+        'next DDS has same correlator' if same_correlator else '',
+        ),
         end=''
     )
-    body = recv_from_sock(read_sock, ln)
+
+    body = recv_from_sock(read_sock, 4)
     assert ln == int.from_bytes(body[:2], byteorder='big') + 6
-
     code_point = int.from_bytes(body[2:4], byteorder='big')
-    print(" %s:%s" % (
-        CODE_POINT[code_point],
-        binascii.b2a_hex(body[4:]).decode('ascii')
-        )
-    )
-    asc_dump(body[4:])
+    print(" %s:" % (CODE_POINT[code_point],), end='')
+    sys.stdout.flush()
 
-    cont_head = recv_from_sock(read_sock, 2)
-    cont_body = recv_from_sock(read_sock, int.from_bytes(cont_head, byteorder='big') - 2)
-    print("\t%s" % (binascii.b2a_hex(cont_body).decode('ascii'),))
-    asc_dump(cont_body)
+    body += recv_from_sock(read_sock, ln-10)
+    print(binascii.b2a_hex(body[4:]).decode('ascii'))
+    asc_dump(body[4:])
 
     write_sock.send(head)
     write_sock.send(body)
-    write_sock.send(cont_head)
-    write_sock.send(cont_body)
+
+    if CODE_POINT[code_point] != 'QRYDTA':
+        cont_head = recv_from_sock(read_sock, 2)
+        cont_body = recv_from_sock(read_sock, int.from_bytes(cont_head, byteorder='big') - 2)
+        print("\t%s" % (binascii.b2a_hex(cont_body).decode('ascii'),))
+        asc_dump(cont_body)
+
+        write_sock.send(cont_head)
+        write_sock.send(cont_body)
 
     if CODE_POINT[code_point] == 'SECCHKRM':
         b = recv_from_sock(read_sock, 2)
@@ -291,6 +299,16 @@ def relay_packets(indicator, read_sock, write_sock):
         print("\t SECURITY_INFO:%s" % (binascii.b2a_hex(b).decode('ascii'),))
         write_sock.send(b)
 
+    if CODE_POINT[code_point] in ('PRPSQLSTT', 'EXCSQLIMM'):
+        relay_packets(indicator, read_sock, write_sock)
+
+    if CODE_POINT[code_point] in ('RSLSETRM', 'SQLRSLRD', 'SQLCINRD'):
+        relay_packets(indicator, read_sock, write_sock)
+
+    if CODE_POINT[code_point] == '':
+        b = read_sock.recv(32000)
+        print("???????:%s" % (binascii.b2a_hex(b).decode('ascii'),))
+        write_sock.send(b)
 
 
 def proxy_wire(server_name, server_port, listen_host, listen_port):
