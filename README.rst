@@ -4,6 +4,8 @@ pydrda
 
 DRDA protocol python database driver
 
+https://en.wikipedia.org/wiki/DRDA
+
 Requirements
 -----------------
 
