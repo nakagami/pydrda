@@ -21,36 +21,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 ##############################################################################
-
 import ddm
-from cursor import Cursor
 
-class Connection:
-    def __init__(self):
-        pass
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc, value, traceback):
-        self.close()
-
-    def is_connect(self):
-            return bool(self.sock)
-
-    def cursor(self):
-        return Cursor(self)
-
-    def begin(self):
-        pass
-
-    def commit(self):
-        pass
-
-    def rollback(self):
-        pass
-
-    def close(self):
-        pass
-
+class Cursor:
+    pass
 
