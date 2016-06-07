@@ -254,20 +254,34 @@ def parseEXCSAT(obj):
         cp = CODE_POINT[int.from_bytes(obj[i+2:i+4], byteorder='big')]
         binary = obj[i+4:i+ln]
         if cp in ('EXTNAM', 'SRVNAM', 'SRVRLSLV', 'SRVCLSNM', 'SPVNAM'):
-            print("\t%s:%s" % (cp, binascii.b2a_hex(binary).decode('ascii')))
+            print("\t%s:%s" % (cp, binary.decode('cp500')))
         elif cp in ('MGRLVLLS', ):
             print("\t%s:" % (cp,), end='')
             while binary:
-                k = int.from_bytes(binary[:2], byteorder='big')
+                cp2 = CODE_POINT[int.from_bytes(binary[:2], byteorder='big')]
                 v = int.from_bytes(binary[2:4], byteorder='big')
-                print("%s=%d" % (CODE_POINT[k], v), end=' ')
+                print("%s=%d" % (cp2, v), end=' ')
                 binary = binary[4:]
-            print()
+        i += ln
+    assert i == len(obj)
+
+def parseACCSEC(obj):
+    print("ACCSEC:%s" % (binascii.b2a_hex(obj).decode('ascii'),))
+    i = 0;
+    while i < len(obj):
+        ln = int.from_bytes(obj[i:i+2], byteorder='big')
+        cp = CODE_POINT[int.from_bytes(obj[i+2:i+4], byteorder='big')]
+        binary = obj[i+4:i+ln]
+        if cp in ('SECMEC', ):
+            print("\t%s:%d" % (cp, int.from_bytes(binary, byteorder='big')))
+        if cp in ('RDBNAM', ):
+            print("\t%s:%s" % (cp, binary.decode('cp500')))
         i += ln
     assert i == len(obj)
 
 cp_funcs = {
     'EXCSAT': parseEXCSAT,
+    'ACCSEC': parseACCSEC,
 }
 
 def relay_packets(indicator, read_sock, write_sock):
