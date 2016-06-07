@@ -251,9 +251,18 @@ def parseEXCSAT(obj):
     i = 0;
     while i < len(obj):
         ln = int.from_bytes(obj[i:i+2], byteorder='big')
-        code_point = int.from_bytes(obj[i+2:i+4], byteorder='big')
-        b = obj[i+4:i+ln]
-        print("\t%s:%s" % (CODE_POINT[code_point], binascii.b2a_hex(b).decode('ascii')))
+        cp = CODE_POINT[int.from_bytes(obj[i+2:i+4], byteorder='big')]
+        binary = obj[i+4:i+ln]
+        if cp in ('EXTNAM', 'SRVNAM', 'SRVRLSLV', 'SRVCLSNM', 'SPVNAM'):
+            print("\t%s:%s" % (cp, binascii.b2a_hex(binary).decode('ascii')))
+        elif cp in ('MGRLVLLS', ):
+            print("\t%s:" % (cp,), end='')
+            while binary:
+                k = int.from_bytes(binary[:2], byteorder='big')
+                v = int.from_bytes(binary[2:4], byteorder='big')
+                print("%s=%d" % (CODE_POINT[k], v), end=' ')
+                binary = binary[4:]
+            print()
         i += ln
     assert i == len(obj)
 
