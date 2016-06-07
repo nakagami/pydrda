@@ -246,8 +246,9 @@ def recv_from_sock(sock, nbytes):
     return recieved
 
 
-def parseEXCSAT(obj):
-    print("EXCSAT:%s" % (binascii.b2a_hex(obj).decode('ascii'),))
+def parseEXCSAT(cp, obj):
+    assert cp == 'EXCSAT'
+    print("%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')))
     i = 0;
     while i < len(obj):
         ln = int.from_bytes(obj[i:i+2], byteorder='big')
@@ -262,26 +263,49 @@ def parseEXCSAT(obj):
                 v = int.from_bytes(binary[2:4], byteorder='big')
                 print("%s=%d" % (cp2, v), end=' ')
                 binary = binary[4:]
+            print()
+        else:
+            raise ValueError('Unknown code point')
         i += ln
     assert i == len(obj)
 
-def parseACCSEC(obj):
-    print("ACCSEC:%s" % (binascii.b2a_hex(obj).decode('ascii'),))
+def parseACCSEC(cp, obj):
+    assert cp == 'ACCSEC'
+    print("%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')))
     i = 0;
     while i < len(obj):
         ln = int.from_bytes(obj[i:i+2], byteorder='big')
         cp = CODE_POINT[int.from_bytes(obj[i+2:i+4], byteorder='big')]
         binary = obj[i+4:i+ln]
-        if cp in ('SECMEC', ):
-            print("\t%s:%d" % (cp, int.from_bytes(binary, byteorder='big')))
-        if cp in ('RDBNAM', ):
-            print("\t%s:%s" % (cp, binary.decode('cp500')))
+        print("%s:%s" % (cp, binascii.b2a_hex(binary).decode('ascii')))
+        i += ln
+    assert i == len(obj)
+
+def parseUnknown(cp, obj):
+    print("%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')))
+    i = 0;
+    while i < len(obj):
+        ln = int.from_bytes(obj[i:i+2], byteorder='big')
+        cp = CODE_POINT[int.from_bytes(obj[i+2:i+4], byteorder='big')]
+        binary = obj[i+4:i+ln]
+        print("\t%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')))
+
         i += ln
     assert i == len(obj)
 
 cp_funcs = {
     'EXCSAT': parseEXCSAT,
     'ACCSEC': parseACCSEC,
+    'EXCSATRD': parseUnknown,
+    'ACCSECRD': parseUnknown,
+    'SECCHK': parseUnknown,
+    'ACCRDB': parseUnknown,
+    'SECCHKRM': parseUnknown,
+    'ACCRDBRM': parseUnknown,
+    'PBSD': parseUnknown,
+    'RDBCMM': parseUnknown,
+    'ENDUOWRM': parseUnknown,
+    'SQLCARD': parseUnknown,
 }
 
 def relay_packets(indicator, read_sock, write_sock):
@@ -320,7 +344,7 @@ def relay_packets(indicator, read_sock, write_sock):
 
     func = cp_funcs.get(CODE_POINT[code_point])
     if func:
-        func(obj)
+        func(CODE_POINT[code_point], obj)
     else:
         print("%s:" % (CODE_POINT[code_point],), end='')
         print(binascii.b2a_hex(obj).decode('ascii'))
