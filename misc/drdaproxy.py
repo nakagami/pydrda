@@ -246,7 +246,22 @@ def recv_from_sock(sock, nbytes):
     return recieved
 
 
-def relay_packets(indicator, read_sock, write_sock, cont_data=True):
+def parseEXCSAT(obj):
+    print("EXCSAT:%s" % (binascii.b2a_hex(obj).decode('ascii'),))
+    i = 0;
+    while i < len(obj):
+        ln = int.from_bytes(obj[i:i+2], byteorder='big')
+        code_point = int.from_bytes(obj[i+2:i+4], byteorder='big')
+        b = obj[i+4:i+ln]
+        print("\t%s:%s" % (CODE_POINT[code_point], binascii.b2a_hex(b).decode('ascii')))
+        i += ln
+    assert i == len(obj)
+
+cp_funcs = {
+    'EXCSAT': parseEXCSAT,
+}
+
+def relay_packets(indicator, read_sock, write_sock):
     DSS_type = {
         1: 'Request DSS',
         2: 'Reply DSS',
@@ -271,18 +286,23 @@ def relay_packets(indicator, read_sock, write_sock, cont_data=True):
         ),
     )
 
+    write_sock.send(head)
     body = recv_from_sock(read_sock, 4)
+    write_sock.send(body)
+    obj = recv_from_sock(read_sock, ln-10)
+    write_sock.send(obj)
+
     assert ln == int.from_bytes(body[:2], byteorder='big') + 6
     code_point = int.from_bytes(body[2:4], byteorder='big')
-    print("%s:" % (CODE_POINT[code_point],), end='')
-    sys.stdout.flush()
 
-    body += recv_from_sock(read_sock, ln-10)
-    print(binascii.b2a_hex(body[4:]).decode('ascii'))
-    asc_dump(body[4:])
+    func = cp_funcs.get(CODE_POINT[code_point])
+    if func:
+        func(obj)
+    else:
+        print("%s:" % (CODE_POINT[code_point],), end='')
+        print(binascii.b2a_hex(obj).decode('ascii'))
+        asc_dump(obj)
 
-    write_sock.send(head)
-    write_sock.send(body)
 
     return chained
 
