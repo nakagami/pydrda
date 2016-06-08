@@ -261,8 +261,7 @@ def printCodePoint(cp, obj):
         binary = obj[i+4:i+ln]
         if cp in (
             'EXTNAM', 'SRVNAM', 'SRVRLSLV', 'SRVCLSNM', 'SPVNAM',
-            'USRID',
-            'PRDDTA',
+            'USRID', 'PRDDTA',
         ):
             print('\t%s:"%s"' % (cp, binary.decode('cp500')))
         elif cp in ('SECMEC', ):
@@ -277,6 +276,8 @@ def printCodePoint(cp, obj):
             print()
         elif cp in ('TYPDEFNAM', 'PBSD', 'PRDID'):
             print("\t%s:'%s'" % (cp, binary.decode('ascii')))
+        elif cp in ('QRYPRCTYP', ):
+            print("\t%s:%s" % (cp, CODE_POINT[int.from_bytes(binary, byteorder='big')]))
         else:
             print("%s:%s" % (cp, binascii.b2a_hex(binary).decode('ascii')))
         i += ln
