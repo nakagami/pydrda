@@ -246,16 +246,27 @@ def recv_from_sock(sock, nbytes):
     return recieved
 
 
-def parseEXCSAT(cp, obj):
-    assert cp == 'EXCSAT'
+def printCodePoint(cp, obj):
     print("%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')))
+    if cp in (
+        'SQLATTR', 'SQLSTT', 'SQLCARD', 'SQLDARD', 'SQLRSLRD',
+        'SQLCINRD', 'QRYDSC', 'QRYDTA',
+    ):
+        return
+
     i = 0;
     while i < len(obj):
         ln = int.from_bytes(obj[i:i+2], byteorder='big')
         cp = CODE_POINT[int.from_bytes(obj[i+2:i+4], byteorder='big')]
         binary = obj[i+4:i+ln]
-        if cp in ('EXTNAM', 'SRVNAM', 'SRVRLSLV', 'SRVCLSNM', 'SPVNAM'):
-            print("\t%s:%s" % (cp, binary.decode('cp500')))
+        if cp in (
+            'EXTNAM', 'SRVNAM', 'SRVRLSLV', 'SRVCLSNM', 'SPVNAM',
+            'USRID',
+            'PRDDTA',
+        ):
+            print('\t%s:"%s"' % (cp, binary.decode('cp500')))
+        elif cp in ('SECMEC', ):
+            print("\t%s:%s" % (cp, int.from_bytes(binary, byteorder='big')))
         elif cp in ('MGRLVLLS', ):
             print("\t%s:" % (cp,), end='')
             while binary:
@@ -264,49 +275,13 @@ def parseEXCSAT(cp, obj):
                 print("%s=%d" % (cp2, v), end=' ')
                 binary = binary[4:]
             print()
+        elif cp in ('TYPDEFNAM', 'PBSD', 'PRDID'):
+            print("\t%s:'%s'" % (cp, binary.decode('ascii')))
         else:
-            raise ValueError('Unknown code point')
+            print("%s:%s" % (cp, binascii.b2a_hex(binary).decode('ascii')))
         i += ln
     assert i == len(obj)
 
-def parseACCSEC(cp, obj):
-    assert cp == 'ACCSEC'
-    print("%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')))
-    i = 0;
-    while i < len(obj):
-        ln = int.from_bytes(obj[i:i+2], byteorder='big')
-        cp = CODE_POINT[int.from_bytes(obj[i+2:i+4], byteorder='big')]
-        binary = obj[i+4:i+ln]
-        print("%s:%s" % (cp, binascii.b2a_hex(binary).decode('ascii')))
-        i += ln
-    assert i == len(obj)
-
-def parseUnknown(cp, obj):
-    print("%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')))
-    i = 0;
-    while i < len(obj):
-        ln = int.from_bytes(obj[i:i+2], byteorder='big')
-        cp = CODE_POINT[int.from_bytes(obj[i+2:i+4], byteorder='big')]
-        binary = obj[i+4:i+ln]
-        print("\t%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')))
-
-        i += ln
-    assert i == len(obj)
-
-cp_funcs = {
-    'EXCSAT': parseEXCSAT,
-    'ACCSEC': parseACCSEC,
-    'EXCSATRD': parseUnknown,
-    'ACCSECRD': parseUnknown,
-    'SECCHK': parseUnknown,
-    'ACCRDB': parseUnknown,
-    'SECCHKRM': parseUnknown,
-    'ACCRDBRM': parseUnknown,
-    'PBSD': parseUnknown,
-    'RDBCMM': parseUnknown,
-    'ENDUOWRM': parseUnknown,
-    'SQLCARD': parseUnknown,
-}
 
 def relay_packets(indicator, read_sock, write_sock):
     DSS_type = {
@@ -342,14 +317,7 @@ def relay_packets(indicator, read_sock, write_sock):
     assert ln == int.from_bytes(body[:2], byteorder='big') + 6
     code_point = int.from_bytes(body[2:4], byteorder='big')
 
-    func = cp_funcs.get(CODE_POINT[code_point])
-    if func:
-        func(CODE_POINT[code_point], obj)
-    else:
-        print("%s:" % (CODE_POINT[code_point],), end='')
-        print(binascii.b2a_hex(obj).decode('ascii'))
-        asc_dump(obj)
-
+    printCodePoint(CODE_POINT[code_point], obj)
 
     return chained
 
