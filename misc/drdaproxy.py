@@ -264,7 +264,7 @@ def printCodePoint(cp, obj):
             'USRID', 'PRDDTA',
         ):
             print('\t%s:"%s"' % (cp, binary.decode('cp500')))
-        elif cp in ('SECMEC', ):
+        elif cp in ('SECMEC', 'PBSD_ISO', 'UOWDSP'):
             print("\t%s:%s" % (cp, int.from_bytes(binary, byteorder='big')))
         elif cp in ('MGRLVLLS', ):
             print("\t%s:" % (cp,), end='')
@@ -274,12 +274,12 @@ def printCodePoint(cp, obj):
                 print("%s=%d" % (cp2, v), end=' ')
                 binary = binary[4:]
             print()
-        elif cp in ('TYPDEFNAM', 'PBSD', 'PRDID'):
+        elif cp in ('TYPDEFNAM', 'PBSD', 'PRDID', 'PBSD_SCHEMA'):
             print("\t%s:'%s'" % (cp, binary.decode('ascii')))
         elif cp in ('RDBNAM', ):
             print("\t%s:" % (cp, ), end='')
             asc_dump(binary)
-        elif cp in ('QRYPRCTYP', ):
+        elif cp in ('QRYPRCTYP', 'RDBACCCL'):
             print("\t%s:%s" % (cp, CODE_POINT[int.from_bytes(binary, byteorder='big')]))
         else:
             print("%s:%s" % (cp, binascii.b2a_hex(binary).decode('ascii')))
