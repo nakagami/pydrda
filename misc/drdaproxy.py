@@ -276,6 +276,9 @@ def printCodePoint(cp, obj):
             print()
         elif cp in ('TYPDEFNAM', 'PBSD', 'PRDID'):
             print("\t%s:'%s'" % (cp, binary.decode('ascii')))
+        elif cp in ('RDBNAM', ):
+            print("\t%s:" % (cp, ), end='')
+            asc_dump(binary)
         elif cp in ('QRYPRCTYP', ):
             print("\t%s:%s" % (cp, CODE_POINT[int.from_bytes(binary, byteorder='big')]))
         else:
