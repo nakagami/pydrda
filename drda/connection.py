@@ -22,8 +22,7 @@
 # SOFTWARE.
 ##############################################################################
 
-import ddm
-from cursor import Cursor
+from .cursor import Cursor
 
 class Connection:
     def __init__(self, host, database, port, user, password):

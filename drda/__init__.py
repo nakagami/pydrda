@@ -24,7 +24,7 @@
 
 import datetime
 import decimal
-from connection import Connection
+from .connection import Connection
 
 VERSION = (0, 0, 1)
 __version__ = '%s.%s.%s' % VERSION
