@@ -21,7 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 ##############################################################################
-
+import socket
 from .cursor import Cursor
 
 class Connection:
@@ -31,6 +31,9 @@ class Connection:
         self.port = port
         self.user = user
         self.password=password
+
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.connect((self.host, self.port))
 
     def __enter__(self):
         return self
@@ -54,6 +57,4 @@ class Connection:
         pass
 
     def close(self):
-        pass
-
-
+        self.sock.close()
