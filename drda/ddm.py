@@ -21,7 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 ##############################################################################
-
+import binascii
 from drda import codepoint as cp
 
 def _recv_from_sock(sock, nbytes):
@@ -38,16 +38,20 @@ def _send_to_sock(sock, b):
     sock.send(b)
 
 
+def _pack_binary(code_point, v):
+    return (
+        code_point.to_bytes(2, byteorder='big') +
+        (len(v) + 4).to_bytes(2, byteorder='big') +
+        v
+    )
+
+
 def _pack_uint(code_point, v, size):
-    return code_point.to_bytes(2, byteorder='big') + v.to_bytes(size, byteorder='big')
+    return _pack_binary(code_point, v.to_bytes(size, byteorder='big'))
 
 
 def _pack_str(code_point, v, enc):
-    return code_point.to_bytes(2, byteorder='big') + v.encode(enc)
-
-
-def _pack_binary(code_point, v):
-    return code_point.to_bytes(2, byteorder='big') + v
+    return _pack_binary(code_point, v.encode(enc))
 
 
 def pack_dds_object(code_point, o):
@@ -85,7 +89,7 @@ def write_requests_dds(sock, obj_list):
 
 
 def packEXCSAT():
-    return pack_dds_object(cp.EXCSAT, (
+    b = pack_dds_object(cp.EXCSAT, (
         _pack_str(cp.EXTNAM, 'pydrda', 'cp500') +
         _pack_str(cp.SRVNAM, 'pydrda', 'cp500') +
         _pack_str(cp.SRVRLSLV, 'pydrda', 'cp500') +
@@ -95,10 +99,12 @@ def packEXCSAT():
         _pack_str(cp.SRVCLSNM, 'pydrda', 'cp500')
         )
     )
+    return b
 
 
 def packACCSEC(database):
-    return pack_dds_object(cp.ACCSEC,
+    b = pack_dds_object(cp.ACCSEC,
         _pack_uint(cp.SECMEC, 4, 2) + _pack_str(cp.RDBNAM, database, 'cp500'),
     )
+    return b
 
