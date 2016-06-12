@@ -34,6 +34,9 @@ def _recv_from_sock(sock, nbytes):
         n -= len(bs)
     return recieved
 
+def _send_to_sock(sock, b):
+    sock.send(b)
+
 
 def _pack_uint(code_point, v, size):
     return code_point.to_bytes(2, byteorder='big') + v.to_bytes(size, byteorder='big')
@@ -72,13 +75,13 @@ def write_requests_dds(sock, obj_list):
     "Write request DDS packets"
     for i in range(len(obj_list)):
         o = obj_list[i]
-        sock.send((len(o)+4).to_bytes(2, byteorder='big'))
+        _send_to_sock(sock, (len(o)+4).to_bytes(2, byteorder='big'))
         flag = 1    # DDS request
         if i == len(obj_list) -1:
             flag |= 0b01000000
-        sock.send(bytes([0xD0, flag]))
-        sock.send((i+1).to_bytes(2, byteorder='big'))
-        sock.send(o)
+        _send_to_sock(sock, bytes([0xD0, flag]))
+        _send_to_sock(sock, (i+1).to_bytes(2, byteorder='big'))
+        _send_to_sock(sock, o)
 
 
 def packEXCSAT():
