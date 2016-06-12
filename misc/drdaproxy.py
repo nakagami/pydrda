@@ -287,7 +287,7 @@ def printCodePoint(cp, obj):
         ):
             print("\t%s:%s(len=%d)" % (cp, int.from_bytes(binary, byteorder='big'), len(binary)))
         elif cp in ('MGRLVLLS', ):
-            print("\t%s:" % (cp,), end='')
+            print("\t%s:[%s] " % (cp, binascii.b2a_hex(binary).decode('ascii')), end='')
             while binary:
                 cp2 = CODE_POINT[int.from_bytes(binary[:2], byteorder='big')]
                 v = int.from_bytes(binary[2:4], byteorder='big')
