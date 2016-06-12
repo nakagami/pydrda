@@ -22,7 +22,7 @@
 # SOFTWARE.
 ##############################################################################
 
-import codepoint as cp
+from drda import codepoint as cp
 
 def _recv_from_sock(sock, nbytes):
     n = nbytes
@@ -41,6 +41,10 @@ def _pack_uint(code_point, v, size):
 
 def _pack_str(code_point, v, enc):
     return code_point.to_bytes(2, byteorder='big') + v.encode(enc)
+
+
+def _pack_binary(code_point, v):
+    return code_point.to_bytes(2, byteorder='big') + v
 
 
 def pack_dds_object(code_point, o):
@@ -66,13 +70,32 @@ def read_dds(sock):
 
 def write_requests_dds(sock, obj_list):
     "Write request DDS packets"
-    for i in in range(len(obj_list)):
+    for i in range(len(obj_list)):
         o = obj_list[i]
         sock.send((len(o)+4).to_bytes(2, byteorder='big'))
         flag = 1    # DDS request
         if i == len(obj_list) -1:
             flag |= 0b01000000
-        sock.send(bytes([0xD0, flag])
+        sock.send(bytes([0xD0, flag]))
         sock.send((i+1).to_bytes(2, byteorder='big'))
-        wock.send(o)
+        sock.send(o)
+
+
+def packEXCSAT():
+    return pack_dds_object(cp.EXCSAT, (
+        _pack_str(cp.EXTNAM, 'pydrda', 'cp500') +
+        _pack_str(cp.SRVNAM, 'pydrda', 'cp500') +
+        _pack_str(cp.SRVRLSLV, 'pydrda', 'cp500') +
+        _pack_binary(cp.MGRLVLLS,
+            # AGENT=7 SQLAM=7 RDB=7 SECMGR=7 UNICODEMGR=1208
+            b'\x14\x03\x00\x07\x24\x07\x00\x07\x24\x0f\x00\x07\x14\x40\x00\x07\x1c\x08\x04\xb8') +
+        _pack_str(cp.SRVCLSNM, 'pydrda', 'cp500')
+        )
+    )
+
+
+def packACCSEC(database):
+    return pack_dds_object(cp.ACCSEC,
+        _pack_uint(cp.SECMEC, 4, 2) + _pack_str(cp.RDBNAM, database, 'cp500'),
+    )
 

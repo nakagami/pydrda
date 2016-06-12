@@ -22,7 +22,9 @@
 # SOFTWARE.
 ##############################################################################
 import socket
-from .cursor import Cursor
+from drda import ddm
+from drda.cursor import Cursor
+
 
 class Connection:
     def __init__(self, host, database, port, user, password):
@@ -30,10 +32,15 @@ class Connection:
         self.database = database
         self.port = port
         self.user = user
-        self.password=password
+        self.password = password
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect((self.host, self.port))
+
+        ddm.write_requests_dds(self.sock, [ddm.packEXCSAT(), ddm.packACCSEC(self.database)])
+        chained = True
+        while chained:
+            dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock)
 
     def __enter__(self):
         return self
