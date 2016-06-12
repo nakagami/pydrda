@@ -245,13 +245,31 @@ def recv_from_sock(sock, nbytes):
         n -= len(bs)
     return recieved
 
+def printSQLCARD(cp, obj):
+    flag = obj[0]
+    sqlcode = int.from_bytes(obj[1:5], byteorder='big')
+    sqlstate = obj[5:10]
+    sqlerrproc = obj[10:18]
+    rest = obj[18:]
+    print("flag=%d,sqlcode=%d,sqlstate=%s,sqlerrproc=%s,%s" % (
+        flag,
+        sqlcode,
+        sqlstate.decode('ascii'),
+        sqlerrproc.decode('ascii'),
+        binascii.b2a_hex(rest).decode('ascii'),
+    ))
+
 
 def printCodePoint(cp, obj):
     print("%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')))
+    if cp in ('SQLCARD',):
+        printSQLCARD(cp, obj)
+        return
     if cp in (
-        'SQLATTR', 'SQLSTT', 'SQLCARD', 'SQLDARD', 'SQLRSLRD',
+        'SQLATTR', 'SQLSTT', 'SQLDARD', 'SQLRSLRD',
         'SQLCINRD', 'QRYDSC', 'QRYDTA',
     ):
+        asc_dump(obj)
         return
 
     i = 0;
@@ -313,13 +331,14 @@ def relay_packets(indicator, read_sock, write_sock):
     same_correlator = head[3] & 0b00010000
     dss_type = DSS_type[head[3] & 0b1111]
     chained = head[3] & 0b01000000
-    print("%s(%d) %s,%s,%s,%s" % (
+    print("%s(%d) %s,%s,%s,%s,%d" % (
         indicator,
         ln,
         dss_type,
         'chained' if chained else 'unchained',
         'continue on error' if head[3] & 0b00100000 else '',
-        'next DDS has same correlator' if same_correlator else '',
+        'next DDS has same id' if same_correlator else '',
+        int.from_bytes(head[4:6],  byteorder='big'),
         ),
     )
 

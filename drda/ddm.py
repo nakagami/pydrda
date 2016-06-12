@@ -23,3 +23,56 @@
 ##############################################################################
 
 import codepoint as cp
+
+def _recv_from_sock(sock, nbytes):
+    n = nbytes
+    recieved = b''
+    while n:
+        bs = sock.recv(n)
+        recieved += bs
+
+        n -= len(bs)
+    return recieved
+
+
+def _pack_uint(code_point, v, size):
+    return code_point.to_bytes(2, byteorder='big') + v.to_bytes(size, byteorder='big')
+
+
+def _pack_str(code_point, v, enc):
+    return code_point.to_bytes(2, byteorder='big') + v.encode(enc)
+
+
+def pack_dds_object(code_point, o):
+    "pack to DDS packet"
+    return (len(o)+4).to_bytes(2, byteorder='big') + code_point.to_bytes(2, byteorder='big') + o
+
+
+def read_dds(sock):
+    "Read one DDS packet from socket"
+    _recv_from_sock(sock, 6)
+    ln = int.from_bytes(b[:2], byteorder='big')
+    assert b[2] == 0xD0
+    dss_type = b[3] & 0b1111
+    chained = b[3] & 0b01000000
+    number = int.from_bytes(head[4:6],  byteorder='big')
+    body = _recv_from_sock(sock, 4)
+    obj = recv_from_sock(read_sock, ln-6)
+    assert int.from_bytes(obj[:2]) == ln
+    code_point = int.from_bytes(obj[2:4], byteorder='big')
+
+    return dds_type, chained, number, code_point, obj
+
+
+def write_requests_dds(sock, obj_list):
+    "Write request DDS packets"
+    for i in in range(len(obj_list)):
+        o = obj_list[i]
+        sock.send((len(o)+4).to_bytes(2, byteorder='big'))
+        flag = 1    # DDS request
+        if i == len(obj_list) -1:
+            flag |= 0b01000000
+        sock.send(bytes([0xD0, flag])
+        sock.send((i+1).to_bytes(2, byteorder='big'))
+        wock.send(o)
+
