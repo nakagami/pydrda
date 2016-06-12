@@ -24,5 +24,6 @@
 import ddm
 
 class Cursor:
-    pass
+    def __init__(self, connection):
+        self.connection = connection
 

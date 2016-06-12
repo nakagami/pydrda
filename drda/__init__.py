@@ -122,35 +122,6 @@ class NotSupportedError(DatabaseError):
         DatabaseError.__init__(self, 'NotSupportedError')
 
 
-class Connection(object):
-    def __init__(self):
-        pass
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc, value, traceback):
-        self.close()
-
-    def is_connect(self):
-            return bool(self.sock)
-
-    def cursor(self):
-        return Cursor(self)
-
-
-    def begin(self):
-        pass
-
-    def commit(self):
-        pass
-
-    def rollback(self):
-        pass
-
-    def close(self):
-        pass
-
-def connect(host, dsn, port):
-    return Connection(host, dsn, port)
+def connect(host, database, port, user, password=None):
+    return Connection(host, database, port, user, password)
 

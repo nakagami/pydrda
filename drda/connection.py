@@ -26,8 +26,12 @@ import ddm
 from cursor import Cursor
 
 class Connection:
-    def __init__(self):
-        pass
+    def __init__(self, host, database, port, user, password):
+        self.host = host
+        self.database = database
+        self.port = port
+        self.user = user
+        self.password=password
 
     def __enter__(self):
         return self
@@ -36,7 +40,7 @@ class Connection:
         self.close()
 
     def is_connect(self):
-            return bool(self.sock)
+        return bool(self.sock)
 
     def cursor(self):
         return Cursor(self)
