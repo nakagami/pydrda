@@ -79,7 +79,7 @@ def write_requests_dds(sock, obj_list):
     "Write request DDS packets"
     for i in range(len(obj_list)):
         o = obj_list[i]
-        _send_to_sock(sock, (len(o)+4).to_bytes(2, byteorder='big'))
+        _send_to_sock(sock, (len(o)+6).to_bytes(2, byteorder='big'))
         flag = 1    # DDS request
         if i == len(obj_list) -1:
             flag |= 0b01000000
