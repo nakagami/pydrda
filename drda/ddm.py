@@ -40,7 +40,7 @@ def _send_to_sock(sock, b):
 
 def _pack_binary(code_point, v):
     b = code_point.to_bytes(2, byteorder='big') + v
-    return (len(b) + 4).to_bytes(2, byteorder='big') + b
+    return (len(b) + 2).to_bytes(2, byteorder='big') + b
 
 
 def _pack_uint(code_point, v, size):
@@ -58,14 +58,14 @@ def pack_dds_object(code_point, o):
 
 def read_dds(sock):
     "Read one DDS packet from socket"
-    _recv_from_sock(sock, 6)
+    b = _recv_from_sock(sock, 6)
     ln = int.from_bytes(b[:2], byteorder='big')
     assert b[2] == 0xD0
     dss_type = b[3] & 0b1111
     chained = b[3] & 0b01000000
-    number = int.from_bytes(head[4:6],  byteorder='big')
+    number = int.from_bytes(b[4:6],  byteorder='big')
     body = _recv_from_sock(sock, 4)
-    obj = recv_from_sock(read_sock, ln-6)
+    obj = _recv_from_sock(sock, ln-6)
     assert int.from_bytes(obj[:2]) == ln
     code_point = int.from_bytes(obj[2:4], byteorder='big')
 
