@@ -66,7 +66,7 @@ def read_dds(sock):
     number = int.from_bytes(b[4:6],  byteorder='big')
     body = _recv_from_sock(sock, 4)
     obj = _recv_from_sock(sock, ln-6)
-    assert int.from_bytes(obj[:2]) == ln
+    assert int.from_bytes(obj[:2], byteorder='big') == ln
     code_point = int.from_bytes(obj[2:4], byteorder='big')
 
     return dds_type, chained, number, code_point, obj
@@ -78,7 +78,7 @@ def write_requests_dds(sock, obj_list):
         o = obj_list[i]
         _send_to_sock(sock, (len(o)+6).to_bytes(2, byteorder='big'))
         flag = 1    # DDS request
-        if i == len(obj_list) -1:
+        if i < len(obj_list) -1:
             flag |= 0b01000000
         _send_to_sock(sock, bytes([0xD0, flag]))
         _send_to_sock(sock, (i+1).to_bytes(2, byteorder='big'))
