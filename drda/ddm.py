@@ -39,11 +39,8 @@ def _send_to_sock(sock, b):
 
 
 def _pack_binary(code_point, v):
-    return (
-        code_point.to_bytes(2, byteorder='big') +
-        (len(v) + 4).to_bytes(2, byteorder='big') +
-        v
-    )
+    b = code_point.to_bytes(2, byteorder='big') + v
+    return (len(b) + 4).to_bytes(2, byteorder='big') + b
 
 
 def _pack_uint(code_point, v, size):
