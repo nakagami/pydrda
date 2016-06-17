@@ -64,4 +64,8 @@ class Connection:
         pass
 
     def close(self):
+        ddm.write_requests_dds(self.sock, [ddm.packRDBCMM()])
+        chained = True
+        while chained:
+            dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock)
         self.sock.close()

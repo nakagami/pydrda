@@ -86,7 +86,7 @@ def write_requests_dds(sock, obj_list):
 
 
 def packEXCSAT():
-    b = pack_dds_object(cp.EXCSAT, (
+    return pack_dds_object(cp.EXCSAT, (
         _pack_str(cp.EXTNAM, 'pydrda', 'cp500') +
         _pack_str(cp.SRVNAM, 'pydrda', 'cp500') +
         _pack_str(cp.SRVRLSLV, 'pydrda', 'cp500') +
@@ -96,12 +96,14 @@ def packEXCSAT():
         _pack_str(cp.SRVCLSNM, 'pydrda', 'cp500')
         )
     )
-    return b
 
 
 def packACCSEC(database):
-    b = pack_dds_object(cp.ACCSEC,
+    return pack_dds_object(cp.ACCSEC,
         _pack_uint(cp.SECMEC, 4, 2) + _pack_str(cp.RDBNAM, database, 'cp500'),
     )
-    return b
 
+
+def packRDBCMM():
+    return pack_dds_object(cp.RDBCMM, [])
+    return b
