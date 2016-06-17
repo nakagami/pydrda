@@ -245,13 +245,14 @@ def recv_from_sock(sock, nbytes):
         n -= len(bs)
     return recieved
 
+
 def printSQLCARD(cp, obj):
     flag = obj[0]
     sqlcode = int.from_bytes(obj[1:5], byteorder='big')
     sqlstate = obj[5:10]
     sqlerrproc = obj[10:18]
     rest = obj[18:]
-    print("flag=%d,sqlcode=%d,sqlstate=%s,sqlerrproc=%s,%s" % (
+    print("\t\tflag=%d,sqlcode=%d,sqlstate=%s,sqlerrproc=%s,%s" % (
         flag,
         sqlcode,
         sqlstate.decode('ascii'),
@@ -260,18 +261,16 @@ def printSQLCARD(cp, obj):
     ))
 
 
-def printCodePoint(cp, obj):
-    print("%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')))
-    if cp in ('SQLCARD',):
+def printObject(cp, obj):
+    print("\t%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')))
+    if cp == 'SQLCARD':
         printSQLCARD(cp, obj)
-        return
-    if cp in (
-        'SQLATTR', 'SQLSTT', 'SQLDARD', 'SQLRSLRD',
-        'SQLCINRD', 'QRYDSC', 'QRYDTA',
-    ):
         asc_dump(obj)
         return
 
+
+def printCodePoint(cp, obj):
+    print("%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')))
     i = 0;
     while i < len(obj):
         ln = int.from_bytes(obj[i:i+2], byteorder='big')
@@ -279,13 +278,13 @@ def printCodePoint(cp, obj):
         binary = obj[i+4:i+ln]
         if cp in (
             'EXTNAM', 'SRVNAM', 'SRVRLSLV', 'SRVCLSNM', 'SPVNAM',
-            'USRID', 'PRDDTA',
+            'USRID', 'PRDDTA', 'CRRTKN',
         ):
             print('\t%s:"%s"' % (cp, binary.decode('cp500')))
         elif cp in (
             'SECMEC', 'PBSD_ISO', 'UOWDSP', 'SVRCOD', 'SECCHKCD',
             'RDBCMTOK', 'OUTEXP', 'QRYBLKSZ', 'MAXBLKEXT', 'MAXRSLCNT',
-            'RSLSETFLG', 'QRYROWSET',
+            'RSLSETFLG', 'QRYROWSET', 'TYPSQLDA',
         ):
             print("\t%s:%s(len=%d)" % (cp, int.from_bytes(binary, byteorder='big'), len(binary)))
         elif cp in ('MGRLVLLS', ):
@@ -320,10 +319,10 @@ def printCodePoint(cp, obj):
 
 def relay_packets(indicator, read_sock, write_sock):
     DSS_type = {
-        1: 'Request DSS',
-        2: 'Reply DSS',
-        3: 'Object DSS',
-        4: 'Communication DSS',
+        1: 'Request',
+        2: 'Reply',
+        3: 'Object',
+        4: 'Communication',
         5: 'Request DSS where no reply is expected',
     }
     head = recv_from_sock(read_sock, 6)
@@ -353,7 +352,10 @@ def relay_packets(indicator, read_sock, write_sock):
     assert ln == int.from_bytes(body[:2], byteorder='big') + 6
     code_point = int.from_bytes(body[2:4], byteorder='big')
 
-    printCodePoint(CODE_POINT[code_point], obj)
+    if dss_type == 'Object':
+        printObject(CODE_POINT[code_point], obj)
+    else:
+        printCodePoint(CODE_POINT[code_point], obj)
 
     return chained
 
