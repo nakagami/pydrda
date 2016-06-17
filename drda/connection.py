@@ -39,9 +39,14 @@ class Connection:
         self.sock.connect((self.host, self.port))
 
         ddm.write_requests_dds(self.sock, [ddm.packEXCSAT(), ddm.packACCSEC(self.database)])
+
         chained = True
+        secmec = 0
         while chained:
-            dds_type, chained, number, cp, obj = ddm.read_dds(self.sock)
+            dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock)
+            if code_point == cp.ACCSECRD:
+                secmec = ddm.parse_reply(obj).get(cp.ACCSECRD, secmec)
+        print('secmec=', secmec)
 
     def __enter__(self):
         return self
