@@ -22,6 +22,7 @@
 # SOFTWARE.
 ##############################################################################
 import socket
+from drda import codepoint as cp
 from drda import ddm
 from drda.cursor import Cursor
 
@@ -40,7 +41,7 @@ class Connection:
         ddm.write_requests_dds(self.sock, [ddm.packEXCSAT(), ddm.packACCSEC(self.database)])
         chained = True
         while chained:
-            dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock)
+            dds_type, chained, number, cp, obj = ddm.read_dds(self.sock)
 
     def __enter__(self):
         return self

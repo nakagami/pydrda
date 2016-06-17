@@ -56,6 +56,19 @@ def pack_dds_object(code_point, o):
     return (len(o)+4).to_bytes(2, byteorder='big') + code_point.to_bytes(2, byteorder='big') + o
 
 
+def parse_reply(obj):
+    d = {}
+    assert int.from_bytes(obj[:2], byteorder='big') == len(obj)
+    cp = int.from_bytes(obj[2:4], byteorder='big')
+    i = 4
+    while i < len(obj):
+        ln = int.from_bytes(obj[i:i+2], byteorder='big')
+        d[int.from_bytes(obj[i+2:i+4], byteorder='big')] = obj[i+4:i+ln]
+        i += ln
+    assert i == len(obj)
+    return cp, d
+
+
 def read_dds(sock):
     "Read one DDS packet from socket"
     b = _recv_from_sock(sock, 6)
