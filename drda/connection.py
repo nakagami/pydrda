@@ -41,11 +41,11 @@ class Connection:
         ddm.write_requests_dds(self.sock, [ddm.packEXCSAT(), ddm.packACCSEC(self.database)])
 
         chained = True
-        secmec = 0
+        secmec = b'\0\0\0\0'
         while chained:
             dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock)
             if code_point == cp.ACCSECRD:
-                secmec = ddm.parse_reply(obj).get(cp.ACCSECRD, secmec)
+                secmec = ddm.parse_reply(obj).get(cp.SECMEC, secmec)
 
         print('secmec=', secmec)
 
