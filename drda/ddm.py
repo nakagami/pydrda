@@ -112,17 +112,17 @@ def packEXCSAT():
     )
 
 
-def packSECCHK(user, password, database, secmec):
+def packSECCHK(secmec, database, user, password):
     secmec = int.from_bytes(secmec, byteorder='big')
     if secmec == cp.SECMEC_USRIDONL:
         return pack_dds_object(cp.SECCHK, (
-                _pack_uint(cp.SECMEC, secmec, 2) +
+                _pack_binary(cp.SECMEC, secmec) +
                 _pack_str(cp.RDBNAM, database, 'utf-8') +
                 _pack_str(cp.USRID, user, 'utf-8')
             )
         )
     else:
-        raise ValueError('Unknown SECMEC:%d', %)
+        raise ValueError('Unknown SECMEC:%d' % secmec)
 
 
 def packACCRDB(database):

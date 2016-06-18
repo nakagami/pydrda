@@ -22,6 +22,7 @@
 # SOFTWARE.
 ##############################################################################
 import socket
+import binascii
 from drda import codepoint as cp
 from drda import ddm
 from drda.cursor import Cursor
@@ -38,16 +39,24 @@ class Connection:
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect((self.host, self.port))
 
-        ddm.write_requests_dds(self.sock, [ddm.packEXCSAT(), ddm.packACCSEC(self.database)])
-
+        ddm.write_requests_dds(self.sock, [
+            ddm.packEXCSAT(),
+            ddm.packACCSEC(self.database)
+        ])
+        secmec = binascii.unhexlify(b'0004')
         chained = True
-        secmec = b'\0\0\0\0'
         while chained:
             dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock)
             if code_point == cp.ACCSECRD:
-                secmec = ddm.parse_reply(obj).get(cp.SECMEC, secmec)
+                secmec = ddm.parse_reply(obj).get(cp.SECMEC)
 
-        print('secmec=', secmec)
+        ddm.write_requests_dds(self.sock, [
+            ddm.packSECCHK(secmec, self.database, self.user, self.password),
+            ddm.packACCRDB(self.database)
+        ])
+        chained = True
+        while chained:
+            dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock)
 
     def __enter__(self):
         return self
