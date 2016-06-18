@@ -74,12 +74,12 @@ def read_dds(sock):
     b = _recv_from_sock(sock, 6)
     ln = int.from_bytes(b[:2], byteorder='big')
     assert b[2] == 0xD0
-    dss_type = b[3] & 0b1111
+    dds_type = b[3] & 0b1111
     chained = b[3] & 0b01000000
     number = int.from_bytes(b[4:6],  byteorder='big')
-    body = _recv_from_sock(sock, 4)
-    obj = _recv_from_sock(sock, ln-6)
-    assert int.from_bytes(obj[:2], byteorder='big') == ln
+    obj = _recv_from_sock(sock, ln-2)
+
+    assert int.from_bytes(obj[:2], byteorder='big') == ln - 6
     code_point = int.from_bytes(obj[2:4], byteorder='big')
 
     return dds_type, chained, number, code_point, obj
