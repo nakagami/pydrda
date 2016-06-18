@@ -116,9 +116,9 @@ def packSECCHK(secmec, database, user, password):
     secmec = int.from_bytes(secmec, byteorder='big')
     if secmec == cp.SECMEC_USRIDONL:
         return pack_dds_object(cp.SECCHK, (
-                _pack_binary(cp.SECMEC, secmec) +
+                _pack_uint(cp.SECMEC, secmec, 2) +
                 _pack_str(cp.RDBNAM, database, 'utf-8') +
-                _pack_str(cp.USRID, user, 'utf-8')
+                _pack_str(cp.USRID, user, 'cp500')
             )
         )
     else:
@@ -129,9 +129,10 @@ def packACCRDB(database):
     return pack_dds_object(cp.ACCRDB, (
             _pack_str(cp.RDBNAM, database, 'utf-8') +
             _pack_uint(cp.RDBACCCL, cp.SQLAM, 2) +
+            _pack_str(cp.PRDID, 'DNC10130', 'utf-8') +
             _pack_str(cp.TYPDEFNAM, 'QTDSQLASC', 'utf-8') +
             _pack_binary(cp.CRRTKN,
-                binascii.unhexlify(b'd5c6f0f0f0f0f0f12ec6c5f2f6015562de94c9')) +
+                binascii.unhexlify(b'd5c6f0f0f0f0f0f12ec3f0c1f50155630d5a11')) +
             _pack_binary(cp.TYPDEFOVR,
                 binascii.unhexlify(b'0006119c04b80006119d04b00006119e04b8'))
         )
