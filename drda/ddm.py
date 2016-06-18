@@ -106,7 +106,7 @@ def packEXCSAT():
         _pack_str(cp.SRVRLSLV, 'pydrda', 'cp500') +
         _pack_binary(cp.MGRLVLLS,
             # AGENT=7 SQLAM=7 RDB=7 SECMGR=7 UNICODEMGR=1208
-            b'\x14\x03\x00\x07\x24\x07\x00\x07\x24\x0f\x00\x07\x14\x40\x00\x07\x1c\x08\x04\xb8') +
+            binascii.unhexlify(b'1403000724070007240f0007144000071c0804b8')) +
         _pack_str(cp.SRVCLSNM, 'pydrda', 'cp500')
         )
     )
@@ -115,7 +115,7 @@ def packEXCSAT():
 def packSECCHK(user, password, database, secmec):
     secmec = int.from_bytes(secmec, byteorder='big')
     if secmec == cp.SECMEC_USRIDONL:
-        return pack_dds_object(cp.EXCSAT, (
+        return pack_dds_object(cp.SECCHK, (
                 _pack_uint(cp.SECMEC, secmec, 2) +
                 _pack_str(cp.RDBNAM, database, 'utf-8') +
                 _pack_str(cp.USRID, user, 'utf-8')
@@ -123,6 +123,19 @@ def packSECCHK(user, password, database, secmec):
         )
     else:
         raise ValueError('Unknown SECMEC:%d', %)
+
+
+def packACCRDB(database):
+    return pack_dds_object(cp.ACCRDB, (
+            _pack_str(cp.RDBNAM, database, 'utf-8') +
+            _pack_uint(cp.RDBACCCL, cp.SQLAM, 2) +
+            _pack_str(cp.TYPDEFNAM, 'QTDSQLASC', 'utf-8') +
+            _pack_binary(cp.CRRTKN,
+                binascii.unhexlify(b'd5c6f0f0f0f0f0f12ec6c5f2f6015562de94c9')) +
+            _pack_binary(cp.TYPDEFOVR,
+                binascii.unhexlify(b'0006119c04b80006119d04b00006119e04b8'))
+        )
+    )
 
 
 def packACCSEC(database):
