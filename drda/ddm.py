@@ -30,7 +30,6 @@ def _recv_from_sock(sock, nbytes):
     while n:
         bs = sock.recv(n)
         recieved += bs
-
         n -= len(bs)
     return recieved
 
@@ -57,16 +56,18 @@ def pack_dds_object(code_point, o):
 
 
 def parse_reply(obj):
-    d = {}
     assert int.from_bytes(obj[:2], byteorder='big') == len(obj)
-    cp = int.from_bytes(obj[2:4], byteorder='big')
+    code_point = int.from_bytes(obj[2:4], byteorder='big')
     i = 4
+
+    d = {}
     while i < len(obj):
         ln = int.from_bytes(obj[i:i+2], byteorder='big')
         d[int.from_bytes(obj[i+2:i+4], byteorder='big')] = obj[i+4:i+ln]
         i += ln
+
     assert i == len(obj)
-    return cp, d
+    return d
 
 
 def read_dds(sock):
@@ -77,7 +78,7 @@ def read_dds(sock):
     dds_type = b[3] & 0b1111
     chained = b[3] & 0b01000000
     number = int.from_bytes(b[4:6],  byteorder='big')
-    obj = _recv_from_sock(sock, ln-2)
+    obj = _recv_from_sock(sock, ln-6)
 
     assert int.from_bytes(obj[:2], byteorder='big') == ln - 6
     code_point = int.from_bytes(obj[2:4], byteorder='big')
@@ -118,5 +119,5 @@ def packACCSEC(database):
 
 
 def packRDBCMM():
-    return pack_dds_object(cp.RDBCMM, [])
+    return pack_dds_object(cp.RDBCMM, bytes())
     return b

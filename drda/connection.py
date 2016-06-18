@@ -46,6 +46,7 @@ class Connection:
             dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock)
             if code_point == cp.ACCSECRD:
                 secmec = ddm.parse_reply(obj).get(cp.ACCSECRD, secmec)
+
         print('secmec=', secmec)
 
     def __enter__(self):
