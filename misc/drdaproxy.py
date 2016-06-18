@@ -277,10 +277,13 @@ def printCodePoint(cp, obj):
         cp = CODE_POINT[int.from_bytes(obj[i+2:i+4], byteorder='big')]
         binary = obj[i+4:i+ln]
         if cp in (
-            'EXTNAM', 'SRVNAM', 'SRVRLSLV', 'SRVCLSNM', 'SPVNAM',
-            'USRID', 'PRDDTA',
+            'EXTNAM', 'SRVNAM', 'SRVRLSLV', 'SRVCLSNM', 'SPVNAM', 'PRDDTA',
         ):
             print('\t%s:"%s"' % (cp, binary.decode('cp500')))
+        elif cp in (
+            'USRID'
+        ):
+            print('\t%s:"%s"' % (cp, binary.decode('utf-8')))
         elif cp in (
             'SECMEC', 'PBSD_ISO', 'UOWDSP', 'SVRCOD', 'SECCHKCD',
             'RDBCMTOK', 'OUTEXP', 'QRYBLKSZ', 'MAXBLKEXT', 'MAXRSLCNT',

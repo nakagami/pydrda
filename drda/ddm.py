@@ -118,7 +118,7 @@ def packSECCHK(secmec, database, user, password):
         return pack_dds_object(cp.SECCHK, (
                 _pack_uint(cp.SECMEC, secmec, 2) +
                 _pack_str(cp.RDBNAM, database, 'utf-8') +
-                _pack_str(cp.USRID, user, 'cp500')
+                _pack_str(cp.USRID, user, 'utf-8')
             )
         )
     else:
