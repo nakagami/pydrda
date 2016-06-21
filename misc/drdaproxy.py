@@ -316,6 +316,15 @@ def printCodePoint(cp, obj):
             print("\t%s:%s" % (cp, CODE_POINT[int.from_bytes(binary, byteorder='big')]))
         elif cp in ('CRRTKN', ):
             print("\t%s:%s" % (cp, binascii.b2a_hex(binary).decode('ascii')))
+        elif cp in ('PKGNAMCSN', ):
+            print("\t%s:RDBNAM=[%s],RDBCOLID=[%s],PKGID=[%s],PKGCNSTKN=[%s],PKGSN=[%s]" % (
+                cp,
+                binary[:18].decode('utf-8'),
+                binary[18:36].decode('utf-8'),
+                binary[36:54].decode('utf-8'),
+                binary[54:62].decode('utf-8'),
+                binascii.b2a_hex(binary[62:]).decode('ascii'),
+            ))
         else:
             print("%s:%s" % (cp, binascii.b2a_hex(binary).decode('ascii')))
         i += ln
