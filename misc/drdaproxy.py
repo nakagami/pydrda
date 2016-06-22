@@ -287,7 +287,7 @@ def printCodePoint(cp, obj):
         elif cp in (
             'SECMEC', 'PBSD_ISO', 'UOWDSP', 'SVRCOD', 'SECCHKCD',
             'RDBCMTOK', 'OUTEXP', 'QRYBLKSZ', 'MAXBLKEXT', 'MAXRSLCNT',
-            'RSLSETFLG', 'QRYROWSET', 'TYPSQLDA',
+            'RSLSETFLG', 'QRYROWSET', 'TYPSQLDA', 'QRYINSID',
         ):
             print("\t%s:%s(len=%d)" % (cp, int.from_bytes(binary, byteorder='big'), len(binary)))
         elif cp in ('MGRLVLLS', ):
