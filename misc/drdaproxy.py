@@ -262,11 +262,10 @@ def printSQLCARD(cp, obj):
 
 
 def printObject(cp, obj):
-    print("\t%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')))
+    print("\t%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')), end='')
+    asc_dump(obj)
     if cp == 'SQLCARD':
         printSQLCARD(cp, obj)
-        asc_dump(obj)
-        return
 
 
 def printCodePoint(cp, obj):
