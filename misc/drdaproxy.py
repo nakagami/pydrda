@@ -247,6 +247,7 @@ def recv_from_sock(sock, nbytes):
 
 
 def printSQLCARD(cp, obj):
+    print("\t%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')), end='')
     flag = obj[0]
     sqlcode = int.from_bytes(obj[1:5], byteorder='big')
     sqlstate = obj[5:10]
@@ -261,11 +262,28 @@ def printSQLCARD(cp, obj):
     ))
 
 
-def printObject(cp, obj):
+def printSQLATTR(cp, obj):
     print("\t%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')), end='')
-    asc_dump(obj)
+    i = 0
+    while i < len(obj):
+        ln = obj[i]
+        i += 1
+        if ln == 0xFF:
+            break
+        print("[%s]" % (obj[i:i+ln].decode('utf-8'),), end=' ')
+        i += ln
+    assert i == len(obj)
+    print()
+
+
+def printObject(cp, obj):
     if cp == 'SQLCARD':
         printSQLCARD(cp, obj)
+    elif cp in ('SQLATTR', ):
+        printSQLATTR(cp, obj)
+    else:
+        print("\t%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')), end='')
+        asc_dump(obj)
 
 
 def printCodePoint(cp, obj):
