@@ -246,9 +246,13 @@ def recv_from_sock(sock, nbytes):
     return recieved
 
 
+# https://www.ibm.com/support/knowledgecenter/SSEPH2_14.1.0/com.ibm.ims14.doc.apr/ims_ddm_cmds.htm
+
 def printSQLCARD(cp, obj):
     print("\t%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')), end='')
     flag = obj[0]
+    # SQLSTATE & SQLCODE
+    # https://www.ibm.com/support/knowledgecenter/ssw_i5_54/rzala/rzalaccl.htm
     sqlcode = int.from_bytes(obj[1:5], byteorder='big')
     sqlstate = obj[5:10]
     sqlerrproc = obj[10:18]
@@ -260,6 +264,12 @@ def printSQLCARD(cp, obj):
         sqlerrproc.decode('ascii'),
         binascii.b2a_hex(rest).decode('ascii'),
     ))
+
+
+def printSQLDARD(cp, obj):
+    # TODO:
+    print("\t%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')), end='')
+    asc_dump(obj)
 
 
 def printSQLATTR(cp, obj):
@@ -276,14 +286,23 @@ def printSQLATTR(cp, obj):
     print()
 
 
+def printSQLATTR(cp, obj):
+    # TODO:
+    print("\t%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')), end='')
+    asc_dump(obj)
+
+
+def printUnknown(cp, obj):
+    print("\t???%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')), end='')
+    asc_dump(obj)
+
+
 def printObject(cp, obj):
-    if cp == 'SQLCARD':
-        printSQLCARD(cp, obj)
-    elif cp in ('SQLATTR', ):
-        printSQLATTR(cp, obj)
-    else:
-        print("\t%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')), end='')
-        asc_dump(obj)
+    {
+    'SQLCARD': printSQLCARD,
+    'SQLDARD': printSQLDARD,
+    'SQLATTR': printSQLATTR,
+    }.get(cp, printUnknown)(cp, obj)
 
 
 def printCodePoint(cp, obj):
