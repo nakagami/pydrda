@@ -248,6 +248,15 @@ def recv_from_sock(sock, nbytes):
 
 # https://www.ibm.com/support/knowledgecenter/SSEPH2_14.1.0/com.ibm.ims14.doc.apr/ims_ddm_cmds.htm
 
+def parse_null_string(b):
+    if b[0] == 0xFF:
+        return None, b[1:]
+    assert b[0] == 0
+    ln = int.from_bytes(b[1:5], byteorder='big')
+    s = b[5:5+ln].decode('utf-8')
+    return s, b[5+ln:]
+
+
 def printSQLCARD(cp, obj):
     print("\t%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')), end='')
     flag = obj[0]
@@ -286,9 +295,13 @@ def printSQLATTR(cp, obj):
     print()
 
 
-def printSQLATTR(cp, obj):
-    # TODO:
-    print("\t%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')), end='')
+def printStrings(cp, obj):
+    "mixed character string and single character string"
+    b = obj
+    mixed_string, b = parse_null_string(b)
+    single_string, b = parse_null_string(b)
+    print("\t%s:<%s>,<%s>" % (cp, mixed_string, single_string), end='')
+    assert b == b''
     asc_dump(obj)
 
 
@@ -301,7 +314,8 @@ def printObject(cp, obj):
     {
     'SQLCARD': printSQLCARD,
     'SQLDARD': printSQLDARD,
-    'SQLATTR': printSQLATTR,
+    'SQLATTR': printStrings,
+    'SQLSTT': printStrings,
     }.get(cp, printUnknown)(cp, obj)
 
 
