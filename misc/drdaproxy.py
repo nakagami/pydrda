@@ -258,7 +258,7 @@ def parse_null_string(b):
 
 
 def printSQLCARD(cp, obj):
-    print("\t%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')), end='')
+    print("%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')), end='')
     flag = obj[0]
     # SQLSTATE & SQLCODE
     # https://www.ibm.com/support/knowledgecenter/ssw_i5_54/rzala/rzalaccl.htm
@@ -282,7 +282,7 @@ def printSQLDARD(cp, obj):
 
 
 def printSQLATTR(cp, obj):
-    print("\t%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')), end='')
+    print("%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')), end='')
     i = 0
     while i < len(obj):
         ln = obj[i]
@@ -296,13 +296,13 @@ def printSQLATTR(cp, obj):
 
 
 def printSQLDTA(cp, obj):
-    print("\t%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')))
+    print("%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')))
     i = 0
     while i < len(obj):
         ln = int.from_bytes(obj[i:i+2], byteorder='big')
         cp = CODE_POINT[int.from_bytes(obj[i+2:i+4], byteorder='big')]
         binary = obj[i+4:i+ln]
-        print("\t\t%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')), end='')
+        print("\t%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')), end='')
         asc_dump(binary)
 
         i += ln
@@ -315,13 +315,13 @@ def printStrings(cp, obj):
     b = obj
     mixed_string, b = parse_null_string(b)
     single_string, b = parse_null_string(b)
-    print("\t%s:<%s>,<%s>" % (cp, mixed_string, single_string), end='')
+    print("%s:<%s>,<%s>" % (cp, mixed_string, single_string), end='')
     assert b == b''
     asc_dump(obj)
 
 
 def printUnknown(cp, obj):
-    print("\t???%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')), end='')
+    print("???%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')), end='')
     asc_dump(obj)
 
 
