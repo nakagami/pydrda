@@ -277,7 +277,7 @@ def printSQLCARD(cp, obj):
 
 def printSQLDARD(cp, obj):
     # TODO:
-    print("\t%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')), end='')
+    print("%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')), end='')
     asc_dump(obj)
 
 
@@ -392,7 +392,7 @@ def printCodePoint(cp, obj):
                 binascii.b2a_hex(binary[62:]).decode('ascii'),
             ))
         else:
-            print("%s:%s" % (cp, binascii.b2a_hex(binary).decode('ascii')))
+            print("\t%s:%s" % (cp, binascii.b2a_hex(binary).decode('ascii')))
         i += ln
     assert i == len(obj)
 
