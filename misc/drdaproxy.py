@@ -295,6 +295,21 @@ def printSQLATTR(cp, obj):
     print()
 
 
+def printSQLDTA(cp, obj):
+    print("\t%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')))
+    i = 0
+    while i < len(obj):
+        ln = int.from_bytes(obj[i:i+2], byteorder='big')
+        cp = CODE_POINT[int.from_bytes(obj[i+2:i+4], byteorder='big')]
+        binary = obj[i+4:i+ln]
+        print("\t\t%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')), end='')
+        asc_dump(binary)
+
+        i += ln
+    assert i == len(obj)
+    print()
+
+
 def printStrings(cp, obj):
     "mixed character string and single character string"
     b = obj
@@ -316,6 +331,7 @@ def printObject(cp, obj):
     'SQLDARD': printSQLDARD,
     'SQLATTR': printStrings,
     'SQLSTT': printStrings,
+    'SQLDTA': printSQLDTA,
     }.get(cp, printUnknown)(cp, obj)
 
 
