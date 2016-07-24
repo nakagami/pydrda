@@ -332,8 +332,30 @@ def printSQLCINRD(cp, obj):
     for i in range(3, 19):
         assert obj[i] == 0
     b = obj[19:]
+
+    # num_rows == 0
+    num_row = int.from_bytes(b[:2], byteorder='big')
+    print('num_row=', num_row)
+    b = b[2:]
+
     print("\tsqldhold=%d:%s" % (sqldhold,binascii.b2a_hex(obj).decode('ascii')), end='')
-    asc_dump(b)
+    print()
+
+    while b:
+        precision = int.from_bytes(b[0:2], byteorder='big')
+        scale = int.from_bytes(b[2:4], byteorder='big')
+        length = int.from_bytes(b[4:12], byteorder='big')
+        sqltype = int.from_bytes(b[12:14], byteorder='big')
+        ccsid = int.from_bytes(b[14:16], byteorder='big')
+        b = b[20:]
+        print("1????????%s" % (binascii.b2a_hex(b).decode('ascii')))
+        ln = b[0]
+        name = b[1:1+ln].decode('utf-8')
+        print('name=', name)
+        b = b[1+ln+15:]
+        print("2????????%s" % (binascii.b2a_hex(b).decode('ascii')))
+
+#    asc_dump(b)
 
 
 def printUnknown(cp, obj):
