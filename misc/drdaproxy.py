@@ -253,7 +253,10 @@ def parse_null_string(b):
         return None, b[1:]
     assert b[0] == 0
     ln = int.from_bytes(b[1:5], byteorder='big')
-    s = b[5:5+ln].decode('utf-8')
+    if ln:
+        s = b[5:5+ln].decode('utf-8')
+    else:
+        s = ''
     return s, b[5+ln:]
 
 
@@ -320,6 +323,17 @@ def printStrings(cp, obj):
     asc_dump(obj)
 
 
+def printSQLCINRD(cp, obj):
+    print("%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')), end='')
+    asc_dump(obj)
+
+    assert obj[0] == 0
+    sqldhold = int.from_bytes(obj[1:3], byteorder='big')
+    b = obj[19:]
+    print("\t", end='')
+    asc_dump(b)
+
+
 def printUnknown(cp, obj):
     print("???%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')), end='')
     asc_dump(obj)
@@ -332,6 +346,7 @@ def printObject(cp, obj):
     'SQLATTR': printStrings,
     'SQLSTT': printStrings,
     'SQLDTA': printSQLDTA,
+    'SQLCINRD': printSQLCINRD,
     }.get(cp, printUnknown)(cp, obj)
 
 
