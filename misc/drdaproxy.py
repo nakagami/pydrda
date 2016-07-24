@@ -329,8 +329,10 @@ def printSQLCINRD(cp, obj):
 
     assert obj[0] == 0
     sqldhold = int.from_bytes(obj[1:3], byteorder='big')
+    for i in range(3, 19):
+        assert obj[i] == 0
     b = obj[19:]
-    print("\t", end='')
+    print("\tsqldhold=%d:%s" % (sqldhold,binascii.b2a_hex(obj).decode('ascii')), end='')
     asc_dump(b)
 
 
