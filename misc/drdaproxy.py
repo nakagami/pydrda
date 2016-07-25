@@ -258,12 +258,14 @@ def parse_string(b):
     b = b[2+ln:]
     return s, b
 
+
 def parse_name(b):
     "parse VCM or VCS"
-    s, b = parse_string(b)
+    s1, b = parse_string(b)
+    s2, b = parse_string(b)
     ln = int.from_bytes(b[:2], byteorder='big')
-    assert ln == 0
-    return s, b[2:]
+    return s1 if s1 else s2, b
+
 
 def parse_null_string(b, lnln):
     if b[0] == 0xFF:
@@ -353,8 +355,7 @@ def printSQLCINRD(cp, obj):
     ncols = int.from_bytes(b[:2], byteorder='big')
     b = b[2:]
 
-    print("\tsqldhold=%d:%s,ncols=%d" % (sqldhold,binascii.b2a_hex(obj).decode('ascii'), ncols), end='')
-    print()
+    print("\tsqldhold=%d:%s,ncols=%d" % (sqldhold,binascii.b2a_hex(obj).decode('ascii'), ncols))
 
     # SQLDAGRP parseSQLDAGRP()
     while b:
@@ -364,36 +365,42 @@ def printSQLCINRD(cp, obj):
         sqltype = int.from_bytes(b[12:14], byteorder='big')
         ccsid = int.from_bytes(b[14:16], byteorder='big')
         b = b[16:]
-        print('precision, scale, length, sqltype, ccsid=',
-            precision, scale, length, sqltype, ccsid)
 
         # SQLDOPTGRP parseSQLDOPTGRP()
+        assert b[0] == 0
+        b = b[1:]
+        # sqlunnamed
+        assert int.from_bytes(b[:2], byteorder='big') == 0
+        b = b[2:]
+        sqlname, b = parse_name(b)
+        sqllabel, b = parse_name(b)
+        sqlcomments, b = parse_name(b)
+
+        # parseSQLUDTGRP()
         if b[0] == 0xFF:
             b = b[1:]
         else:
-            assert b[0] == 0
-            b = b[1:]
-            # sqlunnamed
-            assert int.from_bytes(b[:2], byteorder='big') == 0
-            b = b[2:]
-            sqlname, b = parse_name(b)
-            sqllabel, b = parse_name(b)
-            sqlcomments, b = parse_name(b)
+            typename, b = parse_name(b)
+            classname, b = parse_name(b)
 
-            # parseSQLUDTGRP()
-            print('SQLUDTGRP', binascii.b2a_hex(b).decode('ascii'))
-            if b[0] == 0xFF:
-                b = b[1:]
-            else:
-                typename, b = parse_name(b)
-                classname, b = parse_name(b)
+        # parseSQLDXGRP()
+        assert b[0] == 0x00
+        b = b[1:]
+        # sqlunnamed
+        sqlxkeymem = int.from_bytes(b[0:2], byteorder='big')
+        sqlxupdateable = int.from_bytes(b[2:4], byteorder='big')
+        sqlxgenerated = int.from_bytes(b[4:6], byteorder='big')
+        sqlxparmmode = int.from_bytes(b[6:8], byteorder='big')
+        sqlxrdbnam, b = parse_string(b[8:])
+        sqlxcorname, b = parse_name(b)
+        sqlxbasename, b = parse_name(b)
+        sqlxschema, b = parse_name(b)
+        sqlxname, b = parse_name(b)
 
-            # parseSQLDXGRP()
-            print('SQLDXGRP', binascii.b2a_hex(b).decode('ascii'))
-            assert b[0] == 0xFF
-            b = b[1:]
+        print('precision, scale, length, sqltype, ccsid=',
+            precision, scale, length, sqltype, ccsid)
 
-#    asc_dump(b)
+    assert len(b) == 0
 
 
 def printUnknown(cp, obj):
