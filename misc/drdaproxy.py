@@ -248,14 +248,19 @@ def recv_from_sock(sock, nbytes):
 
 # https://www.ibm.com/support/knowledgecenter/SSEPH2_14.1.0/com.ibm.ims14.doc.apr/ims_ddm_cmds.htm
 
-def parse_name(b):
-    "parse VCM or VCS"
+def parse_string(b):
+    "parse VCM"
     ln = int.from_bytes(b[:2], byteorder='big')
     if ln:
         s = b[2:2+ln].decode('utf-8')
     else:
         s = ''
     b = b[2+ln:]
+    return s, b
+
+def parse_name(b):
+    "parse VCM or VCS"
+    s, b = parse_string(b)
     ln = int.from_bytes(b[:2], byteorder='big')
     assert ln == 0
     return s, b[2:]
