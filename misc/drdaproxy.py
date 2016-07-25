@@ -248,16 +248,25 @@ def recv_from_sock(sock, nbytes):
 
 # https://www.ibm.com/support/knowledgecenter/SSEPH2_14.1.0/com.ibm.ims14.doc.apr/ims_ddm_cmds.htm
 
-def parse_null_string(b):
+def parse_string(b, lnln):
+    ln = int.from_bytes(b[:lnln], byteorder='big')
+    if ln:
+        s = b[lnln:lnln+ln].decode('utf-8')
+    else:
+        s = ''
+    return s, b[lnln+ln:]
+
+
+def parse_null_string(b, lnln):
     if b[0] == 0xFF:
         return None, b[1:]
     assert b[0] == 0
-    ln = int.from_bytes(b[1:5], byteorder='big')
+    ln = int.from_bytes(b[1:1+lnln], byteorder='big')
     if ln:
-        s = b[5:5+ln].decode('utf-8')
+        s = b[1+lnln:1+lnln+ln].decode('utf-8')
     else:
         s = ''
-    return s, b[5+ln:]
+    return s, b[1+lnln+ln:]
 
 
 def printSQLCARD(cp, obj):
@@ -316,8 +325,8 @@ def printSQLDTA(cp, obj):
 def printStrings(cp, obj):
     "mixed character string and single character string"
     b = obj
-    mixed_string, b = parse_null_string(b)
-    single_string, b = parse_null_string(b)
+    mixed_string, b = parse_null_string(b, 4)
+    single_string, b = parse_null_string(b, 4)
     print("%s:<%s>,<%s>" % (cp, mixed_string, single_string), end='')
     assert b == b''
     asc_dump(obj)
@@ -333,27 +342,43 @@ def printSQLCINRD(cp, obj):
         assert obj[i] == 0
     b = obj[19:]
 
-    # num_rows == 0
-    num_row = int.from_bytes(b[:2], byteorder='big')
-    print('num_row=', num_row)
+    ncols = int.from_bytes(b[:2], byteorder='big')
     b = b[2:]
 
-    print("\tsqldhold=%d:%s" % (sqldhold,binascii.b2a_hex(obj).decode('ascii')), end='')
+    print("\tsqldhold=%d:%s,ncols=%d" % (sqldhold,binascii.b2a_hex(obj).decode('ascii'), ncols), end='')
     print()
 
+    # SQLDAGRP
     while b:
         precision = int.from_bytes(b[0:2], byteorder='big')
         scale = int.from_bytes(b[2:4], byteorder='big')
         length = int.from_bytes(b[4:12], byteorder='big')
         sqltype = int.from_bytes(b[12:14], byteorder='big')
         ccsid = int.from_bytes(b[14:16], byteorder='big')
-        b = b[20:]
+        b = b[16:]
+        # SQLDOPTGRP
+        b = b[3:]
         print("1????????%s" % (binascii.b2a_hex(b).decode('ascii')))
-        ln = b[0]
-        name = b[1:1+ln].decode('utf-8')
-        print('name=', name)
-        b = b[1+ln+15:]
+
+        sqlname_m, b = parse_string(b, 2)
+        sqlname_s, b = parse_string(b, 2)
         print("2????????%s" % (binascii.b2a_hex(b).decode('ascii')))
+        sqllabel_m, b = parse_string(b, 2)
+        sqllabel_s, b = parse_string(b, 2)
+        print("3????????%s" % (binascii.b2a_hex(b).decode('ascii')))
+        sqlcomments_m, b = parse_string(b, 2)
+        sqlcomments_s, b = parse_string(b, 2)
+        print("4????????%s" % (binascii.b2a_hex(b).decode('ascii')))
+        sqldudtgrp_m, b = parse_string(b, 2)
+        sqldudtgrp_s, b = parse_string(b, 2)
+        print("5????????%s" % (binascii.b2a_hex(b).decode('ascii')))
+        sqldxgrp_m, b = parse_string(b, 2)
+        sqldxgrp_s, b = parse_string(b, 2)
+        print("6????????%s" % (binascii.b2a_hex(b).decode('ascii')))
+
+        print('precision, scale, length, sqltype, ccsid, name=',
+            precision, scale, length, sqltype, ccsid, sqlname_m)
+        print("7????????%s" % (binascii.b2a_hex(b).decode('ascii')))
 
 #    asc_dump(b)
 
