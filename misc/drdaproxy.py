@@ -248,14 +248,17 @@ def recv_from_sock(sock, nbytes):
 
 # https://www.ibm.com/support/knowledgecenter/SSEPH2_14.1.0/com.ibm.ims14.doc.apr/ims_ddm_cmds.htm
 
-def parse_string(b, lnln):
-    ln = int.from_bytes(b[:lnln], byteorder='big')
+def parse_string(b):
+    "parse VCM or VCS"
+    ln = int.from_bytes(b[:2], byteorder='big')
     if ln:
-        s = b[lnln:lnln+ln].decode('utf-8')
+        s = b[2:2+ln].decode('utf-8')
     else:
         s = ''
-    return s, b[lnln+ln:]
-
+    b = b[2+ln:]
+    ln = int.from_bytes(b[:2], byteorder='big')
+    assert ln == 0
+    return s, b[2:]
 
 def parse_null_string(b, lnln):
     if b[0] == 0xFF:
@@ -348,37 +351,35 @@ def printSQLCINRD(cp, obj):
     print("\tsqldhold=%d:%s,ncols=%d" % (sqldhold,binascii.b2a_hex(obj).decode('ascii'), ncols), end='')
     print()
 
-    # SQLDAGRP
+    # SQLDAGRP parseSQLDAGRP()
     while b:
+        print(binascii.b2a_hex(b).decode('ascii'))
+
         precision = int.from_bytes(b[0:2], byteorder='big')
         scale = int.from_bytes(b[2:4], byteorder='big')
         length = int.from_bytes(b[4:12], byteorder='big')
         sqltype = int.from_bytes(b[12:14], byteorder='big')
         ccsid = int.from_bytes(b[14:16], byteorder='big')
         b = b[16:]
-        # SQLDOPTGRP
-        b = b[3:]
-        print("1????????%s" % (binascii.b2a_hex(b).decode('ascii')))
+        print('precision, scale, length, sqltype, ccsid=',
+            precision, scale, length, sqltype, ccsid)
 
-        sqlname_m, b = parse_string(b, 2)
-        sqlname_s, b = parse_string(b, 2)
-        print("2????????%s" % (binascii.b2a_hex(b).decode('ascii')))
-        sqllabel_m, b = parse_string(b, 2)
-        sqllabel_s, b = parse_string(b, 2)
-        print("3????????%s" % (binascii.b2a_hex(b).decode('ascii')))
-        sqlcomments_m, b = parse_string(b, 2)
-        sqlcomments_s, b = parse_string(b, 2)
-        print("4????????%s" % (binascii.b2a_hex(b).decode('ascii')))
-        sqldudtgrp_m, b = parse_string(b, 2)
-        sqldudtgrp_s, b = parse_string(b, 2)
-        print("5????????%s" % (binascii.b2a_hex(b).decode('ascii')))
-        sqldxgrp_m, b = parse_string(b, 2)
-        sqldxgrp_s, b = parse_string(b, 2)
-        print("6????????%s" % (binascii.b2a_hex(b).decode('ascii')))
-
-        print('precision, scale, length, sqltype, ccsid, name=',
-            precision, scale, length, sqltype, ccsid, sqlname_m)
-        print("7????????%s" % (binascii.b2a_hex(b).decode('ascii')))
+        # SQLDOPTGRP parseSQLDOPTGRP()
+        if b[0] == 0xFF:
+            b = b[1:]
+        else:
+            assert b[0] == 0
+            b = b[1:]
+            # sqlunnamed
+            assert int.from_bytes(b[:2], byteorder='big') == 0
+            b = b[2:]
+            sqlname, b = parse_string(b)
+            sqllabel, b = parse_string(b)
+            sqlcomments, b = parse_string(b)
+            # parseSQLUDTGRP()
+            typename, b = parse_string(b)
+            classname, b = parse_string(b)
+            # parseSQLDXGRP()
 
 #    asc_dump(b)
 
