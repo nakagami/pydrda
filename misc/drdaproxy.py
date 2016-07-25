@@ -355,7 +355,7 @@ def printSQLCINRD(cp, obj):
     ncols = int.from_bytes(b[:2], byteorder='big')
     b = b[2:]
 
-    print("\tsqldhold=%d:%s,ncols=%d" % (sqldhold,binascii.b2a_hex(obj).decode('ascii'), ncols))
+    print("\tsqldhold=%d,ncols=%d" % (sqldhold, ncols))
 
     # SQLDAGRP parseSQLDAGRP()
     while b:
