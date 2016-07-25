@@ -353,8 +353,6 @@ def printSQLCINRD(cp, obj):
 
     # SQLDAGRP parseSQLDAGRP()
     while b:
-        print(binascii.b2a_hex(b).decode('ascii'))
-
         precision = int.from_bytes(b[0:2], byteorder='big')
         scale = int.from_bytes(b[2:4], byteorder='big')
         length = int.from_bytes(b[4:12], byteorder='big')
@@ -376,10 +374,16 @@ def printSQLCINRD(cp, obj):
             sqlname, b = parse_string(b)
             sqllabel, b = parse_string(b)
             sqlcomments, b = parse_string(b)
+
             # parseSQLUDTGRP()
+            print('SQLUDTGRP', binascii.b2a_hex(b).decode('ascii'))
             typename, b = parse_string(b)
             classname, b = parse_string(b)
+
             # parseSQLDXGRP()
+            print('SQLDXGRP', binascii.b2a_hex(b).decode('ascii'))
+            assert b[0] == 0xFF
+            b = b[1:]
 
 #    asc_dump(b)
 
