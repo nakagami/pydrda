@@ -248,7 +248,7 @@ def recv_from_sock(sock, nbytes):
 
 # https://www.ibm.com/support/knowledgecenter/SSEPH2_14.1.0/com.ibm.ims14.doc.apr/ims_ddm_cmds.htm
 
-def parse_string(b):
+def parse_name(b):
     "parse VCM or VCS"
     ln = int.from_bytes(b[:2], byteorder='big')
     if ln:
@@ -371,14 +371,17 @@ def printSQLCINRD(cp, obj):
             # sqlunnamed
             assert int.from_bytes(b[:2], byteorder='big') == 0
             b = b[2:]
-            sqlname, b = parse_string(b)
-            sqllabel, b = parse_string(b)
-            sqlcomments, b = parse_string(b)
+            sqlname, b = parse_name(b)
+            sqllabel, b = parse_name(b)
+            sqlcomments, b = parse_name(b)
 
             # parseSQLUDTGRP()
             print('SQLUDTGRP', binascii.b2a_hex(b).decode('ascii'))
-            typename, b = parse_string(b)
-            classname, b = parse_string(b)
+            if b[0] == 0xFF:
+                b = b[1:]
+            else:
+                typename, b = parse_name(b)
+                classname, b = parse_name(b)
 
             # parseSQLDXGRP()
             print('SQLDXGRP', binascii.b2a_hex(b).decode('ascii'))
