@@ -397,8 +397,8 @@ def printSQLCINRD(cp, obj):
         sqlxschema, b = parse_name(b)
         sqlxname, b = parse_name(b)
 
-        print('precision, scale, length, sqltype, ccsid=',
-            precision, scale, length, sqltype, ccsid)
+        print('sqlname,sqlxname,precision,scale,length,sqltype,ccsid=',
+            sqlname, sqlxname, precision, scale, length, sqltype, ccsid)
 
     assert len(b) == 0
 
