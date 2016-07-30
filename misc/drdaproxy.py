@@ -403,6 +403,21 @@ def printSQLCINRD(cp, obj):
     assert len(b) == 0
 
 
+def printQRYDSC(cp, obj):
+    print("%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')), end='')
+    asc_dump(obj)
+    b = obj
+
+    while b:
+        ln = b[0]
+        dsc = b[1:ln]
+        print("\t%s" % (binascii.b2a_hex(dsc).decode('ascii')))
+        triplet_type = dsc[0]
+        triplet_id = dsc[1]
+        b = b[ln:]
+
+    assert len(b) == 0
+
 def printUnknown(cp, obj):
     print("???%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')), end='')
     asc_dump(obj)
@@ -416,6 +431,7 @@ def printObject(cp, obj):
     'SQLSTT': printStrings,
     'SQLDTA': printSQLDTA,
     'SQLCINRD': printSQLCINRD,
+    'QRYDSC': printQRYDSC,
     }.get(cp, printUnknown)(cp, obj)
 
 
