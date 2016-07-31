@@ -418,6 +418,14 @@ def printQRYDSC(cp, obj):
 
     assert len(b) == 0
 
+
+def printQRYDSC(cp, obj):
+    # https://www.ibm.com/support/knowledgecenter/SSEPH2_12.1.0/com.ibm.ims12.doc.apr/ims_ddm_qrydta.htm
+    print("%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')), end='')
+    asc_dump(obj)
+    assert obj[0] == 0xFF   # aibStream
+    assert obj[1] == 0x00   # dbpcbStream
+
 def printUnknown(cp, obj):
     print("???%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')), end='')
     asc_dump(obj)
