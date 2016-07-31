@@ -397,8 +397,8 @@ def printSQLCINRD(cp, obj):
         sqlxschema, b = parse_name(b)
         sqlxname, b = parse_name(b)
 
-        print('sqlname,sqlxname,precision,scale,length,sqltype,ccsid=',
-            sqlname, sqlxname, precision, scale, length, sqltype, ccsid)
+        print('sqlname,precision,scale,length,sqltype',
+            sqlname, precision, scale, length, sqltype)
 
     assert len(b) == 0
 
@@ -419,7 +419,7 @@ def printQRYDSC(cp, obj):
     assert len(b) == 0
 
 
-def printQRYDSC(cp, obj):
+def printQRYDTA(cp, obj):
     # https://www.ibm.com/support/knowledgecenter/SSEPH2_12.1.0/com.ibm.ims12.doc.apr/ims_ddm_qrydta.htm
     print("%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')), end='')
     asc_dump(obj)
@@ -440,6 +440,7 @@ def printObject(cp, obj):
     'SQLDTA': printSQLDTA,
     'SQLCINRD': printSQLCINRD,
     'QRYDSC': printQRYDSC,
+    'QRYDTA': printQRYDTA,
     }.get(cp, printUnknown)(cp, obj)
 
 
