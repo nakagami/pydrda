@@ -287,11 +287,18 @@ def printSQLCARD(cp, obj):
     sqlcode = int.from_bytes(obj[1:5], byteorder='big')
     sqlstate = obj[5:10]
     sqlerrproc = obj[10:18]
-    rest = obj[18:]
-    print("\t\tflag=%d,sqlcode=%d,sqlstate=%s,sqlerrproc=%s,%s" % (
+    rest = obj[18:56]
+    ln = int.from_bytes(obj[56:58], byteorder='big')
+    if ln:
+        s = obj[58:58+ln].decode('utf-8')
+    else:
+        s = ''
+
+    print("\t\tflag=%d,sqlcode=%d,sqlstate=%s,message=%s,sqlerrproc=%s,%s" % (
         flag,
         sqlcode,
         sqlstate.decode('ascii'),
+        s,
         sqlerrproc.decode('ascii'),
         binascii.b2a_hex(rest).decode('ascii'),
     ))
