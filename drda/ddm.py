@@ -88,15 +88,24 @@ def read_dds(sock):
 
 def write_requests_dds(sock, obj_list):
     "Write request DDS packets"
+    cur_id = 1
     for i in range(len(obj_list)):
         o = obj_list[i]
         _send_to_sock(sock, (len(o)+6).to_bytes(2, byteorder='big'))
         flag = 1    # DDS request
         if i < len(obj_list) -1:
             flag |= 0b01000000
+        if int.from_bytes(o[2:4], byteorder='big') in (
+            cp.EXCSQLIMM,
+        ):
+            next_id = cur_id
+            flag |= 0b00010000
+        else:
+            next_id = cur_id + 1
         _send_to_sock(sock, bytes([0xD0, flag]))
-        _send_to_sock(sock, (i+1).to_bytes(2, byteorder='big'))
+        _send_to_sock(sock, cur_id.to_bytes(2, byteorder='big'))
         _send_to_sock(sock, o)
+        cur_id = next_id
 
 
 def packEXCSAT():
