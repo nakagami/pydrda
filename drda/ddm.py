@@ -33,8 +33,16 @@ def _recv_from_sock(sock, nbytes):
         n -= len(bs)
     return recieved
 
+
 def _send_to_sock(sock, b):
     sock.send(b)
+
+
+def _pack_null_string(v, enc):
+    if v is None:
+        return b'\xff'
+    b = v.encode(enc)
+    return b'\x00' + len(b).to_bytes(4, bteorder='big') + b
 
 
 def _pack_binary(code_point, v):
@@ -157,3 +165,15 @@ def packACCSEC(database):
 def packRDBCMM():
     return pack_dds_object(cp.RDBCMM, bytes())
     return b
+
+
+def packEXCSQLIMM():
+    return pack_dds_object(cp.EXCSQLIMM,
+        binascii.a2b_hex('004421137465737464623b6372656174653d747275654e554c4c49442020202020202020202020205359534c48303030202020202020202020205359534c564c3031000100052105f1')
+    )
+
+
+def packSQLSTT(sql):
+    return pack_dds_object(cp.SQLSTT,
+        _pack_null_string(sql, 'utf-8') + _pack_null_string(None, 'utf-8')
+    )
