@@ -99,11 +99,15 @@ def write_requests_dds(sock, obj_list):
     cur_id = 1
     for i in range(len(obj_list)):
         o = obj_list[i]
+        code_point = int.from_bytes(o[2:4], byteorder='big')
         _send_to_sock(sock, (len(o)+6).to_bytes(2, byteorder='big'))
-        flag = 1    # DDS request
+        if code_point in (cp.SQLSTT,):
+            flag = 3    # DSS object
+        else:
+            flag = 1    # DSS request
         if i < len(obj_list) -1:
             flag |= 0b01000000
-        if int.from_bytes(o[2:4], byteorder='big') in (
+        if code_point in (
             cp.EXCSQLIMM,
         ):
             next_id = cur_id
