@@ -64,6 +64,16 @@ class Connection:
     def __exit__(self, exc, value, traceback):
         self.close()
 
+    def _execute(self, query):
+        ddm.write_requests_dds(self.sock, [
+            ddm.packEXCSQLIMM(),
+            ddm.packSQLSTT(query),
+            ddm.packRDBCMM(),
+        ])
+        chained = True
+        while chained:
+            dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock)
+
     def is_connect(self):
         return bool(self.sock)
 

@@ -26,3 +26,5 @@ class Cursor:
     def __init__(self, connection):
         self.connection = connection
 
+    def execute(self, query, params=[]):
+        self.connection._execute(query)
