@@ -48,4 +48,5 @@ class TestDerby(unittest.TestCase):
         cur.execute("create table test (s varchar(20))")
         cur.execute("insert into test (s) values ('A')")
         cur.execute("insert into test (s) values ('B')")
+        cur.execute("select * from test")
 

@@ -74,6 +74,9 @@ class Connection:
         while chained:
             dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock)
 
+    def _query(self, query):
+        pass
+
     def is_connect(self):
         return bool(self.sock)
 

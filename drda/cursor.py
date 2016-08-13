@@ -27,4 +27,8 @@ class Cursor:
         self.connection = connection
 
     def execute(self, query, params=[]):
-        self.connection._execute(query)
+        if query.strip().split()[0].upper() == 'SELECT':
+            self.connection._query(query)
+        else:
+            self.connection._execute(query)
+
