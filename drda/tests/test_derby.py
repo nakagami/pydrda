@@ -44,5 +44,8 @@ class TestDerby(unittest.TestCase):
         self.connection.close()
 
     def test_derby(self):
-        pass
+        cur = self.connection.cursor()
+        cur.execute("create table test (s varchar(20))")
+        cur.execute("insert into test (s) values ('A')")
+        cur.execute("insert into test (s) values ('B')")
 

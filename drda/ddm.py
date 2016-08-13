@@ -42,7 +42,7 @@ def _pack_null_string(v, enc):
     if v is None:
         return b'\xff'
     b = v.encode(enc)
-    return b'\x00' + len(b).to_bytes(4, bteorder='big') + b
+    return b'\x00' + len(b).to_bytes(4, byteorder='big') + b
 
 
 def _pack_binary(code_point, v):
