@@ -30,7 +30,7 @@ import drda
 
 class TestDerby(unittest.TestCase):
     host = 'localhost'
-    database = 'test_derby;create=true'
+    database = 'testdb;create=true'
     port = 1527
 
     def setUp(self):
