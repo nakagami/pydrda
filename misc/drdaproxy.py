@@ -283,6 +283,7 @@ def printSQLCARD(cp, obj):
     print("%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')), end='')
     flag = obj[0]
     # SQLSTATE & SQLCODE
+    # https://www.ibm.com/support/knowledgecenter/SSEPH2_13.1.0/com.ibm.ims13.doc.apr/ims_ddm_sqlcard.htm
     # https://www.ibm.com/support/knowledgecenter/ssw_i5_54/rzala/rzalaccl.htm
     sqlcode = int.from_bytes(obj[1:5], byteorder='big')
     sqlstate = obj[5:10]
@@ -305,6 +306,9 @@ def printSQLCARD(cp, obj):
 
 
 def printSQLDARD(cp, obj):
+    # SQLSTATE & SQLCODE & description
+    # https://www.ibm.com/support/knowledgecenter/SSEPH2_13.1.0/com.ibm.ims13.doc.apr/ims_ddm_sqldard.htm
+    # https://www.ibm.com/support/knowledgecenter/ssw_i5_54/rzala/rzalaccl.htm
     # TODO:
     print("%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')), end='')
     asc_dump(obj)
