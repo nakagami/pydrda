@@ -21,10 +21,34 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 ##############################################################################
+from drda import NotSupportedError
 
 class Cursor:
     def __init__(self, connection):
         self.connection = connection
+        self.description = []
+        self._rows = collections.deque()
+        self._rowcount = 0
+        self.arraysize = 1
+        self.query = None
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc, value, traceback):
+        self.close()
+
+    def callproc(self, procname, args=()):
+        raise NotSupportedError()
+
+    def nextset(self, procname, args=()):
+        raise NotSupportedError()
+
+    def setinputsizes(sizes):
+        pass
+
+    def setoutputsize(size, column=None):
+        pass
 
     def execute(self, query, params=[]):
         if query.strip().split()[0].upper() == 'SELECT':
