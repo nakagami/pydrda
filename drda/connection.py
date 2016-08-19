@@ -79,7 +79,7 @@ class Connection:
             ddm.packPRPSQLSTT(self.database),
             ddm.packSQLATTR('WITH HOLD '),
             ddm.packSQLSTT(query),
-            ddm.packOPNQRY(query),
+            ddm.packOPNQRY(self.database),
         ])
         chained = True
         while chained:
