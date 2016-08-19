@@ -75,7 +75,15 @@ class Connection:
             dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock)
 
     def _query(self, query):
-        pass
+        ddm.write_requests_dds(self.sock, [
+            ddm.packPRPSQLSTT(self.database),
+            ddm.packSQLATTR('WITH HOLD '),
+            ddm.packSQLSTT(query),
+            ddm.packOPNQRY(query),
+        ])
+        chained = True
+        while chained:
+            dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock)
 
     def is_connect(self):
         return bool(self.sock)

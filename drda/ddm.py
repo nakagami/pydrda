@@ -108,7 +108,7 @@ def write_requests_dds(sock, obj_list):
         if i < len(obj_list) -1:
             flag |= 0b01000000
         if code_point in (
-            cp.EXCSQLIMM,
+            cp.EXCSQLIMM, cp.PRPSQLSTT,
         ):
             next_id = cur_id
             flag |= 0b00010000
@@ -181,7 +181,26 @@ def packEXCSQLIMM(database):
         _packPKGNAMCSN(database) + _pack_binary(cp.RDBCMTOK, bytes([241]))
     )
 
+def packPRPSQLSTT(database):
+    return pack_dds_object(cp.PRPSQLSTT,
+        _packPKGNAMCSN(database) +
+        _pack_binary(cp.RTNSQLDA, bytes([241])) +
+        _pack_binary(cp.TYPSQLDA, bytes([4]))
+    )
+
+def packOPNQRY(database):
+    return pack_dds_object(cp.OPNQRY,
+        _packPKGNAMCSN(database) +
+        _pack_uint(cp.QRYBLKSZ, 32767, 4) +
+        _pack_binary(cp.QRYCLSIMP, bytes([1]))
+    )
+
 def packSQLSTT(sql):
     return pack_dds_object(cp.SQLSTT,
         _pack_null_string(sql, 'utf-8') + _pack_null_string(None, 'utf-8')
+    )
+
+def packSQLATTR(attr):
+    return pack_dds_object(cp.SQLATTR,
+        _pack_null_string(attr, 'utf-8') + _pack_null_string(None, 'utf-8')
     )
