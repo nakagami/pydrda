@@ -170,12 +170,16 @@ def packRDBCMM():
     return pack_dds_object(cp.RDBCMM, bytes())
     return b
 
+def _packPKGNAMCSN(database):
+    pkgnamcsn = bytearray(binascii.a2b_hex('004421130000000000000000000000000000000000004e554c4c49442020202020202020202020205359534c48303030202020202020202020205359534c564c30310001'))
+    dbnam = (database + ' ' * 18).encode('utf-8')[:18]
+    pkgnamcsn[4:22] = dbnam
+    return bytes(pkgnamcsn)
 
-def packEXCSQLIMM():
+def packEXCSQLIMM(database):
     return pack_dds_object(cp.EXCSQLIMM,
-        binascii.a2b_hex('004421137465737464623b6372656174653d747275654e554c4c49442020202020202020202020205359534c48303030202020202020202020205359534c564c3031000100052105f1')
+        _packPKGNAMCSN(database) + _pack_binary(cp.RDBCMTOK, bytes([241]))
     )
-
 
 def packSQLSTT(sql):
     return pack_dds_object(cp.SQLSTT,

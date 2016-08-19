@@ -66,7 +66,7 @@ class Connection:
 
     def _execute(self, query):
         ddm.write_requests_dds(self.sock, [
-            ddm.packEXCSQLIMM(),
+            ddm.packEXCSQLIMM(self.database),
             ddm.packSQLSTT(query),
             ddm.packRDBCMM(),
         ])
