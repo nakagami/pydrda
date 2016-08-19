@@ -21,7 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 ##############################################################################
-from drda import NotSupportedError
+import collections
 
 class Cursor:
     def __init__(self, connection):
@@ -39,6 +39,7 @@ class Cursor:
         self.close()
 
     def callproc(self, procname, args=()):
+        from drda import NotSupportedError
         raise NotSupportedError()
 
     def nextset(self, procname, args=()):

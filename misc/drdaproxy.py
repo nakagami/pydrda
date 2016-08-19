@@ -281,10 +281,10 @@ def parse_null_string(b, lnln):
 
 def printSQLCARD(cp, obj):
     print("%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')), end='')
-    flag = obj[0]
     # SQLSTATE & SQLCODE
     # https://www.ibm.com/support/knowledgecenter/SSEPH2_13.1.0/com.ibm.ims13.doc.apr/ims_ddm_sqlcard.htm
     # https://www.ibm.com/support/knowledgecenter/ssw_i5_54/rzala/rzalaccl.htm
+    flag = obj[0]
     sqlcode = int.from_bytes(obj[1:5], byteorder='big')
     sqlstate = obj[5:10]
     sqlerrproc = obj[10:18]
@@ -295,23 +295,42 @@ def printSQLCARD(cp, obj):
     else:
         s = ''
 
-    print("\t\tflag=%d,sqlcode=%d,sqlstate=%s,message=%s,sqlerrproc=%s,%s" % (
+    print("\t\tflag=%d,sqlcode=%d,sqlstate=%s,rest=%s,essage=%s,sqlerrproc=%s,%s" % (
         flag,
         sqlcode,
         sqlstate.decode('ascii'),
+        binascii.b2a_hex(rest).decode('ascii'),
         s,
         sqlerrproc.decode('ascii'),
-        binascii.b2a_hex(rest).decode('ascii'),
+        obj[58+ln:],
     ))
 
 
 def printSQLDARD(cp, obj):
+    print("%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')), end='')
     # SQLSTATE & SQLCODE & description
     # https://www.ibm.com/support/knowledgecenter/SSEPH2_13.1.0/com.ibm.ims13.doc.apr/ims_ddm_sqldard.htm
     # https://www.ibm.com/support/knowledgecenter/ssw_i5_54/rzala/rzalaccl.htm
-    # TODO:
-    print("%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')), end='')
-    asc_dump(obj)
+    flag = obj[0]
+    sqlcode = int.from_bytes(obj[1:5], byteorder='big')
+    sqlstate = obj[5:10]
+    sqlerrproc = obj[10:18]
+    rest = obj[18:56]
+    ln = int.from_bytes(obj[56:58], byteorder='big')
+    if ln:
+        s = obj[58:58+ln].decode('utf-8')
+    else:
+        s = ''
+
+    print("\t\tflag=%d,sqlcode=%d,sqlstate=%s,rest=%s,essage=%s,sqlerrproc=%s,%s" % (
+        flag,
+        sqlcode,
+        sqlstate.decode('ascii'),
+        binascii.b2a_hex(rest).decode('ascii'),
+        s,
+        sqlerrproc.decode('ascii'),
+        obj[58+ln:],
+    ))
 
 
 def printSQLATTR(cp, obj):
