@@ -312,7 +312,10 @@ def printSQLCARD(cp, obj):
 def printSQLDARD(cp, obj):
     # https://www.ibm.com/support/knowledgecenter/SSEPH2_13.1.0/com.ibm.ims13.doc.apr/ims_ddm_sqldard.htm
     rest = printSQLCARD(cp, obj)
-    print("\tSQLDHGRP=%s" % (binascii.b2a_hex(rest).decode('ascii'),))
+    print("\tSQLDHGRP=%s" % (binascii.b2a_hex(rest[:19]).decode('ascii'),))
+    ln = int.from_bytes(rest[19:21], byteorder='big')
+    rest = rest[21:]
+    print("\tSQLNUMBRP=%d,SQLDAGRP+SQLDOPTGRP+SQLUDTGRP+SQLDXGRP=%s" % (ln, binascii.b2a_hex(rest).decode('ascii'),))
 
 
 def printSQLATTR(cp, obj):
