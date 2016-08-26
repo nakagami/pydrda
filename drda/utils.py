@@ -22,6 +22,7 @@
 # SOFTWARE.
 ##############################################################################
 
+import binascii
 from drda.consts import *
 
 def read_field(t, ps, b):
@@ -46,6 +47,13 @@ def read_field(t, ps, b):
         b = b[ln:]
     elif t == DRDA_TYPE_NDECIMAL:
         (p, s) = (ps[0], ps[1])
-    
+        ln = p + 1
+        if ln % 2:
+            ln += 1
+        ln /= 2
+        v = binascii.b2a_hex(b[:ln]).decode('ascii')
+        assert v[-1] == 'c'
+        v = v[:-1]
+        b = b[ln:]
     retune v, b
-    
+
