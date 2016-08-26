@@ -23,7 +23,7 @@ Example
 -----------------
 
 Apache Derby
-~~~~~~~~~~~~~
++++++++++++++
 
 You need Start the Network server. http://db.apache.org/derby/papers/DerbyTut/ns_intro.html#start_ns
 ::
