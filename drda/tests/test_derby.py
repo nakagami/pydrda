@@ -45,9 +45,19 @@ class TestDerby(unittest.TestCase):
 
     def test_derby(self):
         cur = self.connection.cursor()
-        cur.execute("create table test (s varchar(20), i int, d decimal(18, 2))")
-        cur.execute("insert into test (s, i, d) values ('abcdefghijklmnopq', 1, 1.1)")
-        cur.execute("insert into test (s, i, d) values ('B', 2, 1.2)")
-        cur.execute("insert into test (s, i) values ('C', 3)")
-        cur.execute("select * from test")
+        cur.execute("""
+            CREATE TABLE test (
+                s VARCHAR(20),
+                i int,
+                d1 decimal(2, 1),
+                d2 decimal(18, 2)
+            )
+        """)
+        cur.execute("""
+            INSERT INTO test (s, i, d1, d2) VALUES
+                ('abcdefghijklmnopq', 1, 1.1, 123456789.12),
+                ('B', 2, 1.2, 2),
+                ('C', 3, null, null)
+        """)
+        cur.execute("SELECT * FROM test")
 
