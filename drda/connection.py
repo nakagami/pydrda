@@ -116,13 +116,13 @@ class Connection:
         return Cursor(self)
 
     def begin(self):
-        pass
+        self._execute("START TRANSACTION")
 
     def commit(self):
-        pass
+        self._execute("COMMIT")
 
     def rollback(self):
-        pass
+        self._execute("ROLLBACK")
 
     def close(self):
         ddm.write_requests_dds(self.sock, [ddm.packRDBCMM()])
