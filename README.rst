@@ -30,7 +30,7 @@ You need Start the Network server. http://db.apache.org/derby/papers/DerbyTut/ns
 
    import drda
 
-   conn = drda.connect(host='servername', databse='dbname', port=1527)
+   conn = drda.connect(host='serverhost', database='dbname', port=1527)
    cur = conn.cursor()
    cur.execute('select * from foo')
    for r in cur.fetchall():
