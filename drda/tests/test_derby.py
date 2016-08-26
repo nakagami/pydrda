@@ -50,7 +50,7 @@ class TestDerby(unittest.TestCase):
                 s VARCHAR(20),
                 i int,
                 d1 decimal(2, 1),
-                d2 decimal(18, 2)
+                d2 decimal(11, 2)
             )
         """)
         cur.execute("""

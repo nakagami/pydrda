@@ -32,10 +32,20 @@ def read_field(t, ps, b):
     ps:  precision and scale or length
     b: input bytes
     """
-    if t == DRDA_TYPE_NVARCHAR:
-        pass
-    else:
-        raise ValueError("Unknown type %d" % (t,))
+    (isnull, b) = (b[0] == 0xFF, b[1:])
+
+    if isnull:
+        v = None
+    elif t == DRDA_TYPE_NVARCHAR:
+        ln = int.from_bytes(b[:2], byteorder='big')
+        v = b[2:2+ln].decode('utf-8')
+        b = b[2+ln:]
+    elif t == DRDA_TYPE_NINTEGER:
+        ln = int.from_bytes(ps, byteorder='big')
+        v = int.from_bytes(b[:ln], byteorder='big')
+        b = b[ln:]
+    elif t == DRDA_TYPE_NDECIMAL:
+        (p, s) = (ps[0], ps[1])
     
-    retune None, b
+    retune v, b
     
