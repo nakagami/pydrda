@@ -23,6 +23,7 @@
 ##############################################################################
 
 import binascii
+import decimal
 from drda.consts import *
 
 def read_field(t, ps, b):
@@ -54,6 +55,8 @@ def read_field(t, ps, b):
         v = binascii.b2a_hex(b[:ln]).decode('ascii')
         assert v[-1] == 'c'
         v = v[:-1]
+        v = decimal.Decimal(v) / (10**s)
+
         b = b[ln:]
     return v, b
 
