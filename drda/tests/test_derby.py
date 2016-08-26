@@ -55,7 +55,7 @@ class TestDerby(unittest.TestCase):
     def tearDown(self):
         self.connection.close()
 
-    def test_derby(self):
+    def test_basic(self):
         cur = self.connection.cursor()
         cur.execute("""
             INSERT INTO test (s, i, d1, d2) VALUES
@@ -69,3 +69,8 @@ class TestDerby(unittest.TestCase):
             ('B', 2, decimal.Decimal('1.2'), decimal.Decimal('2')),
             ('C', 3, None, None)
         ])
+
+    def xxx_test_error(self):
+        cur = self.connection.cursor()
+        cur.execute("invalid query")
+
