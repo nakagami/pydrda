@@ -25,6 +25,7 @@ import socket
 import binascii
 from drda import codepoint as cp
 from drda import ddm
+from drda import utils
 from drda.cursor import Cursor
 
 
@@ -97,6 +98,15 @@ class Connection:
                 assert (obj[4], obj[5]) == (0xff, 0x00)
                 b = obj[6:]
                 results = []
+                while True:
+                    for t, ps in qrydsc:
+                        r = []
+                        v, b = utils.read_field(t, ps, b)
+                        r.append(v)
+                    results.append(r)
+                    if b[0] == 0:
+                        break
+                    b = b[1:]
 
         return results
 

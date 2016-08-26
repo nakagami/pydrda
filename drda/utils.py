@@ -50,10 +50,11 @@ def read_field(t, ps, b):
         ln = p + 1
         if ln % 2:
             ln += 1
-        ln /= 2
+        ln //= 2
         v = binascii.b2a_hex(b[:ln]).decode('ascii')
+        print('v=', v)
         assert v[-1] == 'c'
         v = v[:-1]
         b = b[ln:]
-    retune v, b
+    return v, b
 
