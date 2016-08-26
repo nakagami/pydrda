@@ -2,9 +2,9 @@
 pydrda
 =============
 
-DRDA protocol python database driver
+This is a DRDA protocol (https://en.wikipedia.org/wiki/DRDA) python database driver.
 
-https://en.wikipedia.org/wiki/DRDA
+We target *Apache Derby* and *DB2* now.
 
 Requirements
 =============
