@@ -95,10 +95,12 @@ class Connection:
                 # [(DRDA_TYPE_xxxx, size_binary), ...]
                 qrydsc = [(c[0], c[1:]) for c in [b[i:i+3] for i in range(0, len(b), 3)]]
             elif code_point == cp.QRYDTA:
-                assert (obj[4], obj[5]) == (0xff, 0x00)
-                b = obj[6:]
+                b = obj[4:]
                 results = []
                 while True:
+                    if (b[0], [1]) != (0xff, 0x00):
+                        break
+                    b = b[2:]
                     for t, ps in qrydsc:
                         r = []
                         v, b = utils.read_field(t, ps, b)
@@ -106,7 +108,6 @@ class Connection:
                     results.append(r)
                     if b[0] == 0:
                         break
-                    b = b[1:]
 
         return results
 
