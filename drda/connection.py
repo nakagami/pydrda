@@ -106,8 +106,8 @@ class Connection:
                         v, b = utils.read_field(t, ps, b)
                         r.append(v)
                     results.append(tuple(r))
-        print(results)
-        return results
+
+        return results, utils.get_description(qrydsc)
 
     def is_connect(self):
         return bool(self.sock)

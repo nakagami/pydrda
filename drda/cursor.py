@@ -27,8 +27,7 @@ class Cursor:
     def __init__(self, connection):
         self.connection = connection
         self.description = []
-        self._rows = collections.deque()
-        self._rowcount = 0
+        self._rows = []
         self.arraysize = 1
         self.query = None
 
@@ -52,8 +51,9 @@ class Cursor:
         pass
 
     def execute(self, query, params=[]):
+        self.query = query
         if query.strip().split()[0].upper() == 'SELECT':
-            self.connection._query(query)
+            self._rows, self.description = self.connection._query(self.query)
         else:
-            self.connection._execute(query)
+            self.connection._execute(self.query)
 
