@@ -25,6 +25,7 @@ import unittest
 import io
 import decimal
 import datetime
+import decimal
 import drda
 
 
@@ -60,4 +61,8 @@ class TestDerby(unittest.TestCase):
                 ('C', 3, null, null)
         """)
         cur.execute("SELECT * FROM test")
-
+        self.assertEqual(cur.fetchall(), [
+            ('abcdefghijklmnopq', 1, decimal.Decimal('1.1'), decimal.Decimal('123456789.12')),
+            ('B', 2, decimal.Decimal('1.2'), decimal.Decimal('2')),
+            ('C', 3, None, None)
+        ])

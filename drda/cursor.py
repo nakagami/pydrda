@@ -57,3 +57,51 @@ class Cursor:
         else:
             self.connection._execute(self.query)
 
+    def executemany(self, query, seq_of_params):
+        rowcount = 0
+        for params in seq_of_params:
+            self.execute(query, params)
+            rowcount += self._rowcount
+        self._rowcount = rowcount
+
+    def fetchone(self):
+        if not self.connection or not self.connection.is_connect():
+            raise OperationalError(u"08003:Lost connection")
+        if len(self._rows):
+            return self._rows.popleft()
+        return None
+
+    def fetchmany(self, size=1):
+        rs = []
+        for i in range(size):
+            r = self.fetchone()
+            if not r:
+                break
+            rs.append(r)
+        return rs
+
+    def fetchall(self):
+        r = list(self._rows)
+        self._rows.clear()
+        return r
+
+    def close(self):
+        self.connection = None
+
+    @property
+    def rowcount(self):
+        return self._rowcount
+
+    @property
+    def closed(self):
+        return self.connection is None or not self.connection.is_connect()
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        r = self.fetchone()
+        if not r:
+            raise StopIteration()
+        return r
+

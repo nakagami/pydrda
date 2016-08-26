@@ -23,6 +23,8 @@
 ##############################################################################
 import socket
 import binascii
+import collections
+
 from drda import codepoint as cp
 from drda import ddm
 from drda import utils
@@ -76,7 +78,7 @@ class Connection:
             dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock)
 
     def _query(self, query):
-        results = None
+        results = collections.deque()
         qrydsc = None
         ddm.write_requests_dds(self.sock, [
             ddm.packPRPSQLSTT(self.database),
@@ -96,7 +98,6 @@ class Connection:
                 qrydsc = [(c[0], c[1:]) for c in [b[i:i+3] for i in range(0, len(b), 3)]]
             elif code_point == cp.QRYDTA:
                 b = obj[4:]
-                results = []
                 while True:
                     if (b[0], b[1]) != (0xff, 0x00):
                         break
