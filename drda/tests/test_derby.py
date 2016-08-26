@@ -40,11 +40,6 @@ class TestDerby(unittest.TestCase):
             database=self.database,
             port=self.port,
         )
-
-    def tearDown(self):
-        self.connection.close()
-
-    def test_derby(self):
         cur = self.connection.cursor()
         cur.execute("""
             CREATE TABLE test (
@@ -54,6 +49,14 @@ class TestDerby(unittest.TestCase):
                 d2 decimal(11, 2)
             )
         """)
+        cur.execute("DELETE FROM test")
+        self.connection.commit()
+
+    def tearDown(self):
+        self.connection.close()
+
+    def test_derby(self):
+        cur = self.connection.cursor()
         cur.execute("""
             INSERT INTO test (s, i, d1, d2) VALUES
                 ('abcdefghijklmnopq', 1, 1.1, 123456789.12),
