@@ -74,3 +74,7 @@ class TestDerby(unittest.TestCase):
         cur = self.connection.cursor()
         cur.execute("invalid query")
 
+
+if __name__ == "__main__":
+    import unittest
+    unittest.main()
