@@ -98,17 +98,15 @@ class Connection:
                 b = obj[4:]
                 results = []
                 while True:
-                    if (b[0], [1]) != (0xff, 0x00):
+                    if (b[0], b[1]) != (0xff, 0x00):
                         break
                     b = b[2:]
+                    r = []
                     for t, ps in qrydsc:
-                        r = []
                         v, b = utils.read_field(t, ps, b)
                         r.append(v)
-                    results.append(r)
-                    if b[0] == 0:
-                        break
-
+                    results.append(tuple(r))
+        print(results)
         return results
 
     def is_connect(self):
