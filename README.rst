@@ -22,7 +22,13 @@ Installation
 Example
 -----------------
 
-::
+Apache Derby::
 
    import drda
+
+   conn = drda.connect(host='servername', databse='dbname', port=1527)
+   cur = conn.cursor()
+   cur.execute('select * from foo')
+   for r in cur.fetchall():
+       print(r[0], r[1])
 
