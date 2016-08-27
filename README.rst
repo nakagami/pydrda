@@ -4,7 +4,7 @@ pydrda
 
 This is a DRDA protocol (https://en.wikipedia.org/wiki/DRDA) python database driver.
 
-We target *Apache Derby* and *DB2* now.
+We target *Apache Derby* now, and will add *DB2*.
 
 Requirements
 =============
