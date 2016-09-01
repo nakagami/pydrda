@@ -342,6 +342,11 @@ def _print_column_name(b):
     sqlxbasename, b = parse_name(b)
     sqlxschema, b = parse_name(b)
     sqlxname, b = parse_name(b)
+
+    print("sqlxrdbnam,sqlxcolname,sqlxbasename,sqlxschema,sqlxname = %s,%s,%s,%s,%s" % (
+        sqlxrdbnam, sqlxcolname, sqlxbasename, sqlxschema, sqlxname
+    ))
+
     return b
 
 
