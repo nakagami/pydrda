@@ -313,21 +313,21 @@ def _print_column_name(b):
     b = b[16:]
 
     # SQLDOPTGRP
-    asset b[0] == 0x00  # not null
+    assert b[0] == 0x00  # not null
     b = b[3:]
     sqlname, b = parse_name(b)
     sqllabel, b = parse_name(b)
     sqlcomments, b = parse_name(b)
 
     # SQLUDTGRP
-    asset b[0] == 0x00  # not null
+    assert b[0] == 0x00  # not null
     b = b[5:]
     sqludtrdb, b = parse_string(b)
     sqlschema, b = parse_name(b)
     sqludtname, b = parse_name(b)
 
     # SQLDXGRP
-    asset b[0] == 0x00  # not null
+    assert b[0] == 0x00  # not null
     b = b[9:]
     sqlxrdbnam, b = parse_string(b)
     sqlxcolname, b = parse_name(b)
