@@ -64,11 +64,8 @@ def pack_dds_object(code_point, o):
 
 
 def parse_reply(obj):
-    assert int.from_bytes(obj[:2], byteorder='big') == len(obj)
-    code_point = int.from_bytes(obj[2:4], byteorder='big')
-    i = 4
-
     d = {}
+    i = 0
     while i < len(obj):
         ln = int.from_bytes(obj[i:i+2], byteorder='big')
         d[int.from_bytes(obj[i+2:i+4], byteorder='big')] = obj[i+4:i+ln]
@@ -91,7 +88,7 @@ def read_dds(sock):
     assert int.from_bytes(obj[:2], byteorder='big') == ln - 6
     code_point = int.from_bytes(obj[2:4], byteorder='big')
 
-    return dds_type, chained, number, code_point, obj
+    return dds_type, chained, number, code_point, obj[4:]
 
 
 def write_requests_dds(sock, obj_list):

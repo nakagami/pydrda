@@ -90,14 +90,14 @@ class Connection:
         while chained:
             dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock)
             if code_point == cp.QRYDSC:
-                ln = obj[4]
-                b = obj[5:5+ln-1]
+                ln = obj[0]
+                b = obj[1:ln]
                 assert b[:2] == b'\x76\xd0'
                 b = b[2:]
                 # [(DRDA_TYPE_xxxx, size_binary), ...]
                 qrydsc = [(c[0], c[1:]) for c in [b[i:i+3] for i in range(0, len(b), 3)]]
             elif code_point == cp.QRYDTA:
-                b = obj[4:]
+                b = obj
                 while True:
                     if (b[0], b[1]) != (0xff, 0x00):
                         break
