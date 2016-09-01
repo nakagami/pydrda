@@ -309,6 +309,34 @@ def printSQLCARD(cp, obj):
     assert rest[:3] == b'\x00\x00\xff'
     return rest[3:]
 
+def _print_column_name(b):
+    b = b[16:]
+
+    # SQLDOPTGRP
+    asset b[0] == 0x00  # not null
+    b = b[3:]
+    sqlname, b = parse_name(b)
+    sqllabel, b = parse_name(b)
+    sqlcomments, b = parse_name(b)
+
+    # SQLUDTGRP
+    asset b[0] == 0x00  # not null
+    b = b[5:]
+    sqludtrdb, b = parse_string(b)
+    sqlschema, b = parse_name(b)
+    sqludtname, b = parse_name(b)
+
+    # SQLDXGRP
+    asset b[0] == 0x00  # not null
+    b = b[9:]
+    sqlxrdbnam, b = parse_string(b)
+    sqlxcolname, b = parse_name(b)
+    sqlxbasename, b = parse_name(b)
+    sqlxschema, b = pase_name(b)
+    sqlxname, b = parse_name(b)
+    return b
+
+
 def printSQLDARD(cp, obj):
     # https://www.ibm.com/support/knowledgecenter/SSEPH2_13.1.0/com.ibm.ims13.doc.apr/ims_ddm_sqldard.htm
     rest = printSQLCARD(cp, obj)
@@ -316,6 +344,8 @@ def printSQLDARD(cp, obj):
     ln = int.from_bytes(rest[19:21], byteorder='big')
     rest = rest[21:]
     print("\tSQLNUMBRP=%d,SQLDAGRP+SQLDOPTGRP+SQLUDTGRP+SQLDXGRP=%s" % (ln, binascii.b2a_hex(rest).decode('ascii'),))
+    for i in range(ln):
+        rest = _print_column_name(rest)
 
 
 def printSQLATTR(cp, obj):
