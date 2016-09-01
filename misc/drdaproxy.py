@@ -318,13 +318,21 @@ def _print_column_name(b):
     sqlname, b = parse_name(b)
     sqllabel, b = parse_name(b)
     sqlcomments, b = parse_name(b)
+    print("sqlname,sqllabel,sqlcomments = %s,%s,%s" % (
+        sqlname, sqllabel, sqlcomments
+    ))
 
     # SQLUDTGRP
-    assert b[0] == 0x00  # not null
-    b = b[5:]
-    sqludtrdb, b = parse_string(b)
-    sqlschema, b = parse_name(b)
-    sqludtname, b = parse_name(b)
+    if b[0] == 0x00:  # not null
+        b = b[5:]
+        sqludtrdb, b = parse_string(b)
+        sqlschema, b = parse_name(b)
+        sqludtname, b = parse_name(b)
+        print("sqludtrdb,sqlschema,sqludtname = %s,%s,%s" % (
+        sqludtrdb, sqlschema, sqludtname
+    ))
+    else:
+        b = b[1:]
 
     # SQLDXGRP
     assert b[0] == 0x00  # not null
@@ -332,7 +340,7 @@ def _print_column_name(b):
     sqlxrdbnam, b = parse_string(b)
     sqlxcolname, b = parse_name(b)
     sqlxbasename, b = parse_name(b)
-    sqlxschema, b = pase_name(b)
+    sqlxschema, b = parse_name(b)
     sqlxname, b = parse_name(b)
     return b
 
