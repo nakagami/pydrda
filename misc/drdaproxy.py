@@ -330,7 +330,7 @@ def _print_column_name(b):
         sqludtname, b = parse_name(b)
         print("sqludtrdb,sqlschema,sqludtname = %s,%s,%s" % (
         sqludtrdb, sqlschema, sqludtname
-    ))
+        ))
     else:
         b = b[1:]
 
