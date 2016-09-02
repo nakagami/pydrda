@@ -68,6 +68,7 @@ class Connection:
         self.close()
 
     def _execute(self, query):
+        err = None
         ddm.write_requests_dds(self.sock, [
             ddm.packEXCSQLIMM(self.database),
             ddm.packSQLSTT(query),
@@ -76,6 +77,11 @@ class Connection:
         chained = True
         while chained:
             dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock)
+            if code_point == cp.SQLCARD:
+                if err is None:
+                    err, _ = ddm.parse_sqlcard(obj)
+        if err:
+            raise err
 
     def _query(self, query):
         results = collections.deque()

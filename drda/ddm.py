@@ -22,7 +22,9 @@
 # SOFTWARE.
 ##############################################################################
 import binascii
+import drda
 from drda import codepoint as cp
+
 
 def _recv_from_sock(sock, nbytes):
     n = nbytes
@@ -107,7 +109,7 @@ def parse_sqlcard(obj):
     rest = rest[3:]
 
     if sqlcode:
-        err = OperationalError(sqlcode, sqlstate, message)
+        err = drda.OperationalError(sqlcode, sqlstate, message)
     else:
         err = None
 

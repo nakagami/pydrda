@@ -66,18 +66,17 @@ ROWID = DBAPITypeObject()
 
 
 class Error(Exception):
-    def __init__(self, *args):
-        if len(args) > 0:
-            self.message = args[0]
-        else:
-            self.message = 'Database Error'
-        super(Error, self).__init__(*args)
+    def __init__(self, sqlcode, sqlstate, message):
+        self.sqlcode = sqlcode
+        self.sqlstate = sqlstate
+        self.message = message
+        super(Error, self).__init__()
 
     def __str__(self):
-        return self.message
+        return "%d:%s" % (self.sqlcode, self.message)
 
     def __repr__(self):
-        return self.message
+        return "%d:%s" % (self.sqlcode, self.message)
 
 
 class Warning(Exception):
@@ -98,7 +97,7 @@ class DisconnectByPeer(Warning):
 
 class InternalError(DatabaseError):
     def __init__(self):
-        DatabaseError.__init__(self, 'InternalError')
+        DatabaseError.__init__(self, -1, 'InternalError')
 
 
 class OperationalError(DatabaseError):
