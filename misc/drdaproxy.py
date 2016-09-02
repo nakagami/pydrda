@@ -295,8 +295,7 @@ def printSQLCARD(cp, obj):
     b = obj[18:]
     # SQLCAXGRP
     if b[0] == 0:
-        sqlerrd = b[1:7]
-        sqlwarn = b[7:18]
+        b = b[36:]
         sqlrdbname, b = parse_string(b)
         sqlerrmsg, b = parse_name(b)
     else:
@@ -304,6 +303,7 @@ def printSQLCARD(cp, obj):
 
     # SQLDIAGGRP
     assert b[0] == 0xFF
+    b = b[1:]
 
     print("\t\tsqlcode=%d,sqlstate=%s,message=%s,sqlerrproc=%s" % (
         sqlcode,
@@ -312,7 +312,7 @@ def printSQLCARD(cp, obj):
         sqlerrproc.decode('ascii'),
     ))
 
-    return rest[3:]
+    return b
 
 def _print_column(b):
     precision = int.from_bytes(b[:2], byteorder='big')
