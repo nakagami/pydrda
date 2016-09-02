@@ -79,7 +79,7 @@ class Connection:
 
     def _query(self, query):
         results = collections.deque()
-        qrydsc = None
+        err = qrydsc = None
         ddm.write_requests_dds(self.sock, [
             ddm.packPRPSQLSTT(self.database),
             ddm.packSQLATTR('WITH HOLD '),
@@ -89,6 +89,8 @@ class Connection:
         chained = True
         while chained:
             dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock)
+            if code_point == cp.SQLDARD:
+                err, description = ddm.parse_sqldard(obj)
             if code_point == cp.QRYDSC:
                 ln = obj[0]
                 b = obj[1:ln]
@@ -107,8 +109,9 @@ class Connection:
                         v, b = utils.read_field(t, ps, b)
                         r.append(v)
                     results.append(tuple(r))
-
-        return results, utils.get_description(qrydsc)
+        if err:
+            raise err
+        return results, description
 
     def is_connect(self):
         return bool(self.sock)

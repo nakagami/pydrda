@@ -83,6 +83,7 @@ def parse_sqlcard(obj):
     misc = obj[18:56]
     ln = int.from_bytes(obj[56:58], byteorder='big')
     message = obj[58:58+ln].decode('utf-8')
+    rest = obj[58+ln:]
 
     if sqlcode:
         err = OperationalError(sqlcode, sqlstate, message)
