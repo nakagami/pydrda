@@ -284,29 +284,35 @@ def printSQLCARD(cp, obj):
     print("%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')), end='')
     # SQLSTATE & SQLCODE
     # https://www.ibm.com/support/knowledgecenter/SSEPH2_13.1.0/com.ibm.ims13.doc.apr/ims_ddm_sqlcard.htm
-    # https://www.ibm.com/support/knowledgecenter/ssw_i5_54/rzala/rzalaccl.htm
     flag = obj[0]
     sqlcode = int.from_bytes(obj[1:5], byteorder='big', signed=True)
     sqlstate = obj[5:10]
     sqlerrproc = obj[10:18]
-    misc = obj[18:56]
-    ln = int.from_bytes(obj[56:58], byteorder='big')
-    #s = obj[58:58+ln].decode('utf-8')
-    s = obj[58:58+ln]
+    misc = obj[18:54]
+    rest = obj[54:]
+    ln = int.from_bytes(rest[:2], byteorder='big')
+    sqlrdbname = obj[2:2+ln]
+    rest = rest[2+ln:]
 
-    rest = obj[58+ln:]
+    ln = int.from_bytes(rest[:2], byteorder='big')
+    sqlerrmsg_m = obj[2:2+ln]
+    rest = rest[2+ln:]
 
-    print("\t\tflag=%d,sqlcode=%d,sqlstate=%s,misc=%s,message=%s,sqlerrproc=%s" % (
+    ln = int.from_bytes(rest[:2], byteorder='big')
+    sqlerrmsg_s = obj[2:2+ln]
+    rest = rest[2+ln:]
+
+    print("\t\tflag=%d,sqlcode=%d,sqlstate=%s,sqlrdbname=%s,sqlerrmsg_m=%s,sqlerrmsg_s=%s,sqlerrproc=%s" % (
         flag,
         sqlcode,
         sqlstate.decode('ascii'),
-        binascii.b2a_hex(misc).decode('ascii'),
-        s,
+        sqlrdbname,
+        sqlerrmsg_m,
+        sqlerrmsg_s,
         sqlerrproc.decode('ascii'),
     ))
-
-    assert rest[:3] == b'\x00\x00\xff'
-    return rest[3:]
+    print('\t\trest=%s' % (rest,))
+    return rest
 
 def _print_column(b):
     precision = int.from_bytes(b[:2], byteorder='big')
