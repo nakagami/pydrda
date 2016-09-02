@@ -91,11 +91,54 @@ def parse_sqlcard(obj):
 
     return err, rest
 
+def _parse_column(b):
+    precision = int.from_bytes(b[:2], byteorder='big')
+    scale = int.from_bytes(b[2:4], byteorder='big')
+    sqllength = int.from_bytes(b[4:12], byteorder='big')
+    sqltype = int.from_bytes(b[12:14], byteorder='big')
+    sqlccsid = int.from_bytes(b[14:16], byteorder='big')
+
+    b = b[16:]
+
+    # SQLDOPTGRP
+    assert b[0] == 0x00  # not null
+    b = b[3:]
+    sqlname, b = parse_name(b)
+    sqllabel, b = parse_name(b)
+    sqlcomments, b = parse_name(b)
+
+    # SQLUDTGRP
+    if b[0] == 0x00:  # not null
+        b = b[5:]
+        sqludtrdb, b = parse_string(b)
+        sqlschema, b = parse_name(b)
+        sqludtname, b = parse_name(b)
+    else:
+        b = b[1:]
+
+    # SQLDXGRP
+    assert b[0] == 0x00  # not null
+    b = b[9:]
+    sqlxrdbnam, b = parse_string(b)
+    sqlxcolname, b = parse_name(b)
+    sqlxbasename, b = parse_name(b)
+    sqlxschema, b = parse_name(b)
+    sqlxname, b = parse_name(b)
+
+    return (sqlname, sqltype, sqllength, sqllength, precision, scale, None), b
+
 
 def parse_sqldard(obj):
+    description = []
     err, rest = parse_sqlcard(obj)
-    if err:
-        return err, None
+    if not err:
+        ln = int.from_bytes(rest[19:21], byteorder='big')
+        b = rest[21:]
+        for i in range(ln):
+            d, b = _parse_column(b)
+            description.appen(d)
+
+    return err, description
 
 
 def read_dds(sock):
