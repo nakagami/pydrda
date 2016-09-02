@@ -225,6 +225,7 @@ CODE_POINT = {
     0x126D: 'SYNCRRD',
     0x1905: 'PRPHRCLST',
     0x1906: 'XIDCNT',
+    0x1913: 'CCSIDXML',
 }
 
 def asc_dump(bindata):
