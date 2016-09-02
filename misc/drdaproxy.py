@@ -251,8 +251,6 @@ def recv_from_sock(sock, nbytes):
 
 def parse_string(b):
     "parse VCM"
-    if b[0] == 0xFF:
-        return None, b[1:]
     ln = int.from_bytes(b[:2], byteorder='big')
     if ln:
         s = b[2:2+ln].decode('utf-8')
@@ -284,34 +282,29 @@ def parse_null_string(b, lnln):
 
 def printSQLCARD(cp, obj):
     print("%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')), end='')
+    # SQLSTATE & SQLCODE
     # https://www.ibm.com/support/knowledgecenter/SSEPH2_13.1.0/com.ibm.ims13.doc.apr/ims_ddm_sqlcard.htm
-
-    # SQLCAGRP
-    assert obj[0] == 0
+    # https://www.ibm.com/support/knowledgecenter/ssw_i5_54/rzala/rzalaccl.htm
+    flag = obj[0]
     sqlcode = int.from_bytes(obj[1:5], byteorder='big', signed=True)
     sqlstate = obj[5:10]
     sqlerrproc = obj[10:18]
+    misc = obj[18:56]
+    ln = int.from_bytes(obj[56:58], byteorder='big')
+    s = obj[58:58+ln].decode('utf-8')
 
-    b = obj[18:]
-    # SQLCAXGRP
-    if b[0] == 0:
-        sqlerrd = b[1:7]
-        sqlwarn = b[7:18]
-        sqlrdbname, b = parse_string(b)
-        sqlerrmsg, b = parse_name(b)
-    else:
-        b = b[1:]
+    rest = obj[58+ln:]
 
-    # SQLDIAGGRP
-    assert b[0] == 0xFF
-
-    print("\t\tsqlcode=%d,sqlstate=%s,message=%s,sqlerrproc=%s" % (
+    print("\t\tflag=%d,sqlcode=%d,sqlstate=%s,misc=%s,message=%s,sqlerrproc=%s" % (
+        flag,
         sqlcode,
         sqlstate.decode('ascii'),
-        sqlerrmsg,
+        binascii.b2a_hex(misc).decode('ascii'),
+        s,
         sqlerrproc.decode('ascii'),
     ))
 
+    assert rest[:3] == b'\x00\x00\xff'
     return rest[3:]
 
 def _print_column(b):
