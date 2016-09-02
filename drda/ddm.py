@@ -75,6 +75,29 @@ def parse_reply(obj):
     return d
 
 
+def parse_sqlcard(obj):
+    flag = obj[0]
+    sqlcode = int.from_bytes(obj[1:5], byteorder='big')
+    sqlstate = obj[5:10]
+    sqlerrproc = obj[10:18]
+    misc = obj[18:56]
+    ln = int.from_bytes(obj[56:58], byteorder='big')
+    message = obj[58:58+ln].decode('utf-8')
+
+    if sqlcode:
+        err = OperationalError(sqlcode, sqlstate, message)
+    else:
+        err = None
+
+    return err, rest
+
+
+def parse_sqldard(obj):
+    err, rest = parse_sqlcard(obj)
+    if err:
+        return err, None
+
+
 def read_dds(sock):
     "Read one DDS packet from socket"
     b = _recv_from_sock(sock, 6)

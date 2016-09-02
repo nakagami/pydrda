@@ -290,14 +290,11 @@ def printSQLCARD(cp, obj):
     sqlerrproc = obj[10:18]
     misc = obj[18:56]
     ln = int.from_bytes(obj[56:58], byteorder='big')
-    if ln:
-        s = obj[58:58+ln].decode('utf-8')
-    else:
-        s = ''
+    s = obj[58:58+ln].decode('utf-8')
 
     rest = obj[58+ln:]
 
-    print("\t\tflag=%d,sqlcode=%d,sqlstate=%s,misc=%s,essage=%s,sqlerrproc=%s" % (
+    print("\t\tflag=%d,sqlcode=%d,sqlstate=%s,misc=%s,message=%s,sqlerrproc=%s" % (
         flag,
         sqlcode,
         sqlstate.decode('ascii'),
@@ -356,7 +353,6 @@ def printSQLDARD(cp, obj):
     print("\tSQLDHGRP=%s" % (binascii.b2a_hex(rest[:19]).decode('ascii'),))
     ln = int.from_bytes(rest[19:21], byteorder='big')
     rest = rest[21:]
-    print("\tSQLNUMBRP=%d,SQLDAGRP+SQLDOPTGRP+SQLUDTGRP+SQLDXGRP=%s" % (ln, binascii.b2a_hex(rest).decode('ascii'),))
     for i in range(ln):
         rest = _print_column_name(rest)
 
