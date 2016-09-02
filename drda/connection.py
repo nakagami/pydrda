@@ -91,7 +91,7 @@ class Connection:
             dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock)
             if code_point == cp.SQLDARD:
                 err, description = ddm.parse_sqldard(obj)
-            if code_point == cp.QRYDSC:
+            elif code_point == cp.QRYDSC:
                 ln = obj[0]
                 b = obj[1:ln]
                 assert b[:2] == b'\x76\xd0'

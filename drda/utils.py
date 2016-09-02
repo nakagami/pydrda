@@ -59,22 +59,3 @@ def read_field(t, ps, b):
 
         b = b[ln:]
     return v, b
-
-
-def get_description(qrydsc):
-    dsc = []
-    for t, ps in qrydsc:
-        name = None
-        display_size = internal_size = -1
-        p = -1
-        s = -1
-
-        if t == DRDA_TYPE_NVARCHAR:
-            display_size = int.from_bytes(ps, byteorder='big')
-        elif t == DRDA_TYPE_NINTEGER:
-            internal_size = int.from_bytes(ps, byteorder='big')
-        elif t == DRDA_TYPE_NDECIMAL:
-            (p, s) = (ps[0], ps[1])
-        dsc.append((name, t, display_size, internal_size, p, s, None))
-
-    return dsc

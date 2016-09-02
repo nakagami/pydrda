@@ -58,6 +58,25 @@ def _pack_str(code_point, v, enc):
     return _pack_binary(code_point, v.encode(enc))
 
 
+def parse_string(b):
+    "parse VCM"
+    ln = int.from_bytes(b[:2], byteorder='big')
+    if ln:
+        s = b[2:2+ln].decode('utf-8')
+    else:
+        s = ''
+    b = b[2+ln:]
+    return s, b
+
+
+def parse_name(b):
+    "parse VCM or VCS"
+    s1, b = parse_string(b)
+    s2, b = parse_string(b)
+    ln = int.from_bytes(b[:2], byteorder='big')
+    return s1 if s1 else s2, b
+
+
 def pack_dds_object(code_point, o):
     "pack to DDS packet"
     return (len(o)+4).to_bytes(2, byteorder='big') + code_point.to_bytes(2, byteorder='big') + o
@@ -84,6 +103,8 @@ def parse_sqlcard(obj):
     ln = int.from_bytes(obj[56:58], byteorder='big')
     message = obj[58:58+ln].decode('utf-8')
     rest = obj[58+ln:]
+    assert rest[:3] == b'\x00\x00\xff'
+    rest = rest[3:]
 
     if sqlcode:
         err = OperationalError(sqlcode, sqlstate, message)
@@ -137,7 +158,7 @@ def parse_sqldard(obj):
         b = rest[21:]
         for i in range(ln):
             d, b = _parse_column(b)
-            description.appen(d)
+            description.append(d)
 
     return err, description
 

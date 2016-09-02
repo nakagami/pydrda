@@ -64,6 +64,12 @@ class TestDerby(unittest.TestCase):
                 ('C', 3, null, null)
         """)
         cur.execute("SELECT * FROM test")
+        self.assertEqual(cur.description, [
+            ('S', 449, 20, 20, 20, 0, None),
+            ('I', 497, 4, 4, 10, 0, None),
+            ('D1', 485, 513, 513, 2, 1, None),
+            ('D2', 485, 2818, 2818, 11, 2, None)
+        ])
         self.assertEqual(cur.fetchall(), [
             ('abcdefghijklmnopq', 1, decimal.Decimal('1.1'), decimal.Decimal('123456789.12')),
             ('B', 2, decimal.Decimal('1.2'), decimal.Decimal('2')),
