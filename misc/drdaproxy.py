@@ -306,7 +306,14 @@ def printSQLCARD(cp, obj):
     assert rest[:3] == b'\x00\x00\xff'
     return rest[3:]
 
-def _print_column_name(b):
+def _print_column(b):
+    precision = int.from_bytes(b[:2], byteorder='big')
+    scale = int.from_bytes(b[2:4], byteorder='big')
+    sqllength = int.from_bytes(b[4:12], byteorder='big')
+    sqltype = int.from_bytes(b[12:14], byteorder='big')
+    sqlccsid = int.from_bytes(b[14:16], byteorder='big')
+    print('%d,%d,%d,%d,%d' % (precision, scale, sqllength, sqltype, sqlccsid))
+
     b = b[16:]
 
     # SQLDOPTGRP
@@ -354,7 +361,7 @@ def printSQLDARD(cp, obj):
     ln = int.from_bytes(rest[19:21], byteorder='big')
     rest = rest[21:]
     for i in range(ln):
-        rest = _print_column_name(rest)
+        rest = _print_column(rest)
 
 
 def printSQLATTR(cp, obj):
