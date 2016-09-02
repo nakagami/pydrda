@@ -34,7 +34,7 @@ from drda.cursor import Cursor
 class Connection:
     def __init__(self, host, database, port, user, password):
         self.host = host
-        self.database = database
+        self.database = (database + ' ' * 18)[:18]
         self.port = port
         self.user = user
         self.password = password
