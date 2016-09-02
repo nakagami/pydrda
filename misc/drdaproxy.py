@@ -285,7 +285,7 @@ def printSQLCARD(cp, obj):
     # https://www.ibm.com/support/knowledgecenter/SSEPH2_13.1.0/com.ibm.ims13.doc.apr/ims_ddm_sqlcard.htm
     # https://www.ibm.com/support/knowledgecenter/ssw_i5_54/rzala/rzalaccl.htm
     flag = obj[0]
-    sqlcode = int.from_bytes(obj[1:5], byteorder='big')
+    sqlcode = int.from_bytes(obj[1:5], byteorder='big', signed=True)
     sqlstate = obj[5:10]
     sqlerrproc = obj[10:18]
     misc = obj[18:56]

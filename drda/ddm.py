@@ -98,7 +98,7 @@ def parse_reply(obj):
 
 def parse_sqlcard(obj):
     flag = obj[0]
-    sqlcode = int.from_bytes(obj[1:5], byteorder='big')
+    sqlcode = int.from_bytes(obj[1:5], byteorder='big', signed=True)
     sqlstate = obj[5:10]
     sqlerrproc = obj[10:18]
     misc = obj[18:56]
@@ -108,7 +108,7 @@ def parse_sqlcard(obj):
     assert rest[:3] == b'\x00\x00\xff'
     rest = rest[3:]
 
-    if sqlcode:
+    if sqlcode < 0:
         err = drda.OperationalError(sqlcode, sqlstate, message)
     else:
         err = None

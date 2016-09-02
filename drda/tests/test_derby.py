@@ -41,16 +41,18 @@ class TestDerby(unittest.TestCase):
             port=self.port,
         )
         cur = self.connection.cursor()
-        cur.execute("""
-            CREATE TABLE test (
-                s VARCHAR(20),
-                i int,
-                d1 decimal(2, 1),
-                d2 decimal(11, 2)
-            )
-        """)
+        try:
+            cur.execute("""
+                CREATE TABLE test (
+                    s VARCHAR(20),
+                    i int,
+                    d1 decimal(2, 1),
+                    d2 decimal(11, 2)
+                )
+            """)
+        except drda.OperationalError:
+            pass
         cur.execute("DELETE FROM test")
-        self.connection.commit()
 
     def tearDown(self):
         self.connection.close()
