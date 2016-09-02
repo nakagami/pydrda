@@ -78,9 +78,10 @@ class TestDerby(unittest.TestCase):
             ('C', 3, None, None)
         ])
 
-    def xxx_test_error(self):
+    def test_error(self):
         cur = self.connection.cursor()
-        cur.execute("invalid query")
+        with self.assertRaises(drda.OperationalError):
+            cur.execute("invalid query")
 
 
 if __name__ == "__main__":
