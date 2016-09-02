@@ -519,7 +519,7 @@ def printCodePoint(cp, obj):
         elif cp in (
             'USRID'
         ):
-            print('\t%s:"%s"' % (cp, binary.decode('utf-8')))
+            print('\t%s:"%s"' % (cp, binary.decode('cp500')))
         elif cp in (
             'SECMEC', 'PBSD_ISO', 'UOWDSP', 'SVRCOD', 'SECCHKCD',
             'RDBCMTOK', 'OUTEXP', 'QRYBLKSZ', 'MAXBLKEXT', 'MAXRSLCNT',
@@ -535,7 +535,7 @@ def printCodePoint(cp, obj):
                 binary = binary[4:]
             print()
         elif cp in ('TYPDEFNAM', 'PBSD', 'PRDID', 'PBSD_SCHEMA'):
-            print("\t%s:'%s'" % (cp, binary.decode('ascii')))
+            print("\t%s:'%s'" % (cp, binary.decode('cp500')))
         elif cp in ('TYPDEFOVR', ):
             print("\t%s:%s" % (cp, binascii.b2a_hex(binary).decode('ascii')))
             j = 0;
