@@ -291,7 +291,8 @@ def printSQLCARD(cp, obj):
     sqlerrproc = obj[10:18]
     misc = obj[18:56]
     ln = int.from_bytes(obj[56:58], byteorder='big')
-    s = obj[58:58+ln].decode('utf-8')
+    #s = obj[58:58+ln].decode('utf-8')
+    s = obj[58:58+ln]
 
     rest = obj[58+ln:]
 
