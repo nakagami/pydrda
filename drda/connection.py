@@ -116,6 +116,10 @@ class Connection:
             raise err
         return results, description
 
+    @property
+    def is_derby(self):
+        return self.password is None
+
     def is_connect(self):
         return bool(self.sock)
 
