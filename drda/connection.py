@@ -49,10 +49,10 @@ class Connection:
             secmec = cp.SECMEC_USRIDPWD
             user = self.user
         ddm.write_requests_dds(self.sock, [
-            ddm.packEXCSAT(),
-            ddm.packACCSEC(self.database, secmec),
-            ddm.packSECCHK(secmec, self.database, user, self.password),
-            ddm.packACCRDB(self.database),
+            ddm.packEXCSAT(self),
+            ddm.packACCSEC(self, self.database, secmec),
+            ddm.packSECCHK(self, secmec, self.database, user, self.password),
+            ddm.packACCRDB(self, self.database),
         ])
         chained = True
         while chained:
@@ -69,9 +69,9 @@ class Connection:
     def _execute(self, query):
         err = None
         ddm.write_requests_dds(self.sock, [
-            ddm.packEXCSQLIMM(self.database),
-            ddm.packSQLSTT(query),
-            ddm.packRDBCMM(),
+            ddm.packEXCSQLIMM(self, self.database),
+            ddm.packSQLSTT(self, query),
+            ddm.packRDBCMM(self, ),
         ])
         chained = True
         while chained:
@@ -86,10 +86,10 @@ class Connection:
         results = collections.deque()
         err = qrydsc = None
         ddm.write_requests_dds(self.sock, [
-            ddm.packPRPSQLSTT(self.database),
-            ddm.packSQLATTR('WITH HOLD '),
-            ddm.packSQLSTT(query),
-            ddm.packOPNQRY(self.database),
+            ddm.packPRPSQLSTT(self, self.database),
+            ddm.packSQLATTR(self, 'WITH HOLD '),
+            ddm.packSQLSTT(self, query),
+            ddm.packOPNQRY(self, self.database),
         ])
         chained = True
         while chained:
@@ -138,7 +138,7 @@ class Connection:
         self._execute("ROLLBACK")
 
     def close(self):
-        ddm.write_requests_dds(self.sock, [ddm.packRDBCMM()])
+        ddm.write_requests_dds(self.sock, [ddm.packRDBCMM(self)])
         chained = True
         while chained:
             dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock)

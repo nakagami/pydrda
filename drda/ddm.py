@@ -207,7 +207,7 @@ def write_requests_dds(sock, obj_list):
         cur_id = next_id
 
 
-def packEXCSAT():
+def packEXCSAT(conn):
     return pack_dds_object(cp.EXCSAT, (
         _pack_str(cp.EXTNAM, 'pydrda', 'cp500') +
         _pack_str(cp.SRVNAM, 'pydrda', 'cp500') +
@@ -220,7 +220,7 @@ def packEXCSAT():
     )
 
 
-def packSECCHK(secmec, database, user, password):
+def packSECCHK(conn, secmec, database, user, password):
     if secmec == cp.SECMEC_USRIDONL:
         return pack_dds_object(cp.SECCHK, (
                 _pack_uint(cp.SECMEC, secmec, 2) +
@@ -240,7 +240,7 @@ def packSECCHK(secmec, database, user, password):
         raise ValueError('Unknown SECMEC:%d' % secmec)
 
 
-def packACCRDB(database):
+def packACCRDB(conn, database):
     return pack_dds_object(cp.ACCRDB, (
             _pack_str(cp.RDBNAM, database, 'utf-8') +
             _pack_uint(cp.RDBACCCL, cp.SQLAM, 2) +
@@ -254,13 +254,13 @@ def packACCRDB(database):
     )
 
 
-def packACCSEC(database, secmec):
+def packACCSEC(conn, database, secmec):
     return pack_dds_object(cp.ACCSEC,
         _pack_uint(cp.SECMEC, secmec, 2) + _pack_str(cp.RDBNAM, database, 'cp500'),
     )
 
 
-def packRDBCMM():
+def packRDBCMM(conn):
     return pack_dds_object(cp.RDBCMM, bytes())
     return b
 
@@ -270,31 +270,31 @@ def _packPKGNAMCSN(database):
     pkgnamcsn[4:22] = dbnam
     return bytes(pkgnamcsn)
 
-def packEXCSQLIMM(database):
+def packEXCSQLIMM(conn, database):
     return pack_dds_object(cp.EXCSQLIMM,
         _packPKGNAMCSN(database) + _pack_binary(cp.RDBCMTOK, bytes([241]))
     )
 
-def packPRPSQLSTT(database):
+def packPRPSQLSTT(conn, database):
     return pack_dds_object(cp.PRPSQLSTT,
         _packPKGNAMCSN(database) +
         _pack_binary(cp.RTNSQLDA, bytes([241])) +
         _pack_binary(cp.TYPSQLDA, bytes([4]))
     )
 
-def packOPNQRY(database):
+def packOPNQRY(conn, database):
     return pack_dds_object(cp.OPNQRY,
         _packPKGNAMCSN(database) +
         _pack_uint(cp.QRYBLKSZ, 32767, 4) +
         _pack_binary(cp.QRYCLSIMP, bytes([1]))
     )
 
-def packSQLSTT(sql):
+def packSQLSTT(conn, sql):
     return pack_dds_object(cp.SQLSTT,
         _pack_null_string(sql, 'utf-8') + _pack_null_string(None, 'utf-8')
     )
 
-def packSQLATTR(attr):
+def packSQLATTR(conn, attr):
     return pack_dds_object(cp.SQLATTR,
         _pack_null_string(attr, 'utf-8') + _pack_null_string(None, 'utf-8')
     )
