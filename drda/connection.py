@@ -42,11 +42,14 @@ class Connection:
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect((self.host, self.port))
 
+        if self.password is None:
+            secmec = cp.SECMEC_USRIDONL
+        else:
+            secmec = cp.SECMEC_USRIDPWD
         ddm.write_requests_dds(self.sock, [
             ddm.packEXCSAT(),
-            ddm.packACCSEC(self.database)
+            ddm.packACCSEC(self.database, secmec)
         ])
-        secmec = binascii.unhexlify(b'0004')
         chained = True
         while chained:
             dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock)

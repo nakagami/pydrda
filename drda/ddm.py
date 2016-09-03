@@ -247,9 +247,9 @@ def packACCRDB(database):
     )
 
 
-def packACCSEC(database):
+def packACCSEC(database, secmec):
     return pack_dds_object(cp.ACCSEC,
-        _pack_uint(cp.SECMEC, 4, 2) + _pack_str(cp.RDBNAM, database, 'cp500'),
+        _pack_uint(cp.SECMEC, 4, secmec) + _pack_str(cp.RDBNAM, database, 'cp500'),
     )
 
 
