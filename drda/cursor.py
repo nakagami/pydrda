@@ -22,6 +22,7 @@
 # SOFTWARE.
 ##############################################################################
 import collections
+from .utils import escape_parameter
 
 class Cursor:
     def __init__(self, connection):
@@ -50,7 +51,15 @@ class Cursor:
     def setoutputsize(size, column=None):
         pass
 
-    def execute(self, query, params=[]):
+    def execute(self, query, args=()):
+        if args:
+            escaped_args = tuple(
+                escape_parameter(arg).replace(u'%', u'%%') for arg in args
+            )
+            query = query.replace(u'%', u'%%').replace(u'%%s', u'%s')
+            query = query % escaped_args
+            query = query.replace(u'%%', u'%')
+
         self.query = query
         if query.strip().split()[0].upper() == 'SELECT':
             self._rows, self.description = self.connection._query(self.query)

@@ -59,3 +59,18 @@ def read_field(t, ps, b):
 
         b = b[ln:]
     return v, b
+
+
+def escape_parameter(v):
+    t = type(v)
+    if v is None:
+        return 'NULL'
+    elif t == str:
+        return "'" + v.replace(u"'", u"''") + "'"
+    elif t == decimal.Decimal:
+        return "'" + str(v) + "'"
+    elif t == int or t == float:
+        return str(v)
+    else:
+        return "'" + str(v) + "'"
+
