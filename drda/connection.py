@@ -42,14 +42,16 @@ class Connection:
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect((self.host, self.port))
 
-        if self.password is None:
+        if self.is_derby:
             secmec = cp.SECMEC_USRIDONL
+            user = 'APP'
         else:
             secmec = cp.SECMEC_USRIDPWD
+            user = self.user
         ddm.write_requests_dds(self.sock, [
             ddm.packEXCSAT(),
             ddm.packACCSEC(self.database, secmec),
-            ddm.packSECCHK(secmec, self.database, self.user, self.password),
+            ddm.packSECCHK(secmec, self.database, user, self.password),
             ddm.packACCRDB(self.database),
         ])
         chained = True
@@ -118,7 +120,7 @@ class Connection:
 
     @property
     def is_derby(self):
-        return self.password is None
+        return self.user is None
 
     def is_connect(self):
         return bool(self.sock)
