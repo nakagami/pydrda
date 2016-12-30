@@ -84,6 +84,7 @@ class Connection:
 
     def _query(self, query):
         results = collections.deque()
+        description = []
         err = qrydsc = None
         ddm.write_requests_dds(self.sock, [
             ddm.packPRPSQLSTT(self, self.database),
