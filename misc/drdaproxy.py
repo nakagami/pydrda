@@ -227,6 +227,11 @@ CODE_POINT = {
     0x1905: 'PRPHRCLST',
     0x1906: 'XIDCNT',
     0x1913: 'CCSIDXML',
+    0x214B: 'DYNDTAFMT',
+    0x2136: '?2136?',
+    0x2137: '?2137?',
+    0x245A: '?245A?',
+    0x2460: '?2460?',
 }
 
 def asc_dump(bindata):
