@@ -308,16 +308,16 @@ def printSQLCARD(cp, obj):
     sqlerrmsg_s = obj[2:2+ln]
     rest = rest[2+ln:]
 
-    print("\t\tflag=%d,sqlcode=%d,sqlstate=%s,sqlrdbname=%s,sqlerrmsg_m=%s,sqlerrmsg_s=%s,sqlerrproc=%s" % (
+    print("\t\tflag=%d,sqlcode=%d,sqlstate=%s,sqlrdbname=%s,sqlerrmsg_m=%s,sqlerrmsg_s=%s,sqlerrproc=%s,rest=%s" % (
         flag,
         sqlcode,
         sqlstate.decode('ascii'),
         sqlrdbname,
         sqlerrmsg_m,
         sqlerrmsg_s,
-        sqlerrproc.decode('ascii'),
+        sqlerrproc,
+        rest,
     ))
-    print('\t\trest=%s' % (rest,))
     return rest
 
 def _print_column(b):
