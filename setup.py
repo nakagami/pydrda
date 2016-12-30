@@ -1,20 +1,24 @@
 import sys
+import unittest
 from distutils.core import setup, Command
 
 
 class TestCommand(Command):
-    user_options = []
+    user_options = [('db=', None, 'database type (derby|db2)')]
 
     def initialize_options(self):
-        pass
+        self.db = 'derby'
 
     def finalize_options(self):
-        pass
+        assert self.db in ('derby', 'db2'), 'Invalid database type!'
 
     def run(self):
-        from drda.tests import test_derby
-        import unittest
-        unittest.main(test_derby, argv=sys.argv[:1])
+        if self.db == 'derby':
+            from drda.tests import test_derby
+            unittest.main(test_derby, argv=sys.argv[:1])
+        elif self.db == 'db2':
+            from drda.tests import test_db2
+            unittest.main(test_derby, argv=sys.argv[:1])
 
 cmdclass = {'test': TestCommand}
 
