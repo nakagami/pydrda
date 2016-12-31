@@ -14,11 +14,10 @@ class TestCommand(Command):
 
     def run(self):
         if self.db == 'derby':
-            from drda.tests import test_derby
-            unittest.main(test_derby, argv=sys.argv[:1])
+            from drda.tests import test_derby as test_module
         elif self.db == 'db2':
-            from drda.tests import test_db2
-            unittest.main(test_derby, argv=sys.argv[:1])
+            from drda.tests import test_db2 as test_module
+        unittest.main(test_module, argv=sys.argv[:1])
 
 cmdclass = {'test': TestCommand}
 
