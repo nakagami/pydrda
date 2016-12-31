@@ -531,7 +531,7 @@ def printCodePoint(cp, obj):
         ):
             print('\t%s:"%s"' % (cp, binary.decode('cp500')))
         elif cp in (
-            'USRID'
+            'USRID', 'PASSWORD',
         ):
             print('\t%s:"%s"' % (cp, binary.decode('cp500')))
         elif cp in (
