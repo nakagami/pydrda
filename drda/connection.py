@@ -42,7 +42,7 @@ class Connection:
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect((self.host, self.port))
 
-        if self.user is None    # derby
+        if self.user is None:   # derby
             secmec = cp.SECMEC_USRIDONL
             user = 'APP'
         else:
