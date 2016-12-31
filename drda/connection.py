@@ -42,7 +42,7 @@ class Connection:
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect((self.host, self.port))
 
-        if self.is_derby:
+        if self.user is None    # derby
             secmec = cp.SECMEC_USRIDONL
             user = 'APP'
         else:
@@ -118,10 +118,6 @@ class Connection:
         if err:
             raise err
         return results, description
-
-    @property
-    def is_derby(self):
-        return self.user is None
 
     def is_connect(self):
         return bool(self.sock)
