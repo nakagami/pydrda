@@ -43,22 +43,35 @@ class Connection:
         self.sock.connect((self.host, self.port))
 
         if self.is_derby:
-            secmec = cp.SECMEC_USRIDONL
-            user = 'APP'
+            ddm.write_requests_dds(self.sock, [
+                ddm.packEXCSAT(self),
+                ddm.packACCSEC(self, self.database, cp.SECMEC_USRIDONL),
+                ddm.packSECCHK(self, cp.SECMEC_USRIDONL, self.database, 'APP'),
+                ddm.packACCRDB(self, self.database),
+            ])
+            chained = True
+            while chained:
+                dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock)
+                if code_point == cp.ACCSECRD:
+                    secmec = ddm.parse_reply(obj).get(cp.SECMEC)
+                    assert secmec == cp.SECMEC_USRIDONL
+        elif self.is_db2:
+            ddm.write_requests_dds(self.sock, [
+                ddm.packEXCSAT(self),
+                ddm.packACCSEC(self, self.database, cp.SECMEC_USRIDPWD),
+            ])
+            chained = True
+            while chained:
+                dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock)
+            ddm.write_requests_dds(self.sock, [
+                ddm.packSECCHK(self, cp.SECMEC_USRIDPWD, self.database, self.user, self.password),
+                ddm.packACCRDB(self, self.database),
+            ])
+            chained = True
+            while chained:
+                dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock)
         else:
-            secmec = cp.SECMEC_USRIDPWD
-            user = self.user
-        ddm.write_requests_dds(self.sock, [
-            ddm.packEXCSAT(self),
-            ddm.packACCSEC(self, self.database, secmec),
-            ddm.packSECCHK(self, secmec, self.database, user, self.password),
-            ddm.packACCRDB(self, self.database),
-        ])
-        chained = True
-        while chained:
-            dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock)
-            if code_point == cp.ACCSECRD:
-                secmec = ddm.parse_reply(obj).get(cp.SECMEC)
+            raise ValueError('Unknown Database Type')
 
     def __enter__(self):
         return self
@@ -122,6 +135,10 @@ class Connection:
     @property
     def is_derby(self):
         return self.user is None
+
+    @property
+    def is_db2(self):
+        return self.user is not None
 
     def is_connect(self):
         return bool(self.sock)

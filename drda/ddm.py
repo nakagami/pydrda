@@ -220,15 +220,15 @@ def packEXCSAT(conn):
     )
 
 
-def packSECCHK(conn, secmec, database, user, password):
-    if secmec == cp.SECMEC_USRIDONL:
+def packSECCHK(conn, secmec, database, user, password=''):
+    if conn.is_derby:
         return pack_dds_object(cp.SECCHK, (
                 _pack_uint(cp.SECMEC, secmec, 2) +
                 _pack_str(cp.RDBNAM, database, 'utf-8') +
                 _pack_str(cp.USRID, user, 'utf-8')
             )
         )
-    elif secmec == cp.SECMEC_USRIDPWD:
+    elif conn.is_db2:
         return pack_dds_object(cp.SECCHK, (
                 _pack_uint(cp.SECMEC, secmec, 2) +
                 _pack_str(cp.RDBNAM, database, 'cp500') +
@@ -237,7 +237,7 @@ def packSECCHK(conn, secmec, database, user, password):
             )
         )
     else:
-        raise ValueError('Unknown SECMEC:%d' % secmec)
+        raise ValueError('Unknown Database Type')
 
 
 def packACCRDB(conn, database):
