@@ -44,7 +44,13 @@ class Connection:
 
         if self.is_derby:
             ddm.write_requests_dds(self.sock, [
-                ddm.packEXCSAT(self),
+                ddm.packEXCSAT(self, [
+                    cp.AGENT, 7,
+                    cp.SQLAM, 7,
+                    cp.RDB, 7,
+                    cp.SECMGR, 7,
+                    cp.UNICODEMGR, 1028,
+                ]),
                 ddm.packACCSEC(self, self.database, cp.SECMEC_USRIDONL),
                 ddm.packSECCHK(self, cp.SECMEC_USRIDONL, self.database, 'APP'),
                 ddm.packACCRDB(self, self.database),
@@ -57,7 +63,14 @@ class Connection:
                     assert secmec == cp.SECMEC_USRIDONL
         elif self.is_db2:
             ddm.write_requests_dds(self.sock, [
-                ddm.packEXCSAT(self),
+                ddm.packEXCSAT(self, [
+                    cp.AGENT, 10,
+                    cp.SQLAM, 11,
+                    cp.CMNTCPIP, 5,
+                    cp.RDB, 12,
+                    cp.SECMGR, 9,
+                    cp.UNICODEMGR, 1028,
+                ]),
                 ddm.packACCSEC(self, self.database, cp.SECMEC_USRIDPWD),
             ])
             chained = True

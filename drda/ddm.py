@@ -207,14 +207,16 @@ def write_requests_dds(sock, obj_list):
         cur_id = next_id
 
 
-def packEXCSAT(conn):
+def packEXCSAT(conn, mgrlvlls):
+    b = b''
+    for p in mgrlvlls:
+        b += p.to_bytes(2, byteorder='big')
+
     return pack_dds_object(cp.EXCSAT, (
         _pack_str(cp.EXTNAM, 'pydrda', 'cp500') +
         _pack_str(cp.SRVNAM, 'pydrda', 'cp500') +
         _pack_str(cp.SRVRLSLV, 'pydrda', 'cp500') +
-        _pack_binary(cp.MGRLVLLS,
-            # AGENT=7 SQLAM=7 RDB=7 SECMGR=7 UNICODEMGR=1208
-            binascii.unhexlify(b'1403000724070007240f0007144000071c0804b8')) +
+        _pack_binary(cp.MGRLVLLS, b) +
         _pack_str(cp.SRVCLSNM, 'pydrda', 'cp500')
         )
     )
