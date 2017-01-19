@@ -53,7 +53,11 @@ class Connection:
                 ]),
                 ddm.packACCSEC(self, self.database, cp.SECMEC_USRIDONL),
                 ddm.packSECCHK(self, cp.SECMEC_USRIDONL, self.database, 'APP'),
-                ddm.packACCRDB(self, self.database),
+                ddm.packACCRDB(self,
+                    self.database.encode('utf-8'),
+                    'DNC10130'.encode('utf-8'),
+                    'QTDSQLASC'.encode('utf-8'),
+                ),
             ])
             chained = True
             while chained:
@@ -78,7 +82,11 @@ class Connection:
                 dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock)
             ddm.write_requests_dds(self.sock, [
                 ddm.packSECCHK(self, cp.SECMEC_USRIDPWD, self.database, self.user, self.password),
-                ddm.packACCRDB(self, self.database),
+                ddm.packACCRDB(self,
+                    self.database.encode('cp500'),
+                    'DNC10130'.encode('cp500'),
+                    'QTDSQLASC'.encode('cp500'),
+                ),
             ])
             chained = True
             while chained:

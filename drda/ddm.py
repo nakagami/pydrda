@@ -242,12 +242,13 @@ def packSECCHK(conn, secmec, database, user, password=''):
         raise ValueError('Unknown Database Type')
 
 
-def packACCRDB(conn, database):
+def packACCRDB(conn, rdbnam, prdid, typdefnam):
+
     return pack_dds_object(cp.ACCRDB, (
-            _pack_str(cp.RDBNAM, database, 'utf-8') +
+            _pack_binary(cp.RDBNAM, rdbnam) +
             _pack_uint(cp.RDBACCCL, cp.SQLAM, 2) +
-            _pack_str(cp.PRDID, 'DNC10130', 'utf-8') +
-            _pack_str(cp.TYPDEFNAM, 'QTDSQLASC', 'utf-8') +
+            _pack_binary(cp.PRDID, prdid) +
+            _pack_binary(cp.TYPDEFNAM, typdefnam) +
             _pack_binary(cp.CRRTKN,
                 binascii.unhexlify(b'd5c6f0f0f0f0f0f12ec3f0c1f50155630d5a11')) +
             _pack_binary(cp.TYPDEFOVR,
