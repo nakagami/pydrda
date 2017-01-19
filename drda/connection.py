@@ -49,7 +49,7 @@ class Connection:
                     cp.SQLAM, 7,
                     cp.RDB, 7,
                     cp.SECMGR, 7,
-                    cp.UNICODEMGR, 1028,
+                    cp.UNICODEMGR, 1208,
                 ]),
                 ddm.packACCSEC(self, self.database, cp.SECMEC_USRIDONL),
                 ddm.packSECCHK(self, cp.SECMEC_USRIDONL, self.database, 'APP'),
@@ -73,7 +73,7 @@ class Connection:
                     cp.CMNTCPIP, 5,
                     cp.RDB, 12,
                     cp.SECMGR, 9,
-                    cp.UNICODEMGR, 1028,
+                    cp.UNICODEMGR, 1208,
                 ]),
                 ddm.packACCSEC(self, self.database, cp.SECMEC_USRIDPWD),
             ])
