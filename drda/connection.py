@@ -64,7 +64,7 @@ class Connection:
                 dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock)
                 if code_point == cp.ACCSECRD:
                     secmec = ddm.parse_reply(obj).get(cp.SECMEC)
-                    assert secmec == cp.SECMEC_USRIDONL
+                    assert int.from_bytes(secmec, byteorder='big') == cp.SECMEC_USRIDONL
         elif self.is_db2:
             ddm.write_requests_dds(self.sock, [
                 ddm.packEXCSAT(self, [
