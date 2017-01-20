@@ -122,7 +122,7 @@ class Connection:
         err = qrydsc = None
         ddm.write_requests_dds(self.sock, [
             ddm.packPRPSQLSTT(self, self.database),
-            ddm.packSQLATTR(self, 'WITH HOLD '),
+#            ddm.packSQLATTR(self, 'WITH HOLD '),
             ddm.packSQLSTT(self, query),
             ddm.packOPNQRY(self, self.database),
         ])
