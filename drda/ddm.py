@@ -222,24 +222,14 @@ def packEXCSAT(conn, mgrlvlls):
     )
 
 
-def packSECCHK(conn, secmec, database, user, password=''):
-    if conn.db_type == 'derby':
-        return pack_dds_object(cp.SECCHK, (
-                _pack_uint(cp.SECMEC, secmec, 2) +
-                _pack_str(cp.RDBNAM, database, 'utf-8') +
-                _pack_str(cp.USRID, user, 'utf-8')
-            )
+def packSECCHK(conn, secmec, database, user, password, enc):
+    return pack_dds_object(cp.SECCHK, (
+            _pack_uint(cp.SECMEC, secmec, 2) +
+            _pack_str(cp.RDBNAM, database, enc) +
+            _pack_str(cp.USRID, user, enc) +
+            _pack_str(cp.PASSWORD, password, enc)
         )
-    elif conn.db_type == 'db2':
-        return pack_dds_object(cp.SECCHK, (
-                _pack_uint(cp.SECMEC, secmec, 2) +
-                _pack_str(cp.RDBNAM, database, 'cp500') +
-                _pack_str(cp.USRID, user, 'cp500') +
-                _pack_str(cp.PASSWORD, password, 'cp500')
-            )
-        )
-    else:
-        raise ValueError('Unknown Database Type')
+    )
 
 
 def packACCRDB(conn, rdbnam, prdid, typdefnam):

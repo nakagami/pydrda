@@ -58,7 +58,14 @@ class Connection:
                     cp.UNICODEMGR, 1208,
                 ]),
                 ddm.packACCSEC(self, self.database, cp.SECMEC_USRIDONL),
-                ddm.packSECCHK(self, cp.SECMEC_USRIDONL, self.database, 'APP'),
+                ddm.packSECCHK(
+                    self,
+                    cp.SECMEC_USRIDONL,
+                    self.database,
+                    'APP',
+                    '',
+                    enc='utf-8'
+                ),
                 ddm.packACCRDB(self,
                     self.database.encode('utf-8'),
                     'DNC10130'.encode('utf-8'),
@@ -92,7 +99,14 @@ class Connection:
 
             ddm.write_requests_dds(self.sock, [
 
-                ddm.packSECCHK(self, cp.SECMEC_USRIDPWD, self.database, self.user, self.password),
+                ddm.packSECCHK(
+                    self,
+                    cp.SECMEC_USRIDPWD,
+                    self.database,
+                    self.user,
+                    self.password,
+                    enc='cp500'
+                ),
                 ddm.packACCRDB(self,
                     self.database.encode('cp500'),
                     'SQL11011'.encode('cp500'),
