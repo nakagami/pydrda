@@ -233,7 +233,6 @@ def packSECCHK(conn, secmec, database, user, password, enc):
 
 
 def packACCRDB(conn, rdbnam, prdid, typdefnam):
-
     return pack_dds_object(cp.ACCRDB, (
             _pack_binary(cp.RDBNAM, rdbnam) +
             _pack_uint(cp.RDBACCCL, cp.SQLAM, 2) +

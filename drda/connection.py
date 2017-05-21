@@ -45,79 +45,51 @@ class Connection:
             elif self.user is not None:
                 self.db_type = 'db2'
 
+        if self.db_type == 'derby':
+            user = 'APP'
+            password = ''
+            enc = 'utf-8'
+            secmec = cp.SECMEC_USRIDONL
+            prdid = 'DNC10130'
+            typedefnam = 'QTDSQLASC'
+        elif self.db_type == 'db2':
+            user = self.user
+            password = self.password
+            enc = 'cp500'
+            secmec = cp.SECMEC_USRIDPWD
+            prdid = 'DNC10130'
+            typedefnam = 'QTDSQLASC'
+        else:
+            raise ValueError('Unknown database type')
+            
+
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect((self.host, self.port))
 
-        if self.db_type == 'derby':
-            ddm.write_requests_dds(self.sock, [
-                ddm.packEXCSAT(self, [
-                    cp.AGENT, 7,
-                    cp.SQLAM, 7,
-                    cp.RDB, 7,
-                    cp.SECMGR, 7,
-                    cp.UNICODEMGR, 1208,
-                ]),
-                ddm.packACCSEC(self, self.database, cp.SECMEC_USRIDONL),
-                ddm.packSECCHK(
-                    self,
-                    cp.SECMEC_USRIDONL,
-                    self.database,
-                    'APP',
-                    '',
-                    enc='utf-8'
-                ),
-                ddm.packACCRDB(self,
-                    self.database.encode('utf-8'),
-                    'DNC10130'.encode('utf-8'),
-                    'QTDSQLASC'.encode('utf-8'),
-                ),
-            ])
-            chained = True
-            while chained:
-                dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock)
-                if code_point == cp.ACCSECRD:
-                    secmec = ddm.parse_reply(obj).get(cp.SECMEC)
-                    assert int.from_bytes(secmec, byteorder='big') == cp.SECMEC_USRIDONL
-        elif self.db_type == 'db2':
-            ddm.write_requests_dds(self.sock, [
-                ddm.packEXCSAT(self, [
-                    cp.AGENT, 10,
-                    cp.SQLAM, 11,
-                    cp.CMNTCPIP, 5,
-                    cp.RDB, 12,
-                    cp.SECMGR, 9,
-                    cp.UNICODEMGR, 1208,
-                ]),
-                ddm.packACCSEC(self, self.database, cp.SECMEC_USRIDPWD),
-            ])
-            chained = True
-            while chained:
-                dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock)
-                if code_point == cp.ACCSECRD:
-                    secmec = ddm.parse_reply(obj).get(cp.SECMEC)
-                    assert int.from_bytes(secmec, byteorder='big') == cp.SECMEC_USRIDPWD
+        ddm.write_requests_dds(self.sock, [
+            ddm.packEXCSAT(self, [
+                cp.AGENT, 10,
+                cp.SQLAM, 11,
+                cp.CMNTCPIP, 5,
+                cp.RDB, 12,
+                cp.SECMGR, 9,
+                cp.UNICODEMGR, 1208,
+            ]),
+            ddm.packACCSEC(self, self.database, secmec),
+        ])
+        chained = True
+        while chained:
+            dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock)
+            if code_point == cp.ACCSECRD:
+                assert int.from_bytes(ddm.parse_reply(obj).get(cp.SECMEC), byteorder='big') == secmec
 
-            ddm.write_requests_dds(self.sock, [
-
-                ddm.packSECCHK(
-                    self,
-                    cp.SECMEC_USRIDPWD,
-                    self.database,
-                    self.user,
-                    self.password,
-                    enc='cp500'
-                ),
-                ddm.packACCRDB(self,
-                    self.database.encode('cp500'),
-                    'SQL11011'.encode('cp500'),
-                    'QTDSQLX86'.encode('cp500'),
-                ),
-            ])
-            chained = True
-            while chained:
-                dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock)
-        else:
-            raise ValueError('Unknown Database Type')
+        ddm.write_requests_dds(self.sock, [
+            ddm.packSECCHK(self, secmec, self.database, user, password, enc=enc),
+            ddm.packACCRDB(self, self.database.encode(enc), prdid.encode(enc), typedefnam.encode(enc)),
+        ])
+        chained = True
+        while chained:
+            dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock)
 
     def __enter__(self):
         return self
