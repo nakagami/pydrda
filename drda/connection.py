@@ -32,17 +32,23 @@ from drda.cursor import Cursor
 
 
 class Connection:
-    def __init__(self, host, database, port, user, password):
+    def __init__(self, host, database, port, user, password, db_type):
         self.host = host
         self.database = (database + ' ' * 18)[:18]
         self.port = port
         self.user = user
         self.password = password
+        self.db_type = db_type
+        if self.db_type is None:
+            if self.user is None:
+                self.db_type = 'derby'
+            elif self.user is not None:
+                self.db_type = 'db2'
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect((self.host, self.port))
 
-        if self.is_derby:
+        if self.db_type == 'derby':
             ddm.write_requests_dds(self.sock, [
                 ddm.packEXCSAT(self, [
                     cp.AGENT, 7,
@@ -65,7 +71,7 @@ class Connection:
                 if code_point == cp.ACCSECRD:
                     secmec = ddm.parse_reply(obj).get(cp.SECMEC)
                     assert int.from_bytes(secmec, byteorder='big') == cp.SECMEC_USRIDONL
-        elif self.is_db2:
+        elif self.db_type == 'db2':
             ddm.write_requests_dds(self.sock, [
                 ddm.packEXCSAT(self, [
                     cp.AGENT, 10,
@@ -157,14 +163,6 @@ class Connection:
         if err:
             raise err
         return results, description
-
-    @property
-    def is_derby(self):
-        return self.user is None
-
-    @property
-    def is_db2(self):
-        return self.user is not None
 
     def is_connect(self):
         return bool(self.sock)

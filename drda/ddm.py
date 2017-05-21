@@ -214,7 +214,7 @@ def packEXCSAT(conn, mgrlvlls):
 
     return pack_dds_object(cp.EXCSAT, (
         _pack_str(cp.EXTNAM, 'pydrda', 'cp500') +
-        _pack_str(cp.SRVNAM, 'pydrda', 'cp500') +
+        _pack_str(cp.SRVNAM, '%s:%d' % (conn.host, conn.port), 'cp500') +
         _pack_str(cp.SRVRLSLV, 'pydrda', 'cp500') +
         _pack_binary(cp.MGRLVLLS, b) +
         _pack_str(cp.SRVCLSNM, 'pydrda', 'cp500')
@@ -223,14 +223,14 @@ def packEXCSAT(conn, mgrlvlls):
 
 
 def packSECCHK(conn, secmec, database, user, password=''):
-    if conn.is_derby:
+    if conn.db_type == 'derby':
         return pack_dds_object(cp.SECCHK, (
                 _pack_uint(cp.SECMEC, secmec, 2) +
                 _pack_str(cp.RDBNAM, database, 'utf-8') +
                 _pack_str(cp.USRID, user, 'utf-8')
             )
         )
-    elif conn.is_db2:
+    elif conn.db_type == 'db2':
         return pack_dds_object(cp.SECCHK, (
                 _pack_uint(cp.SECMEC, secmec, 2) +
                 _pack_str(cp.RDBNAM, database, 'cp500') +
