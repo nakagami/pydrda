@@ -98,11 +98,11 @@ def parse_reply(obj):
 
 def parse_sqlcard(obj, db_type, message, enc):
     flag = obj[0]
-    sqlcode = int.from_bytes(obj[1:5], byteorder='big', signed=True)
-    sqlstate = obj[5:10].decode('ascii')
-    sqlerrproc = obj[10:18]
 
     if db_type == 'derby':
+        sqlcode = int.from_bytes(obj[1:5], byteorder='big', signed=True)
+        sqlstate = obj[5:10].decode('ascii')
+        sqlerrproc = obj[10:18]
         misc = obj[18:56]
         ln = int.from_bytes(obj[56:58], byteorder='big')
         message = obj[58:58+ln].decode(enc)
@@ -110,6 +110,9 @@ def parse_sqlcard(obj, db_type, message, enc):
         assert rest[:3] == b'\x00\x00\xff'
         rest = rest[3:]
     elif db_type == 'db2':
+        sqlcode = int.from_bytes(obj[1:5], byteorder='little', signed=True)
+        sqlstate = obj[5:10].decode('ascii')
+        sqlerrproc = obj[10:18]
         misc = obj[18:54]
         rest = obj[54:]
         ln = int.from_bytes(rest[:2], byteorder='big')
