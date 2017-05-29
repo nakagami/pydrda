@@ -145,6 +145,10 @@ class Connection:
                 ddm.packEXCSAT(self, [cp.CCSIDMGR, 1208]),
                 ddm.packEXCSQLSET(self, self.database),
                 ddm.packSQLSTT(self, query),
+            ])
+            self._parse_response()
+
+            ddm.write_requests_dds(self.sock, [
                 ddm.packOPNQRY(self, self.database),
             ])
         else:
