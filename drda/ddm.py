@@ -232,12 +232,12 @@ def packSECCHK(conn, secmec, database, user, password, enc):
     )
 
 
-def packACCRDB(conn, rdbnam, prdid, typdefnam):
+def packACCRDB(conn, rdbnam, prdid, typdefnam, enc):
     return pack_dds_object(cp.ACCRDB, (
-            _pack_binary(cp.RDBNAM, rdbnam) +
+            _pack_str(cp.RDBNAM, rdbnam, enc) +
             _pack_uint(cp.RDBACCCL, cp.SQLAM, 2) +
-            _pack_binary(cp.PRDID, prdid) +
-            _pack_binary(cp.TYPDEFNAM, typdefnam) +
+            _pack_str(cp.PRDID, prdid, enc) +
+            _pack_str(cp.TYPDEFNAM, typdefnam, enc) +
             _pack_binary(cp.CRRTKN,
                 binascii.unhexlify(b'd5c6f0f0f0f0f0f12ec3f0c1f50155630d5a11')) +
             _pack_binary(cp.TYPDEFOVR,

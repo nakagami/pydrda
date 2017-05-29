@@ -58,16 +58,16 @@ class Connection:
                 self.db_type = 'db2'
 
         if self.db_type == 'derby':
+            self._enc = 'utf-8'
             user = 'APP'
             password = ''
-            enc = 'utf-8'
             secmec = cp.SECMEC_USRIDONL
             prdid = 'DNC10130'
             typedefnam = 'QTDSQLASC'
         elif self.db_type == 'db2':
+            self._enc = 'cp500'
             user = self.user
             password = self.password
-            enc = 'cp500'
             secmec = cp.SECMEC_USRIDPWD
             prdid = 'SQL11011'
             typedefnam = 'QTDSQLX86'
@@ -92,8 +92,8 @@ class Connection:
         self._parse_response()
 
         ddm.write_requests_dds(self.sock, [
-            ddm.packSECCHK(self, secmec, self.database, user, password, enc=enc),
-            ddm.packACCRDB(self, self.database.encode(enc), prdid.encode(enc), typedefnam.encode(enc)),
+            ddm.packSECCHK(self, secmec, self.database, user, password, self._enc),
+            ddm.packACCRDB(self, self.database, prdid, typedefnam, self._enc),
         ])
         self._parse_response()
 
