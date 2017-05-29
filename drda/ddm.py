@@ -295,6 +295,11 @@ def packPRPSQLSTT(conn, database):
         _pack_binary(cp.TYPSQLDA, bytes([4]))
     )
 
+def packEXCSQLSET(conn, database):
+    return pack_dds_object(cp.EXCSQLSET,
+        _packPKGNAMCSN(database)
+    )
+
 def packOPNQRY(conn, database):
     return pack_dds_object(cp.OPNQRY,
         _packPKGNAMCSN(database) +
