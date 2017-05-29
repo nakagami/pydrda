@@ -32,6 +32,18 @@ from drda.cursor import Cursor
 
 
 class Connection:
+
+    def _parse_response(self):
+        err = None
+        chained = True
+        while chained:
+            dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock)
+            if code_point == cp.SQLCARD:
+                if err is None:
+                    err, _ = ddm.parse_sqlcard(obj)
+        if err:
+            raise err
+
     def __init__(self, host, database, port, user, password, db_type):
         self.host = host
         self.database = (database + ' ' * 18)[:18]
@@ -77,19 +89,13 @@ class Connection:
             ]),
             ddm.packACCSEC(self, self.database, secmec),
         ])
-        chained = True
-        while chained:
-            dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock)
-            if code_point == cp.ACCSECRD:
-                assert int.from_bytes(ddm.parse_reply(obj).get(cp.SECMEC), byteorder='big') == secmec
+        self._parse_response()
 
         ddm.write_requests_dds(self.sock, [
             ddm.packSECCHK(self, secmec, self.database, user, password, enc=enc),
             ddm.packACCRDB(self, self.database.encode(enc), prdid.encode(enc), typedefnam.encode(enc)),
         ])
-        chained = True
-        while chained:
-            dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock)
+        self._parse_response()
 
     def __enter__(self):
         return self
@@ -98,20 +104,12 @@ class Connection:
         self.close()
 
     def _execute(self, query):
-        err = None
         ddm.write_requests_dds(self.sock, [
             ddm.packEXCSQLIMM(self, self.database),
             ddm.packSQLSTT(self, query),
             ddm.packRDBCMM(self, ),
         ])
-        chained = True
-        while chained:
-            dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock)
-            if code_point == cp.SQLCARD:
-                if err is None:
-                    err, _ = ddm.parse_sqlcard(obj)
-        if err:
-            raise err
+        self._parse_response()
 
     def _query(self, query):
         results = collections.deque()
@@ -167,7 +165,5 @@ class Connection:
 
     def close(self):
         ddm.write_requests_dds(self.sock, [ddm.packRDBCMM(self)])
-        chained = True
-        while chained:
-            dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock)
+        self._parse_response()
         self.sock.close()
