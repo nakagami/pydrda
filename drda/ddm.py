@@ -96,14 +96,14 @@ def parse_reply(obj):
     return d
 
 
-def parse_sqlcard(obj):
+def parse_sqlcard(obj, enc):
     flag = obj[0]
     sqlcode = int.from_bytes(obj[1:5], byteorder='big', signed=True)
     sqlstate = obj[5:10]
     sqlerrproc = obj[10:18]
     misc = obj[18:56]
     ln = int.from_bytes(obj[56:58], byteorder='big')
-    message = obj[58:58+ln].decode('utf-8')
+    message = obj[58:58+ln].decode(enc)
     rest = obj[58+ln:]
     assert rest[:3] == b'\x00\x00\xff'
     rest = rest[3:]
@@ -152,9 +152,9 @@ def _parse_column(b):
     return (sqlname, sqltype, sqllength, sqllength, precision, scale, None), b
 
 
-def parse_sqldard(obj):
+def parse_sqldard(obj, enc):
     description = []
-    err, rest = parse_sqlcard(obj)
+    err, rest = parse_sqlcard(obj, enc)
     if not err:
         ln = int.from_bytes(rest[19:21], byteorder='big')
         b = rest[21:]
