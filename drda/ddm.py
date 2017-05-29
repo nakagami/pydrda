@@ -105,7 +105,8 @@ def parse_sqlcard(obj, enc):
     ln = int.from_bytes(obj[56:58], byteorder='big')
     message = obj[58:58+ln].decode(enc)
     rest = obj[58+ln:]
-    assert rest[:3] == b'\x00\x00\xff'
+    # derby specific ?
+    # assert rest[:3] == b'\x00\x00\xff'
     rest = rest[3:]
 
     if sqlcode < 0:
