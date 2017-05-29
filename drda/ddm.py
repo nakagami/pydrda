@@ -96,7 +96,7 @@ def parse_reply(obj):
     return d
 
 
-def parse_sqlcard(obj, db_type, enc):
+def parse_sqlcard(obj, db_type, message, enc):
     flag = obj[0]
     sqlcode = int.from_bytes(obj[1:5], byteorder='big', signed=True)
     sqlstate = obj[5:10].decode('ascii')
@@ -123,7 +123,6 @@ def parse_sqlcard(obj, db_type, enc):
         ln = int.from_bytes(rest[:2], byteorder='big')
         sqlerrmsg_s = obj[2:2+ln]
         rest = rest[2+ln:]
-        message = sqlerrmsg_m.decode(enc)
     else:
         raise ValueError('Unknown database type')
 
@@ -171,9 +170,9 @@ def _parse_column(b):
     return (sqlname, sqltype, sqllength, sqllength, precision, scale, None), b
 
 
-def parse_sqldard(obj, db_type, enc):
+def parse_sqldard(obj, db_type, message, enc):
     description = []
-    err, rest = parse_sqlcard(obj, db_type, enc)
+    err, rest = parse_sqlcard(obj, db_type, message, enc)
     if not err:
         ln = int.from_bytes(rest[19:21], byteorder='big')
         b = rest[21:]

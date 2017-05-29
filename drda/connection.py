@@ -37,13 +37,16 @@ class Connection:
         description = []
         err = qrydsc = None
         chained = True
+        err_msg = None
         while chained:
             dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock)
-            if code_point == cp.SQLCARD:
+            if code_point == cp.SQLERRRM:
+                err_msg = ddm.parse_reply(obj).get(cp.SRVDGN).decode(self._enc)
+            elif code_point == cp.SQLCARD:
                 if err is None:
-                    err, _ = ddm.parse_sqlcard(obj, self.db_type, self._enc)
+                    err, _ = ddm.parse_sqlcard(obj, self.db_type, err_msg, self._enc)
             elif code_point == cp.SQLDARD:
-                err, description = ddm.parse_sqldard(obj, self.db_type, 'utf-8')
+                err, description = ddm.parse_sqldard(obj, self.db_type, err_msg, 'utf-8')
             elif code_point == cp.QRYDSC:
                 ln = obj[0]
                 b = obj[1:ln]
