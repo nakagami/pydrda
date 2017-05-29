@@ -73,10 +73,7 @@ class Error(Exception):
         super(Error, self).__init__()
 
     def __str__(self):
-        return "%d:%s" % (self.sqlcode, self.message)
-
-    def __repr__(self):
-        return "%d:%s" % (self.sqlcode, self.message)
+        return "%d:%s:%s" % (self.sqlcode, self.sqlstate, self.message)
 
 
 class Warning(Exception):

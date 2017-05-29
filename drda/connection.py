@@ -124,7 +124,10 @@ class Connection:
         chained = True
         while chained:
             dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock)
-            if code_point == cp.SQLDARD:
+            if code_point == cp.SQLCARD:
+                if err is None:
+                    err, _ = ddm.parse_sqlcard(obj, self._enc)
+            elif code_point == cp.SQLDARD:
                 err, description = ddm.parse_sqldard(obj, 'utf-8')
             elif code_point == cp.QRYDSC:
                 ln = obj[0]

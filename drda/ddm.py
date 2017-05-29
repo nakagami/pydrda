@@ -99,7 +99,7 @@ def parse_reply(obj):
 def parse_sqlcard(obj, enc):
     flag = obj[0]
     sqlcode = int.from_bytes(obj[1:5], byteorder='big', signed=True)
-    sqlstate = obj[5:10]
+    sqlstate = obj[5:10].decode('ascii')
     sqlerrproc = obj[10:18]
     misc = obj[18:56]
     ln = int.from_bytes(obj[56:58], byteorder='big')
