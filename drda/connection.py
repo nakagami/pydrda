@@ -87,15 +87,11 @@ class Connection:
             user = 'APP'
             password = ''
             secmec = cp.SECMEC_USRIDONL
-            prdid = 'DNC10130'
-            typedefnam = 'QTDSQLASC'
         elif self.db_type == 'db2':
             self._enc = 'cp500'
             user = self.user
             password = self.password
             secmec = cp.SECMEC_USRIDPWD
-            prdid = 'SQL11011'
-            typedefnam = 'QTDSQLX86'
         else:
             raise ValueError('Unknown database type')
             
@@ -118,7 +114,7 @@ class Connection:
 
         ddm.write_requests_dds(self.sock, [
             ddm.packSECCHK(self, secmec, self.database, user, password, self._enc),
-            ddm.packACCRDB(self, self.database, prdid, typedefnam, self._enc),
+            ddm.packACCRDB(self, self.database, self._enc),
         ])
         self._parse_response()
 
