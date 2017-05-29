@@ -76,6 +76,16 @@ class Connection:
                     cp.UNICODEMGR, 1208,
                 ]),
                 ddm.packACCSEC(self, self.database, cp.SECMEC_USRIDPWD),
+            ])
+            chained = True
+            while chained:
+                dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock)
+                if code_point == cp.ACCSECRD:
+                    secmec = ddm.parse_reply(obj).get(cp.SECMEC)
+                    assert int.from_bytes(secmec, byteorder='big') == cp.SECMEC_USRIDPWD
+
+            ddm.write_requests_dds(self.sock, [
+
                 ddm.packSECCHK(self, cp.SECMEC_USRIDPWD, self.database, self.user, self.password),
                 ddm.packACCRDB(self,
                     self.database.encode('cp500'),
