@@ -32,17 +32,39 @@ from drda.cursor import Cursor
 
 
 class Connection:
-
     def _parse_response(self):
-        err = None
+        results = collections.deque()
+        description = []
+        err = qrydsc = None
         chained = True
         while chained:
             dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock)
             if code_point == cp.SQLCARD:
                 if err is None:
                     err, _ = ddm.parse_sqlcard(obj, self.db_type, self._enc)
+            elif code_point == cp.SQLDARD:
+                err, description = ddm.parse_sqldard(obj, self.db_type, 'utf-8')
+            elif code_point == cp.QRYDSC:
+                ln = obj[0]
+                b = obj[1:ln]
+                assert b[:2] == b'\x76\xd0'
+                b = b[2:]
+                # [(DRDA_TYPE_xxxx, size_binary), ...]
+                qrydsc = [(c[0], c[1:]) for c in [b[i:i+3] for i in range(0, len(b), 3)]]
+            elif code_point == cp.QRYDTA:
+                b = obj
+                while True:
+                    if (b[0], b[1]) != (0xff, 0x00):
+                        break
+                    b = b[2:]
+                    r = []
+                    for t, ps in qrydsc:
+                        v, b = utils.read_field(t, ps, b)
+                        r.append(v)
+                    results.append(tuple(r))
         if err:
             raise err
+        return results, description
 
     def __init__(self, host, database, port, user, password, db_type):
         self.host = host
@@ -112,44 +134,14 @@ class Connection:
         self._parse_response()
 
     def _query(self, query):
-        results = collections.deque()
-        description = []
-        err = qrydsc = None
         ddm.write_requests_dds(self.sock, [
             ddm.packPRPSQLSTT(self, self.database),
 #            ddm.packSQLATTR(self, 'WITH HOLD '),
             ddm.packSQLSTT(self, query),
             ddm.packOPNQRY(self, self.database),
         ])
-        chained = True
-        while chained:
-            dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock)
-            if code_point == cp.SQLCARD:
-                if err is None:
-                    err, _ = ddm.parse_sqlcard(obj, self.db_type, self._enc)
-            elif code_point == cp.SQLDARD:
-                err, description = ddm.parse_sqldard(obj, self.db_type, 'utf-8')
-            elif code_point == cp.QRYDSC:
-                ln = obj[0]
-                b = obj[1:ln]
-                assert b[:2] == b'\x76\xd0'
-                b = b[2:]
-                # [(DRDA_TYPE_xxxx, size_binary), ...]
-                qrydsc = [(c[0], c[1:]) for c in [b[i:i+3] for i in range(0, len(b), 3)]]
-            elif code_point == cp.QRYDTA:
-                b = obj
-                while True:
-                    if (b[0], b[1]) != (0xff, 0x00):
-                        break
-                    b = b[2:]
-                    r = []
-                    for t, ps in qrydsc:
-                        v, b = utils.read_field(t, ps, b)
-                        r.append(v)
-                    results.append(tuple(r))
-        if err:
-            raise err
-        return results, description
+
+        return self._parse_response()
 
     def is_connect(self):
         return bool(self.sock)
