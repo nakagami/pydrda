@@ -57,8 +57,8 @@ class Connection:
             password = self.password
             enc = 'cp500'
             secmec = cp.SECMEC_USRIDPWD
-            prdid = 'DNC10130'
-            typedefnam = 'QTDSQLASC'
+            prdid = 'SQL11011'
+            typedefnam = 'QTDSQLX86'
         else:
             raise ValueError('Unknown database type')
             
