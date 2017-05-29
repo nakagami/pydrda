@@ -101,13 +101,31 @@ def parse_sqlcard(obj, db_type, enc):
     sqlcode = int.from_bytes(obj[1:5], byteorder='big', signed=True)
     sqlstate = obj[5:10].decode('ascii')
     sqlerrproc = obj[10:18]
-    misc = obj[18:56]
-    ln = int.from_bytes(obj[56:58], byteorder='big')
-    message = obj[58:58+ln].decode(enc)
-    rest = obj[58+ln:]
-    # derby specific ?
-    # assert rest[:3] == b'\x00\x00\xff'
-    rest = rest[3:]
+
+    if db_type == 'derby':
+        misc = obj[18:56]
+        ln = int.from_bytes(obj[56:58], byteorder='big')
+        message = obj[58:58+ln].decode(enc)
+        rest = obj[58+ln:]
+        assert rest[:3] == b'\x00\x00\xff'
+        rest = rest[3:]
+    elif db_type == 'db2':
+        misc = obj[18:54]
+        rest = obj[54:]
+        ln = int.from_bytes(rest[:2], byteorder='big')
+        sqlrdbname = obj[2:2+ln]
+        rest = rest[2+ln:]
+
+        ln = int.from_bytes(rest[:2], byteorder='big')
+        sqlerrmsg_m = obj[2:2+ln]
+        rest = rest[2+ln:]
+
+        ln = int.from_bytes(rest[:2], byteorder='big')
+        sqlerrmsg_s = obj[2:2+ln]
+        rest = rest[2+ln:]
+        message = sqlerrmsg_m.decode(enc)
+    else:
+        raise ValueError('Unknown database type')
 
     if sqlcode < 0:
         err = drda.OperationalError(sqlcode, sqlstate, message)
