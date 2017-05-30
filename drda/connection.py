@@ -128,7 +128,7 @@ class Connection:
         ddm.write_requests_dds(self.sock, [
             ddm.packEXCSQLIMM(self, self.database),
             ddm.packSQLSTT(self, query),
-#            ddm.packRDBCMM(self, ),
+            ddm.packRDBCMM(self, ),
         ])
         self._parse_response()
 
