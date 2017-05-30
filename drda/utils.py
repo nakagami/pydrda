@@ -58,6 +58,8 @@ def read_field(t, ps, b):
         v = decimal.Decimal(v) / (10**s)
 
         b = b[ln:]
+    else:
+        raise ValueError("UnknownType(%s)" % hex(t))
     return v, b
 
 
