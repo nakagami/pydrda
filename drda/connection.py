@@ -143,7 +143,8 @@ class Connection:
         elif self.db_type == 'db2':
             ddm.write_requests_dds(self.sock, [
                 ddm.packEXCSAT_MGRLVLLS(self, [cp.CCSIDMGR, 1208]),
-                ddm.packEXCSQLSET(self, self.database),
+#                ddm.packEXCSQLSET(self, self.database),
+                ddm.packPRPSQLSTT(self, self.database),
                 ddm.packSQLSTT(self, query),
             ])
             self._parse_response()
