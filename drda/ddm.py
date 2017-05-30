@@ -318,11 +318,18 @@ def packEXCSQLSET(conn, database):
     )
 
 def packOPNQRY(conn, database):
-    return pack_dds_object(cp.OPNQRY,
-        _packPKGNAMCSN(conn.db_type, database) +
-        _pack_uint(cp.QRYBLKSZ, 32767, 4) +
-        _pack_binary(cp.QRYCLSIMP, bytes([1]))
-    )
+    if conn.db_type == 'derby':
+        return pack_dds_object(cp.OPNQRY,
+            _packPKGNAMCSN(conn.db_type, database) +
+            _pack_uint(cp.QRYBLKSZ, 32767, 4) +
+            _pack_binary(cp.QRYCLSIMP, bytes([1]))
+        )
+    else:
+        return pack_dds_object(cp.OPNQRY,
+            _packPKGNAMCSN(conn.db_type, database) +
+            _pack_uint(cp.QRYBLKSZ, 32767, 4) +
+            _pack_binary(cp.DYNDTAFMT, bytes([0xF1]))
+        )
 
 def packSQLSTT(conn, sql):
     return pack_dds_object(cp.SQLSTT,
