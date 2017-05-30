@@ -243,6 +243,14 @@ def packEXCSAT(conn, mgrlvlls):
     )
 
 
+def packEXCSAT_MGRLVLLS(conn, mgrlvlls):
+    b = b''
+    for p in mgrlvlls:
+        b += p.to_bytes(2, byteorder='big')
+
+    return pack_dds_object(cp.EXCSAT, (_pack_binary(cp.MGRLVLLS, b)))
+
+
 def packSECCHK(conn, secmec, database, user, password, enc):
     return pack_dds_object(cp.SECCHK, (
             _pack_uint(cp.SECMEC, secmec, 2) +
@@ -281,7 +289,7 @@ def _packPKGNAMCSN(db_type, database):
     if db_type == 'derby':
         pkgnamcsn = bytearray(binascii.a2b_hex('004421130000000000000000000000000000000000004e554c4c49442020202020202020202020205359534c48303030202020202020202020205359534c564c30310001'))
     elif db_type == 'db2':
-        pkgnamcsn = bytearray(binascii.a2b_hex('004421130000000000000000000000000000000000004e554c4c494420202020202020202020202053514c43324f32362020202020202020202001010101010101010001'))
+        pkgnamcsn = bytearray(binascii.a2b_hex('0044211353414d504c452020202020202020202020204e554c4c494420202020202020202020202053514c43324f32362020202020202020202001010101010101010001'))
     dbnam = (database + ' ' * 18).encode('utf-8')[:18]
     pkgnamcsn[4:22] = dbnam
     return bytes(pkgnamcsn)
