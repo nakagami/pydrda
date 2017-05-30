@@ -128,7 +128,7 @@ class Connection:
         ddm.write_requests_dds(self.sock, [
             ddm.packEXCSQLIMM(self, self.database),
             ddm.packSQLSTT(self, query),
-            ddm.packRDBCMM(self, ),
+#            ddm.packRDBCMM(self, ),
         ])
         self._parse_response()
 
@@ -136,19 +136,16 @@ class Connection:
         if self.db_type == 'derby':
             ddm.write_requests_dds(self.sock, [
                 ddm.packPRPSQLSTT(self, self.database),
-    #            ddm.packSQLATTR(self, 'WITH HOLD '),
                 ddm.packSQLSTT(self, query),
                 ddm.packOPNQRY(self, self.database),
             ])
         elif self.db_type == 'db2':
             ddm.write_requests_dds(self.sock, [
                 ddm.packEXCSAT_MGRLVLLS(self, [cp.CCSIDMGR, 1208]),
-#                ddm.packEXCSQLSET(self, self.database),
                 ddm.packPRPSQLSTT(self, self.database),
                 ddm.packSQLSTT(self, query),
             ])
             self._parse_response()
-
             ddm.write_requests_dds(self.sock, [
                 ddm.packOPNQRY(self, self.database),
             ])
