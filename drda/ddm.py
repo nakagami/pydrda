@@ -300,11 +300,17 @@ def packEXCSQLIMM(conn, database):
     )
 
 def packPRPSQLSTT(conn, database):
-    return pack_dds_object(cp.PRPSQLSTT,
-        _packPKGNAMCSN(conn.db_type, database) +
-        _pack_binary(cp.RTNSQLDA, bytes([241])) +
-        _pack_binary(cp.TYPSQLDA, bytes([4]))
-    )
+
+    if conn.db_type == 'derby':
+        return pack_dds_object(cp.PRPSQLSTT,
+            _packPKGNAMCSN(conn.db_type, database) +
+            _pack_binary(cp.RTNSQLDA, bytes([241])) +
+            _pack_binary(cp.TYPSQLDA, bytes([4]))
+        )
+    else:
+        return pack_dds_object(cp.PRPSQLSTT,
+            _packPKGNAMCSN(conn.db_type, database)
+        )
 
 def packEXCSQLSET(conn, database):
     return pack_dds_object(cp.EXCSQLSET,
