@@ -33,8 +33,8 @@ import drda
 class TestDB2(unittest.TestCase):
     host = 'localhost'
     database = 'testdb'
-    user = 'db2inst1'
-    password = 'db2inst1'
+    user = 'db2admin'
+    password = 'secret'
     port = 50000
 
     def setUp(self):
