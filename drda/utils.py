@@ -34,10 +34,30 @@ def read_field(t, ps, b):
     ps:  precision and scale or length
     b: input bytes
     """
-    (isnull, b) = (b[0] == 0xFF, b[1:])
+    if t in (
+        DRDA_TYPE_NINTEGER, DRDA_TYPE_NSMALL, DRDA_TYPE_N1BYTE_INT, DRDA_TYPE_NFLOAT16,
+        DRDA_TYPE_NFLOAT8, DRDA_TYPE_NFLOAT4, DRDA_TYPE_NDECIMAL, DRDA_TYPE_NNUMERIC_CHAR,
+        DRDA_TYPE_NRSET_LOC, DRDA_TYPE_NINTEGER8, DRDA_TYPE_NLOBLOC, DRDA_TYPE_NCLOBLOC,
+        DRDA_TYPE_NDBCSCLOBLOC, DRDA_TYPE_NROWID, DRDA_TYPE_NDATE, DRDA_TYPE_NTIME,
+        DRDA_TYPE_NTIMESTAMP, DRDA_TYPE_NFIXBYTE, DRDA_TYPE_NVARBYTE, DRDA_TYPE_NLONGVARBYTE,
+        DRDA_TYPE_NTERMBYTE, DRDA_TYPE_NNTERMBYTE, DRDA_TYPE_NCSTR, DRDA_TYPE_NCHAR,
+        DRDA_TYPE_NVARCHAR, DRDA_TYPE_NLONG, DRDA_TYPE_NGRAPHIC, DRDA_TYPE_NVARGRAPH,
+        DRDA_TYPE_NLONGRAPH, DRDA_TYPE_NMIX, DRDA_TYPE_NVARMIX, DRDA_TYPE_NLONGMIX,
+        DRDA_TYPE_NCSTRMIX, DRDA_TYPE_NPSCLBYTE, DRDA_TYPE_NLSTR, DRDA_TYPE_NLSTRMIX,
+        DRDA_TYPE_NSDATALINK, DRDA_TYPE_NMDATALINK,
+    ):
+        (isnull, b) = (b[0] == 0xFF, b[1:])
+        if isnull:
+            return None, b
 
-    if isnull:
-        v = None
+    if t in (DRDA_TYPE_MIX, DRDA_TYPE_NMIX):
+        ln = int.from_bytes(ps, byteorder='big')
+        v = b[:ln].decode('utf-8')
+        b = b[ln:]
+    elif t == DRDA_TYPE_VARMIX:
+        ln = int.from_bytes(b[:2], byteorder='big')
+        v = b[2:2+ln].decode('utf-8')
+        b = b[2+ln:]
     elif t == DRDA_TYPE_NVARCHAR:
         ln = int.from_bytes(b[:2], byteorder='big')
         v = b[2:2+ln].decode('utf-8')
@@ -56,7 +76,10 @@ def read_field(t, ps, b):
         assert v[-1] == 'c'
         v = v[:-1]
         v = decimal.Decimal(v) / (10**s)
-
+        b = b[ln:]
+    elif t == DRDA_TYPE_NDATE:
+        ln = int.from_bytes(ps, byteorder='big')
+        v = b[:ln].decode('utf-8')
         b = b[ln:]
     else:
         raise ValueError("UnknownType(%s)" % hex(t))
