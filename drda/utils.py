@@ -54,7 +54,7 @@ def read_field(t, ps, b, endian):
         ln = int.from_bytes(ps, byteorder='big')
         v = b[:ln].decode('utf-8')
         b = b[ln:]
-    elif t == DRDA_TYPE_VARMIX:
+    elif t in (DRDA_TYPE_VARMIX, DRDA_TYPE_NVARMIX):
         ln = int.from_bytes(b[:2], byteorder='big')
         v = b[2:2+ln].decode('utf-8')
         b = b[2+ln:]
@@ -81,11 +81,23 @@ def read_field(t, ps, b, endian):
         v = v[:-1]
         v = decimal.Decimal(v) / (10**s)
         b = b[ln:]
+    elif t in (DRDA_TYPE_TIMESTAMP, DRDA_TYPE_NTIMESTAMP):
+        ln = int.from_bytes(ps, byteorder='big')
+        v = b[:ln].decode('utf-8')
+        b = b[ln:]
     elif t in (DRDA_TYPE_DATE, DRDA_TYPE_NDATE):
         ln = int.from_bytes(ps, byteorder='big')
         v = b[:ln].decode('utf-8')
         b = b[ln:]
     elif t in (DRDA_TYPE_TIME, DRDA_TYPE_NTIME):
+        ln = int.from_bytes(ps, byteorder='big')
+        v = b[:ln].decode('utf-8')
+        b = b[ln:]
+    elif t in (DRDA_TYPE_VARGRAPH, DRDA_TYPE_NVARGRAPH):
+        ln = int.from_bytes(ps, byteorder='big')
+        v = b[:ln].decode('utf-8')
+        b = b[ln:]
+    elif t in (DRDA_TYPE_GRAPHIC, DRDA_TYPE_NGRAPHIC):
         ln = int.from_bytes(ps, byteorder='big')
         v = b[:ln].decode('utf-8')
         b = b[ln:]
