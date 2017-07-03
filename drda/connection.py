@@ -44,9 +44,15 @@ class Connection:
                 err_msg = ddm.parse_reply(obj).get(cp.SRVDGN).decode('utf-8')
             elif code_point == cp.SQLCARD:
                 if err is None:
-                    err, _ = ddm.parse_sqlcard(obj, self.db_type, err_msg, self._enc)
+                    if self.db_type == 'derby':
+                        err, _ = ddm.parse_sqlcard_derby(obj, self._enc)
+                    else:
+                        err, _ = ddm.parse_sqlcard_db2(obj, err_msg, self._enc)
             elif code_point == cp.SQLDARD:
-                err, description = ddm.parse_sqldard(obj, self.db_type, err_msg, 'utf-8')
+                if self.db_type == 'derby':
+                    err, description = ddm.parse_sqldard_derby(obj, 'utf-8')
+                else:
+                    err, description = ddm.parse_sqldard_db2(obj, err_msg, 'utf-8')
             elif code_point == cp.QRYDSC:
                 ln = obj[0]
                 b = obj[1:ln]
@@ -108,13 +114,13 @@ class Connection:
                 cp.SECMGR, 9,
                 cp.UNICODEMGR, 1208,
             ]),
-            ddm.packACCSEC(self, self.database, secmec),
+            ddm.packACCSEC(self.database, secmec),
         ])
         self._parse_response()
 
         ddm.write_requests_dds(self.sock, [
-            ddm.packSECCHK(self, secmec, self.database, user, password, self._enc),
-            ddm.packACCRDB(self, self.database, self._enc),
+            ddm.packSECCHK(secmec, self.database, user, password, self._enc),
+            ddm.packACCRDB(self.database, self._enc),
         ])
         self._parse_response()
 
@@ -126,28 +132,28 @@ class Connection:
 
     def _execute(self, query):
         ddm.write_requests_dds(self.sock, [
-            ddm.packEXCSQLIMM(self, self.database),
-            ddm.packSQLSTT(self, query),
-            ddm.packRDBCMM(self, ),
+            ddm.packEXCSQLIMM(self.database),
+            ddm.packSQLSTT(query),
+            ddm.packRDBCMM(),
         ])
         self._parse_response()
 
     def _query(self, query):
         if self.db_type == 'derby':
             ddm.write_requests_dds(self.sock, [
-                ddm.packPRPSQLSTT(self, self.database),
-                ddm.packSQLSTT(self, query),
-                ddm.packOPNQRY(self, self.database),
+                ddm.packPRPSQLSTT(self.database),
+                ddm.packSQLSTT(query),
+                ddm.packOPNQRY_derby(self.database),
             ])
         elif self.db_type == 'db2':
             ddm.write_requests_dds(self.sock, [
-                ddm.packEXCSAT_MGRLVLLS(self, [cp.CCSIDMGR, 1208]),
-                ddm.packPRPSQLSTT(self, self.database),
-                ddm.packSQLSTT(self, query),
+                ddm.packEXCSAT_MGRLVLLS([cp.CCSIDMGR, 1208]),
+                ddm.packPRPSQLSTT(self.database),
+                ddm.packSQLSTT(query),
             ])
             self._parse_response()
             ddm.write_requests_dds(self.sock, [
-                ddm.packOPNQRY(self, self.database),
+                ddm.packOPNQRY_db2(self.database),
             ])
         else:
             raise ValueError('Unknown database type')
@@ -170,6 +176,6 @@ class Connection:
         self._execute("ROLLBACK")
 
     def close(self):
-        ddm.write_requests_dds(self.sock, [ddm.packRDBCMM(self)])
+        ddm.write_requests_dds(self.sock, [ddm.packRDBCMM()])
         self._parse_response()
         self.sock.close()
