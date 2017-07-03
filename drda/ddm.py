@@ -113,8 +113,8 @@ def parse_sqlcard_derby(obj, enc):
         err = None
     return err, rest
 
-def parse_sqlcard_db2(obj, message, enc):
-    sqlcode = int.from_bytes(obj[1:5], byteorder='little', signed=True)
+def parse_sqlcard_db2(obj, message, enc, endian):
+    sqlcode = int.from_bytes(obj[1:5], byteorder=endian, signed=True)
     sqlstate = obj[5:10].decode('ascii')
     sqlerrproc = obj[10:18]
     misc = obj[18:54]
@@ -187,9 +187,9 @@ def parse_sqldard_derby(obj, enc):
 
     return err, description
 
-def parse_sqldard_db2(obj, message, enc):
+def parse_sqldard_db2(obj, message, enc, endian):
     description = []
-    err, rest = parse_sqlcard_db2(obj, message, enc)
+    err, rest = parse_sqlcard_db2(obj, message, enc, endian)
     if not err:
         ln = int.from_bytes(rest[19:21], byteorder='big')
         b = rest[21:]

@@ -47,12 +47,12 @@ class Connection:
                     if self.db_type == 'derby':
                         err, _ = ddm.parse_sqlcard_derby(obj, self._enc)
                     else:
-                        err, _ = ddm.parse_sqlcard_db2(obj, err_msg, self._enc)
+                        err, _ = ddm.parse_sqlcard_db2(obj, err_msg, self._enc, self.endian)
             elif code_point == cp.SQLDARD:
                 if self.db_type == 'derby':
                     err, description = ddm.parse_sqldard_derby(obj, 'utf-8')
                 else:
-                    err, description = ddm.parse_sqldard_db2(obj, err_msg, 'utf-8')
+                    err, description = ddm.parse_sqldard_db2(obj, err_msg, 'utf-8', self.endian)
             elif code_point == cp.QRYDSC:
                 ln = obj[0]
                 b = obj[1:ln]
@@ -68,7 +68,7 @@ class Connection:
                     b = b[2:]
                     r = []
                     for t, ps in qrydsc:
-                        v, b = utils.read_field(t, ps, b)
+                        v, b = utils.read_field(t, ps, b, self.endian)
                         r.append(v)
                     results.append(tuple(r))
         if err:
@@ -90,11 +90,13 @@ class Connection:
 
         if self.db_type == 'derby':
             self._enc = 'utf-8'
+            self.endian = 'big'
             user = 'APP'
             password = ''
             secmec = cp.SECMEC_USRIDONL
         elif self.db_type == 'db2':
             self._enc = 'cp500'
+            self.endian = 'little'
             user = self.user
             password = self.password
             secmec = cp.SECMEC_USRIDPWD

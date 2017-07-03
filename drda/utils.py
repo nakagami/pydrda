@@ -26,7 +26,7 @@ import binascii
 import decimal
 from drda.consts import *
 
-def read_field(t, ps, b):
+def read_field(t, ps, b, endian):
     """
     read one field value from bytes.
     return value, rest bytes
@@ -62,9 +62,13 @@ def read_field(t, ps, b):
         ln = int.from_bytes(b[:2], byteorder='big')
         v = b[2:2+ln].decode('utf-8')
         b = b[2+ln:]
-    elif t == DRDA_TYPE_NINTEGER:
+    elif t in (DRDA_TYPE_SMALL, DRDA_TYPE_NSMALL):
         ln = int.from_bytes(ps, byteorder='big')
-        v = int.from_bytes(b[:ln], byteorder='big')
+        v = int.from_bytes(b[:ln], byteorder=endian)
+        b = b[ln:]
+    elif t in (DRDA_TYPE_INTEGER, DRDA_TYPE_NINTEGER):
+        ln = int.from_bytes(ps, byteorder='big')
+        v = int.from_bytes(b[:ln], byteorder=endian)
         b = b[ln:]
     elif t == DRDA_TYPE_NDECIMAL:
         (p, s) = (ps[0], ps[1])
@@ -77,7 +81,11 @@ def read_field(t, ps, b):
         v = v[:-1]
         v = decimal.Decimal(v) / (10**s)
         b = b[ln:]
-    elif t == DRDA_TYPE_NDATE:
+    elif t in (DRDA_TYPE_DATE, DRDA_TYPE_NDATE):
+        ln = int.from_bytes(ps, byteorder='big')
+        v = b[:ln].decode('utf-8')
+        b = b[ln:]
+    elif t in (DRDA_TYPE_TIME, DRDA_TYPE_NTIME):
         ln = int.from_bytes(ps, byteorder='big')
         v = b[:ln].decode('utf-8')
         b = b[ln:]
