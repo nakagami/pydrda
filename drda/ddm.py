@@ -286,10 +286,7 @@ def packRDBCMM(conn):
     return b
 
 def _packPKGNAMCSN(db_type, database):
-    if db_type == 'derby':
-        pkgnamcsn = bytearray(binascii.a2b_hex('004421130000000000000000000000000000000000004e554c4c49442020202020202020202020205359534c48303030202020202020202020205359534c564c30310001'))
-    elif db_type == 'db2':
-        pkgnamcsn = bytearray(binascii.a2b_hex('0044211353414d504c452020202020202020202020204e554c4c494420202020202020202020202053514c43324f323620202020202020202020414141414166416400c9'))
+    pkgnamcsn = bytearray(binascii.a2b_hex('0044211353414d504c452020202020202020202020204e554c4c494420202020202020202020202053514c43324f323620202020202020202020414141414166416400c9'))
     dbnam = (database + ' ' * 18).encode('utf-8')[:18]
     pkgnamcsn[4:22] = dbnam
     return bytes(pkgnamcsn)
@@ -300,17 +297,11 @@ def packEXCSQLIMM(conn, database):
     )
 
 def packPRPSQLSTT(conn, database):
-
-    if conn.db_type == 'derby':
-        return pack_dds_object(cp.PRPSQLSTT,
-            _packPKGNAMCSN(conn.db_type, database) +
-            _pack_binary(cp.RTNSQLDA, bytes([241])) +
-            _pack_binary(cp.TYPSQLDA, bytes([4]))
-        )
-    else:
-        return pack_dds_object(cp.PRPSQLSTT,
-            _packPKGNAMCSN(conn.db_type, database)
-        )
+    return pack_dds_object(cp.PRPSQLSTT,
+        _packPKGNAMCSN(conn.db_type, database) +
+        _pack_binary(cp.RTNSQLDA, bytes([241])) +
+        _pack_binary(cp.TYPSQLDA, bytes([4]))
+    )
 
 def packEXCSQLSET(conn, database):
     return pack_dds_object(cp.EXCSQLSET,
