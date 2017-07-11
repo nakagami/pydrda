@@ -335,6 +335,12 @@ def packOPNQRY_db2(database):
         _pack_binary(cp.DYNDTAFMT, bytes([0xF1]))
     )
 
+def packCLSQRY(database):
+    return pack_dds_object(cp.CLSQRY,
+        _packPKGNAMCSN(database) +
+        _pack_uint(cp.QRYINSID, 0, 4)
+    )
+
 def packSQLSTT(sql):
     return pack_dds_object(cp.SQLSTT,
         _pack_null_string(sql, 'utf-8') + _pack_null_string(None, 'utf-8')

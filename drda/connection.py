@@ -160,7 +160,15 @@ class Connection:
         else:
             raise ValueError('Unknown database type')
 
-        return self._parse_response()
+        response = self._parse_response()
+
+        if self.db_type == 'derby':
+            ddm.write_requests_dds(self.sock, [
+                ddm.packCLSQRY(self.database),
+            ])
+            self._parse_response()
+
+        return response
 
     def is_connect(self):
         return bool(self.sock)
