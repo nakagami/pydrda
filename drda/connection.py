@@ -162,7 +162,7 @@ class Connection:
 
         response = self._parse_response()
 
-        if self.db_type == 'derby':
+        if self.db_type == 'db2':
             ddm.write_requests_dds(self.sock, [
                 ddm.packCLSQRY(self.database),
             ])
