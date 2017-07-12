@@ -321,6 +321,13 @@ def packPRPSQLSTT_db2(database):
         _packPKGNAMCSN(database)
     )
 
+def packDSCSQLSTT(database):
+    return pack_dds_object(cp.DSCSQLSTT,
+        _packPKGNAMCSN(database) +
+        _pack_uint(cp.QRYINSID, 0, 8)
+    )
+
+
 def packEXCSQLSET(database):
     return pack_dds_object(cp.EXCSQLSET,
         _packPKGNAMCSN(database)
@@ -343,7 +350,7 @@ def packOPNQRY_db2(database):
 def packCLSQRY(database):
     return pack_dds_object(cp.CLSQRY,
         _packPKGNAMCSN(database) +
-        _pack_uint(cp.QRYINSID, 0, 4)
+        _pack_uint(cp.QRYINSID, 0, 8)
     )
 
 def packSQLSTT(sql):

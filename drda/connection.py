@@ -164,6 +164,10 @@ class Connection:
 
         if self.db_type == 'db2':
             ddm.write_requests_dds(self.sock, [
+                ddm.packDSCSQLSTT(self.database),
+            ])
+            self._parse_response()
+            ddm.write_requests_dds(self.sock, [
                 ddm.packCLSQRY(self.database),
             ])
             self._parse_response()
