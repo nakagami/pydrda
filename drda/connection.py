@@ -143,14 +143,14 @@ class Connection:
     def _query(self, query):
         if self.db_type == 'derby':
             ddm.write_requests_dds(self.sock, [
-                ddm.packPRPSQLSTT(self.database),
+                ddm.packPRPSQLSTT_derby(self.database),
                 ddm.packSQLSTT(query),
                 ddm.packOPNQRY_derby(self.database),
             ])
         elif self.db_type == 'db2':
             ddm.write_requests_dds(self.sock, [
                 ddm.packEXCSAT_MGRLVLLS([cp.CCSIDMGR, 1208]),
-                ddm.packPRPSQLSTT(self.database),
+                ddm.packPRPSQLSTT_db2(self.database),
                 ddm.packSQLSTT(query),
             ])
             self._parse_response()

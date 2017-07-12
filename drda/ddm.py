@@ -309,11 +309,16 @@ def packEXCSQLIMM(database):
         _packPKGNAMCSN(database) + _pack_binary(cp.RDBCMTOK, bytes([241]))
     )
 
-def packPRPSQLSTT(database):
+def packPRPSQLSTT_derby(database):
     return pack_dds_object(cp.PRPSQLSTT,
         _packPKGNAMCSN(database) +
         _pack_binary(cp.RTNSQLDA, bytes([241])) +
         _pack_binary(cp.TYPSQLDA, bytes([4]))
+    )
+
+def packPRPSQLSTT_db2(database):
+    return pack_dds_object(cp.PRPSQLSTT,
+        _packPKGNAMCSN(database)
     )
 
 def packEXCSQLSET(database):
