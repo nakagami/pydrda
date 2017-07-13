@@ -21,8 +21,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 ##############################################################################
-import collections
 from .utils import escape_parameter
+
 
 class Cursor:
     def __init__(self, connection):
@@ -43,6 +43,7 @@ class Cursor:
         raise NotSupportedError()
 
     def nextset(self, procname, args=()):
+        from drda import NotSupportedError
         raise NotSupportedError()
 
     def setinputsizes(sizes):
@@ -74,6 +75,7 @@ class Cursor:
         self._rowcount = rowcount
 
     def fetchone(self):
+        from drda import OperationalError
         if not self.connection or not self.connection.is_connect():
             raise OperationalError(u"08003:Lost connection")
         if len(self._rows):
@@ -113,4 +115,3 @@ class Cursor:
         if not r:
             raise StopIteration()
         return r
-

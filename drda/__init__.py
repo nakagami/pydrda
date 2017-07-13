@@ -120,4 +120,3 @@ class NotSupportedError(DatabaseError):
 
 def connect(host, database, port, user=None, password=None, db_type=None):
     return Connection(host, database, port, user, password, db_type)
-

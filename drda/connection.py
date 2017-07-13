@@ -22,7 +22,6 @@
 # SOFTWARE.
 ##############################################################################
 import socket
-import binascii
 import collections
 
 from drda import codepoint as cp
@@ -102,7 +101,6 @@ class Connection:
             secmec = cp.SECMEC_USRIDPWD
         else:
             raise ValueError('Unknown database type')
-            
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect((self.host, self.port))

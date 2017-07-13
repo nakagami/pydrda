@@ -196,4 +196,3 @@ def escape_parameter(v):
         return str(v)
     else:
         return "'" + str(v) + "'"
-

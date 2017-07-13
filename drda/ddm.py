@@ -113,6 +113,7 @@ def parse_sqlcard_derby(obj, enc):
         err = None
     return err, rest
 
+
 def parse_sqlcard_db2(obj, message, enc, endian):
     sqlcode = int.from_bytes(obj[1:5], byteorder=endian, signed=True)
     sqlstate = obj[5:10].decode('ascii')
@@ -137,6 +138,7 @@ def parse_sqlcard_db2(obj, message, enc, endian):
         err = None
 
     return err, rest
+
 
 def _parse_column(b):
     precision = int.from_bytes(b[:2], byteorder='big')
@@ -187,6 +189,7 @@ def parse_sqldard_derby(obj, enc):
 
     return err, description
 
+
 def parse_sqldard_db2(obj, message, enc, endian):
     description = []
     err, rest = parse_sqlcard_db2(obj, message, enc, endian)
@@ -227,7 +230,7 @@ def write_requests_dds(sock, obj_list):
             flag = 3    # DSS object
         else:
             flag = 1    # DSS request
-        if i < len(obj_list) -1:
+        if i < len(obj_list) - 1:
             flag |= 0b01000000
         if code_point in (
             cp.EXCSQLIMM, cp.PRPSQLSTT, cp.SQLATTR,
@@ -281,16 +284,19 @@ def packACCRDB(rdbnam, enc):
             _pack_uint(cp.RDBACCCL, cp.SQLAM, 2) +
             _pack_str(cp.PRDID, 'DNC10130', enc) +
             _pack_str(cp.TYPDEFNAM, 'QTDSQLASC', enc) +
-            _pack_binary(cp.CRRTKN,
+            _pack_binary(
+                cp.CRRTKN,
                 binascii.unhexlify(b'd5c6f0f0f0f0f0f12ec3f0c1f50155630d5a11')) +
-            _pack_binary(cp.TYPDEFOVR,
+            _pack_binary(
+                cp.TYPDEFOVR,
                 binascii.unhexlify(b'0006119c04b80006119d04b00006119e04b8'))
         )
     )
 
 
 def packACCSEC(database, secmec):
-    return pack_dds_object(cp.ACCSEC,
+    return pack_dds_object(
+        cp.ACCSEC,
         _pack_uint(cp.SECMEC, secmec, 2) + _pack_str(cp.RDBNAM, database, 'cp500'),
     )
 
@@ -298,67 +304,90 @@ def packACCSEC(database, secmec):
 def packRDBCMM():
     return pack_dds_object(cp.RDBCMM, bytes())
 
+
 def _packPKGNAMCSN(database):
-    pkgnamcsn = bytearray(binascii.a2b_hex('0044211353414d504c452020202020202020202020204e554c4c494420202020202020202020202053514c43324f323620202020202020202020414141414166416400c9'))
+    pkgnamcsn = bytearray(
+        binascii.a2b_hex(
+            '0044211353414d504c452020202020202020202020204e554c4c4944202020202020202020202020'
+            '53514c43324f323620202020202020202020414141414166416400c9'
+        )
+    )
     dbnam = (database + ' ' * 18).encode('utf-8')[:18]
     pkgnamcsn[4:22] = dbnam
     return bytes(pkgnamcsn)
 
+
 def packEXCSQLIMM(database):
-    return pack_dds_object(cp.EXCSQLIMM,
+    return pack_dds_object(
+        cp.EXCSQLIMM,
         _packPKGNAMCSN(database) + _pack_binary(cp.RDBCMTOK, bytes([241]))
     )
 
+
 def packPRPSQLSTT_derby(database):
-    return pack_dds_object(cp.PRPSQLSTT,
+    return pack_dds_object(
+        cp.PRPSQLSTT,
         _packPKGNAMCSN(database) +
         _pack_binary(cp.RTNSQLDA, bytes([241])) +
         _pack_binary(cp.TYPSQLDA, bytes([4]))
     )
 
+
 def packPRPSQLSTT_db2(database):
-    return pack_dds_object(cp.PRPSQLSTT,
+    return pack_dds_object(
+        cp.PRPSQLSTT,
         _packPKGNAMCSN(database)
     )
 
+
 def packDSCSQLSTT(database):
-    return pack_dds_object(cp.DSCSQLSTT,
-        _packPKGNAMCSN(database) +
-        _pack_uint(cp.QRYINSID, 0, 8)
+    return pack_dds_object(
+        cp.DSCSQLSTT,
+        _packPKGNAMCSN(database) + _pack_uint(cp.QRYINSID, 0, 8)
     )
 
 
 def packEXCSQLSET(database):
-    return pack_dds_object(cp.EXCSQLSET,
+    return pack_dds_object(
+        cp.EXCSQLSET,
         _packPKGNAMCSN(database)
     )
 
+
 def packOPNQRY_derby(database):
-    return pack_dds_object(cp.OPNQRY,
+    return pack_dds_object(
+        cp.OPNQRY,
         _packPKGNAMCSN(database) +
         _pack_uint(cp.QRYBLKSZ, 32767, 4) +
         _pack_binary(cp.QRYCLSIMP, bytes([1]))
     )
 
+
 def packOPNQRY_db2(database):
-    return pack_dds_object(cp.OPNQRY,
+    return pack_dds_object(
+        cp.OPNQRY,
         _packPKGNAMCSN(database) +
         _pack_uint(cp.QRYBLKSZ, 32767, 4) +
         _pack_binary(cp.DYNDTAFMT, bytes([0xF1]))
     )
 
+
 def packCLSQRY(database):
-    return pack_dds_object(cp.CLSQRY,
-        _packPKGNAMCSN(database) +
-        _pack_uint(cp.QRYINSID, 0, 8)
+    return pack_dds_object(
+        cp.CLSQRY,
+        _packPKGNAMCSN(database) + _pack_uint(cp.QRYINSID, 0, 8)
     )
 
+
 def packSQLSTT(sql):
-    return pack_dds_object(cp.SQLSTT,
+    return pack_dds_object(
+        cp.SQLSTT,
         _pack_null_string(sql, 'utf-8') + _pack_null_string(None, 'utf-8')
     )
 
+
 def packSQLATTR(attr):
-    return pack_dds_object(cp.SQLATTR,
+    return pack_dds_object(
+        cp.SQLATTR,
         _pack_null_string(attr, 'utf-8') + _pack_null_string(None, 'utf-8')
     )
