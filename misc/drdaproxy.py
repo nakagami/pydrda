@@ -331,17 +331,20 @@ def _print_column(b):
     b = b[16:]
 
     # SQLDOPTGRP
-    assert b[0] == 0x00  # not null
-    b = b[3:]
-    sqlname, b = parse_name(b)
-    sqllabel, b = parse_name(b)
-    sqlcomments, b = parse_name(b)
-    print("sqlname,sqllabel,sqlcomments = %s,%s,%s" % (
-        sqlname, sqllabel, sqlcomments
-    ))
+    if b[0] == 0x00:    # not null
+        b = b[3:]
+        sqlname, b = parse_name(b)
+        sqllabel, b = parse_name(b)
+        sqlcomments, b = parse_name(b)
+        print("sqlname,sqllabel,sqlcomments = %s,%s,%s" % (
+            sqlname, sqllabel, sqlcomments
+        ))
+    else:
+        print("\tSQLDOPTGRP is null")
+        b = b[1:]
 
     # SQLUDTGRP
-    if b[0] == 0x00:  # not null
+    if b[0] == 0x00:    # not null
         b = b[5:]
         sqludtrdb, b = parse_string(b)
         sqlschema, b = parse_name(b)
@@ -371,9 +374,16 @@ def _print_column(b):
 def printSQLDARD(cp, obj):
     # https://www.ibm.com/support/knowledgecenter/SSEPH2_13.1.0/com.ibm.ims13.doc.apr/ims_ddm_sqldard.htm
     rest = printSQLCARD(cp, obj)
-    print("\tSQLDHGRP=%s" % (binascii.b2a_hex(rest[:19]).decode('ascii'),))
-    ln = int.from_bytes(rest[19:21], byteorder='big')
-    rest = rest[21:]
+    if rest[0] == 0x00:     # SQLDHGRP is not null
+        print("\tSQLDHGRP=%s" % (binascii.b2a_hex(rest[:19]).decode('ascii'),))
+        next_i = 19
+    else:
+        print("\tSQLDHGRP is null")
+        next_i = 1
+
+    ln = int.from_bytes(rest[next_i:next_i+2], byteorder='big')
+    print('\ncolumn count=', ln)
+    rest = rest[next_i+2:]
     for i in range(ln):
         rest = _print_column(rest)
 
