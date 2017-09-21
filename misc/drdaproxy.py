@@ -382,7 +382,7 @@ def printSQLDARD(cp, obj):
         next_i = 1
 
     ln = int.from_bytes(rest[next_i:next_i+2], byteorder='big')
-    print('\ncolumn count=', ln)
+    print('\tcolumn count=', ln)
     rest = rest[next_i+2:]
     for i in range(ln):
         rest = _print_column(rest)
