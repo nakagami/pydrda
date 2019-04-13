@@ -23,7 +23,7 @@
 # SOFTWARE.
 ##############################################################################
 import unittest
-import io
+import os
 import decimal
 import datetime
 import decimal
@@ -31,11 +31,11 @@ import drda
 
 
 class TestDB2(unittest.TestCase):
-    host = 'localhost'
-    database = 'testdb'
-    user = 'db2admin'
-    password = 'secret'
-    port = 50000
+    host = os.environ['DB2_HOST']
+    database = os.environ['DB2_DATABASE']
+    user = os.environ['DB2_USER']
+    password = os.environ['DB2_PASSWORD']
+    port = int(os.environ.get('DB2_PORT', 50000))
 
     def setUp(self):
         self.connection = drda.connect(
