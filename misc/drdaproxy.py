@@ -2,7 +2,7 @@
 ##############################################################################
 # The MIT License (MIT)
 #
-# Copyright (c) 2016 Hajime Nakagami
+# Copyright (c) 2016, 2019 Hajime Nakagami
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -290,26 +290,34 @@ def printSQLCARD(cp, obj):
     print("%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')), end='')
     # SQLSTATE & SQLCODE
     # https://www.ibm.com/support/knowledgecenter/SSEPH2_13.1.0/com.ibm.ims13.doc.apr/ims_ddm_sqlcard.htm
-    flag = obj[0]
+    if obj[0] == 0xFF:
+        return
+    assert obj[0] == 0      # SQLCAGRP FLAG
     sqlcode = int.from_bytes(obj[1:5], byteorder='big', signed=True)
     sqlstate = obj[5:10]
     sqlerrproc = obj[10:18]
-    misc = obj[18:54]
-    rest = obj[54:]
+
+    assert obj[18] == 0     # SQLCAXGRP FLAG
+    sqlerrd = obj[19:25]
+    sqlwarn = obj[25:36]
+
+    rest = obj[36+18:]
     ln = int.from_bytes(rest[:2], byteorder='big')
-    sqlrdbname = obj[2:2+ln]
+    sqlrdbname = rest[2:2+ln].decode('utf-8')
     rest = rest[2+ln:]
 
     ln = int.from_bytes(rest[:2], byteorder='big')
-    sqlerrmsg_m = obj[2:2+ln]
+    sqlerrmsg_m = rest[2:2+ln]
     rest = rest[2+ln:]
 
     ln = int.from_bytes(rest[:2], byteorder='big')
-    sqlerrmsg_s = obj[2:2+ln]
+    sqlerrmsg_s = rest[2:2+ln]
     rest = rest[2+ln:]
 
-    print("\t\tflag=%d,sqlcode=%d,sqlstate=%s,sqlrdbname=%s,sqlerrmsg_m=%s,sqlerrmsg_s=%s,sqlerrproc=%s,rest=%s" % (
-        flag,
+    assert rest[0] == 0xFF  # SQLDIAGGRP
+    rest = rest[1:]
+
+    print("\t\tsqlcode=%d,sqlstate=%s,sqlrdbname=%s,sqlerrmsg_m=%s,sqlerrmsg_s=%s,sqlerrproc=%s,rest=%s" % (
         sqlcode,
         sqlstate.decode('ascii'),
         sqlrdbname,
