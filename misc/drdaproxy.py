@@ -384,14 +384,14 @@ def printSQLDARD(cp, obj):
     rest = printSQLCARD(cp, obj)
     if rest[0] == 0x00:     # SQLDHGRP is not null
         print("\tSQLDHGRP=%s" % (binascii.b2a_hex(rest[:19]).decode('ascii'),))
-        next_i = 19
+        rest = rest[19:]
     else:
         print("\tSQLDHGRP is null")
-        next_i = 1
+        rest = rest[1:]
 
-    ln = int.from_bytes(rest[next_i:next_i+2], byteorder='big')
+    ln = int.from_bytes(rest[0:2], byteorder='little')
     print('\tcolumn count=', ln)
-    rest = rest[next_i+2:]
+    rest = rest[2:]
     for i in range(ln):
         rest = _print_column(rest)
 
