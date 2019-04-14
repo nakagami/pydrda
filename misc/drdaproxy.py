@@ -26,6 +26,8 @@ import sys
 import socket
 import binascii
 
+ENDIAN = 'little'
+
 CODE_POINT = {
     0x1041: 'EXCSAT',
     0x1055: 'SYNCCTL',
@@ -329,12 +331,12 @@ def printSQLCARD(cp, obj):
     return rest
 
 def _print_column(b):
-    precision = int.from_bytes(b[:2], byteorder='big')
-    scale = int.from_bytes(b[2:4], byteorder='big')
-    sqllength = int.from_bytes(b[4:12], byteorder='big')
-    sqltype = int.from_bytes(b[12:14], byteorder='big')
-    sqlccsid = int.from_bytes(b[14:16], byteorder='big')
-    print('%d,%d,%d,%d,%d' % (precision, scale, sqllength, sqltype, sqlccsid))
+    precision = int.from_bytes(b[:2], byteorder=ENDIAN)
+    scale = int.from_bytes(b[2:4], byteorder=ENDIAN)
+    sqllength = int.from_bytes(b[4:12], byteorder=ENDIAN)
+    sqltype = int.from_bytes(b[12:14], byteorder=ENDIAN)
+    sqlccsid = int.from_bytes(b[14:16], byteorder=ENDIAN)
+    print('\t(precision, scale, sqllength, sqltype, sqlccsid) = (%d,%d,%d,%d,%d)' % (precision, scale, sqllength, sqltype, sqlccsid))
 
     b = b[16:]
 
@@ -389,7 +391,7 @@ def printSQLDARD(cp, obj):
         print("\tSQLDHGRP is null")
         rest = rest[1:]
 
-    ln = int.from_bytes(rest[0:2], byteorder='little')
+    ln = int.from_bytes(rest[0:2], byteorder=ENDIAN)
     print('\tcolumn count=', ln)
     rest = rest[2:]
     for i in range(ln):
