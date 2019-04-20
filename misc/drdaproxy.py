@@ -264,15 +264,13 @@ def parse_string(b):
         s = b[2:2+ln].decode('utf-8')
     else:
         s = ''
-    b = b[2+ln:]
-    return s, b
+    return s, b[2+ln:]
 
 
 def parse_name(b):
     "parse VCM or VCS"
     s1, b = parse_string(b)
     s2, b = parse_string(b)
-    ln = int.from_bytes(b[:2], byteorder='big')
     return s1 if s1 else s2, b
 
 
@@ -330,56 +328,6 @@ def printSQLCARD(cp, obj):
     ))
     return rest
 
-def _print_column(b):
-    precision = int.from_bytes(b[:2], byteorder=ENDIAN)
-    scale = int.from_bytes(b[2:4], byteorder=ENDIAN)
-    sqllength = int.from_bytes(b[4:12], byteorder=ENDIAN)
-    sqltype = int.from_bytes(b[12:14], byteorder=ENDIAN)
-    sqlccsid = int.from_bytes(b[14:16], byteorder=ENDIAN)
-    print('\t(precision, scale, sqllength, sqltype, sqlccsid) = (%d,%d,%d,%d,%d)' % (precision, scale, sqllength, sqltype, sqlccsid))
-
-    b = b[16:]
-
-    # SQLDOPTGRP
-    if b[0] == 0x00:    # not null
-        b = b[3:]
-        sqlname, b = parse_name(b)
-        sqllabel, b = parse_name(b)
-        sqlcomments, b = parse_name(b)
-        print("sqlname,sqllabel,sqlcomments = %s,%s,%s" % (
-            sqlname, sqllabel, sqlcomments
-        ))
-    else:
-        print("\tSQLDOPTGRP is null")
-        b = b[1:]
-
-    # SQLUDTGRP
-    if b[0] == 0x00:    # not null
-        b = b[5:]
-        sqludtrdb, b = parse_string(b)
-        sqlschema, b = parse_name(b)
-        sqludtname, b = parse_name(b)
-        print("sqludtrdb,sqlschema,sqludtname = %s,%s,%s" % (
-        sqludtrdb, sqlschema, sqludtname
-        ))
-    else:
-        b = b[1:]
-
-    # SQLDXGRP
-    assert b[0] == 0x00  # not null
-    b = b[9:]
-    sqlxrdbnam, b = parse_string(b)
-    sqlxcolname, b = parse_name(b)
-    sqlxbasename, b = parse_name(b)
-    sqlxschema, b = parse_name(b)
-    sqlxname, b = parse_name(b)
-
-    print("sqlxrdbnam,sqlxcolname,sqlxbasename,sqlxschema,sqlxname = %s,%s,%s,%s,%s" % (
-        sqlxrdbnam, sqlxcolname, sqlxbasename, sqlxschema, sqlxname
-    ))
-
-    return b
-
 
 def printSQLDARD(cp, obj):
     # https://www.ibm.com/support/knowledgecenter/SSEPH2_13.1.0/com.ibm.ims13.doc.apr/ims_ddm_sqldard.htm
@@ -394,8 +342,7 @@ def printSQLDARD(cp, obj):
     ln = int.from_bytes(rest[0:2], byteorder=ENDIAN)
     print('\tcolumn count=', ln)
     rest = rest[2:]
-    for i in range(ln):
-        rest = _print_column(rest)
+    printSQLDAGRP(rest)
 
 
 def printSQLATTR(cp, obj):
@@ -452,48 +399,33 @@ def printSQLCINRD(cp, obj):
 
     print("\tsqldhold=%d,ncols=%d" % (sqldhold, ncols))
 
-    # SQLDAGRP parseSQLDAGRP()
+    printSQLDAGRP(b)
+
+
+def printSQLDAGRP(b):
+
     while b:
-        precision = int.from_bytes(b[0:2], byteorder='big')
-        scale = int.from_bytes(b[2:4], byteorder='big')
-        length = int.from_bytes(b[4:12], byteorder='big')
-        sqltype = int.from_bytes(b[12:14], byteorder='big')
+        precision = int.from_bytes(b[0:2], byteorder=ENDIAN)
+        scale = int.from_bytes(b[2:4], byteorder=ENDIAN)
+        length = int.from_bytes(b[4:12], byteorder=ENDIAN)
+        sqltype = int.from_bytes(b[12:14], byteorder=ENDIAN)
         ccsid = int.from_bytes(b[14:16], byteorder='big')
         b = b[16:]
 
-        # SQLDOPTGRP parseSQLDOPTGRP()
+        b = b[6:]   # ?? skip 6 bytes
+
+        # SQLDOPTGRP
         assert b[0] == 0
         b = b[1:]
-        # sqlunnamed
-        assert int.from_bytes(b[:2], byteorder='big') == 0
-        b = b[2:]
+        b = b[2:]   # skip SQLUNNAMED
         sqlname, b = parse_name(b)
         sqllabel, b = parse_name(b)
         sqlcomments, b = parse_name(b)
 
-        # parseSQLUDTGRP()
-        if b[0] == 0xFF:
-            b = b[1:]
-        else:
-            typename, b = parse_name(b)
-            classname, b = parse_name(b)
+        b = b[7:]   # ?? skip 7 bytes
 
-        # parseSQLDXGRP()
-        assert b[0] == 0x00
-        b = b[1:]
-        # sqlunnamed
-        sqlxkeymem = int.from_bytes(b[0:2], byteorder='big')
-        sqlxupdateable = int.from_bytes(b[2:4], byteorder='big')
-        sqlxgenerated = int.from_bytes(b[4:6], byteorder='big')
-        sqlxparmmode = int.from_bytes(b[6:8], byteorder='big')
-        sqlxrdbnam, b = parse_string(b[8:])
-        sqlxcorname, b = parse_name(b)
-        sqlxbasename, b = parse_name(b)
-        sqlxschema, b = parse_name(b)
-        sqlxname, b = parse_name(b)
-
-        print('sqlname,precision,scale,length,sqltype',
-            sqlname, precision, scale, length, sqltype)
+        print('sqllabel,precision,scale,length,sqltype',
+            sqllabel, precision, scale, length, sqltype)
 
     assert len(b) == 0
 
