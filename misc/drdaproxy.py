@@ -293,7 +293,7 @@ def printSQLCARD(cp, obj):
     if obj[0] == 0xFF:
         return
     assert obj[0] == 0      # SQLCAGRP FLAG
-    sqlcode = int.from_bytes(obj[1:5], byteorder='big', signed=True)
+    sqlcode = int.from_bytes(obj[1:5], byteorder=ENDIAN, signed=True)
     sqlstate = obj[5:10]
     sqlerrproc = obj[10:18]
 
