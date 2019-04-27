@@ -587,8 +587,11 @@ def proxy_wire(server_name, server_port, listen_host, listen_port):
     while True:
         while relay_packets('C->S:', client_sock, server_sock):
             pass
+        print()
         while relay_packets('S->C:', server_sock, client_sock):
             pass
+        print()
+        print()
 
 if __name__ == '__main__':
     if len(sys.argv) < 3:
