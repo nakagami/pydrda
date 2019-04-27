@@ -131,11 +131,21 @@ class Connection:
         self.close()
 
     def _execute(self, query):
-        ddm.write_requests_dds(self.sock, [
-            ddm.packEXCSQLIMM(self.database),
-            ddm.packSQLSTT(query),
-            ddm.packRDBCMM(),
-        ])
+        if self.db_type == 'derby':
+            ddm.write_requests_dds(self.sock, [
+                ddm.packEXCSQLIMM(self.database),
+                ddm.packSQLSTT(query),
+                ddm.packRDBCMM(),
+            ])
+        elif self.db_type == 'db2':
+            ddm.write_requests_dds(self.sock, [
+                ddm.packEXCSAT_MGRLVLLS([cp.CCSIDMGR, 1208]),
+                ddm.packEXCSQLIMM(self.database),
+                ddm.packSQLSTT(query),
+                ddm.packRDBCMM(),
+            ])
+        else:
+            raise ValueError('Unknown database type')
         self._parse_response()
 
     def _query(self, query):
