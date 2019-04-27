@@ -21,6 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 ##############################################################################
+import platform
 import binascii
 import drda
 from drda import codepoint as cp
@@ -252,7 +253,7 @@ def packEXCSAT(conn, mgrlvlls):
 
     return pack_dds_object(cp.EXCSAT, (
         _pack_str(cp.EXTNAM, 'pydrda', 'cp500') +
-        _pack_str(cp.SRVNAM, '%s:%d' % (conn.host, conn.port), 'cp500') +
+        _pack_str(cp.SRVNAM, platform.node(), 'cp500') +
         _pack_str(cp.SRVRLSLV, 'pydrda', 'cp500') +
         _pack_binary(cp.MGRLVLLS, b) +
         _pack_str(cp.SRVCLSNM, 'pydrda', 'cp500')
