@@ -24,7 +24,7 @@ cmdclass = {'test': TestCommand}
 version = "%d.%d.%d" % __import__('drda').VERSION
 
 classifiers = [
-    'Development Status :: 3 - Alpha'
+    'Development Status :: 3 - Alpha',
     'License :: OSI Approved :: MIT License',
     'Operating System :: OS Independent',
     'Programming Language :: Python',
