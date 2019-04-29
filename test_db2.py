@@ -22,6 +22,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 ##############################################################################
+"""Tests for db2"""
 import unittest
 import os
 import decimal
@@ -30,7 +31,7 @@ import decimal
 import drda
 
 
-class TestDB2(unittest.TestCase):
+class TestBasic(unittest.TestCase):
     host = os.environ['DB2_HOST']
     database = os.environ['DB2_DATABASE']
     user = os.environ['DB2_USER']
@@ -78,9 +79,10 @@ class TestDB2(unittest.TestCase):
             ('C', 3, None, None)
         ])
 
-    def xxx_test_error(self):
+    def test_error(self):
         cur = self.connection.cursor()
-        cur.execute("invalid query")
+        with self.assertRaises(drda.OperationalError):
+            cur.execute("invalid query"),
 
 
 if __name__ == "__main__":

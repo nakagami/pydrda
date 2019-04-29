@@ -22,6 +22,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 ##############################################################################
+"""Tests for derby"""
 import unittest
 import io
 import decimal
@@ -30,7 +31,7 @@ import decimal
 import drda
 
 
-class TestDerby(unittest.TestCase):
+class TestBasic(unittest.TestCase):
     host = 'localhost'
     database = 'testdb;create=true'
     port = 1527
