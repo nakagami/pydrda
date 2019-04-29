@@ -511,7 +511,7 @@ def printCodePoint(cp, obj):
                 binary2 = binary[j+4:j+ln2]
                 print("\t\t%s:%s" % (cp2, int.from_bytes(binary2, byteorder='big')))
                 j += ln2
-        elif cp in ('RDBNAM', ):
+        elif cp in ('RDBNAM', 'SRVDGN'):
             print("\t%s:" % (cp, ), end='')
             asc_dump(binary)
         elif cp in ('QRYPRCTYP', 'RDBACCCL'):

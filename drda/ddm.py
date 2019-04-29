@@ -116,22 +116,32 @@ def parse_sqlcard_derby(obj, enc):
 
 
 def parse_sqlcard_db2(obj, message, enc, endian):
+    if obj[0] == 0xff:
+        return None, b''
+    assert obj[0] == 0       # SQLCAGRP FLAG
     sqlcode = int.from_bytes(obj[1:5], byteorder=endian, signed=True)
-    sqlstate = obj[5:10].decode('ascii')
+    sqlstate = obj[5:10]
     sqlerrproc = obj[10:18]
-    misc = obj[18:54]
-    rest = obj[54:]
+
+    assert obj[18] == 0     # SQLCAXGRP FLAG
+    sqlerrd = obj[19:25]
+    sqlwarn = obj[25:36]
+
+    rest = obj[36+18:]
     ln = int.from_bytes(rest[:2], byteorder='big')
-    sqlrdbname = obj[2:2+ln]
+    sqlrdbname = rest[2:2+ln].decode('utf-8')
     rest = rest[2+ln:]
 
     ln = int.from_bytes(rest[:2], byteorder='big')
-    sqlerrmsg_m = obj[2:2+ln]
+    sqlerrmsg_m = rest[2:2+ln]
     rest = rest[2+ln:]
 
     ln = int.from_bytes(rest[:2], byteorder='big')
-    sqlerrmsg_s = obj[2:2+ln]
+    sqlerrmsg_s = rest[2:2+ln]
     rest = rest[2+ln:]
+
+    assert rest[0] == 0xFF  # SQLDIAGGRP
+    rest = rest[1:]
 
     if sqlcode < 0:
         err = drda.OperationalError(sqlcode, sqlstate, message)
@@ -220,31 +230,43 @@ def read_dds(sock):
     return dds_type, chained, number, code_point, obj[4:]
 
 
+def write_request_dds(sock, o, cur_id, next_dds_has_same_id, last_packet):
+    "Write request DDS packets"
+    code_point = int.from_bytes(o[2:4], byteorder='big')
+    _send_to_sock(sock, (len(o)+6).to_bytes(2, byteorder='big'))
+    if code_point in (cp.SQLSTT, cp.SQLATTR):
+        flag = 3    # DSS object
+    else:
+        flag = 1    # DSS request
+    if not last_packet:
+        flag |= 0b01000000
+    if next_dds_has_same_id:
+        next_id = cur_id
+        flag |= 0b00010000
+    else:
+        next_id = cur_id + 1
+    _send_to_sock(sock, bytes([0xD0, flag]))
+    _send_to_sock(sock, cur_id.to_bytes(2, byteorder='big'))
+    _send_to_sock(sock, o)
+    cur_id = next_id
+    return cur_id
+
+
 def write_requests_dds(sock, obj_list):
     "Write request DDS packets"
     cur_id = 1
     for i in range(len(obj_list)):
         o = obj_list[i]
+
         code_point = int.from_bytes(o[2:4], byteorder='big')
-        _send_to_sock(sock, (len(o)+6).to_bytes(2, byteorder='big'))
-        if code_point in (cp.SQLSTT, cp.SQLATTR):
-            flag = 3    # DSS object
-        else:
-            flag = 1    # DSS request
-        if i < len(obj_list) - 1:
-            flag |= 0b01000000
         if code_point in (
             cp.EXCSQLIMM, cp.PRPSQLSTT, cp.SQLATTR,
         ):
-            next_id = cur_id
-            flag |= 0b00010000
+            next_dds_has_same_id = True
         else:
-            next_id = cur_id + 1
-        _send_to_sock(sock, bytes([0xD0, flag]))
-        _send_to_sock(sock, cur_id.to_bytes(2, byteorder='big'))
-        _send_to_sock(sock, o)
-        cur_id = next_id
+            next_dds_has_same_id = False
 
+        cur_id = write_request_dds(sock, o, cur_id, next_dds_has_same_id, i==len(obj_list) -1)
 
 def packEXCSAT(conn, mgrlvlls):
     b = b''
@@ -279,11 +301,27 @@ def packSECCHK(secmec, database, user, password, enc):
     )
 
 
-def packACCRDB(rdbnam, enc):
+def packACCRDB_derby(rdbnam, enc):
     return pack_dds_object(cp.ACCRDB, (
             _pack_str(cp.RDBNAM, rdbnam, enc) +
             _pack_uint(cp.RDBACCCL, cp.SQLAM, 2) +
             _pack_str(cp.PRDID, 'DNC10130', enc) +
+            _pack_str(cp.TYPDEFNAM, 'QTDSQLASC', enc) +
+            _pack_binary(
+                cp.CRRTKN,
+                binascii.unhexlify(b'd5c6f0f0f0f0f0f12ec3f0c1f50155630d5a11')) +
+            _pack_binary(
+                cp.TYPDEFOVR,
+                binascii.unhexlify(b'0006119c04b80006119d04b00006119e04b8'))
+        )
+    )
+
+
+def packACCRDB_db2(rdbnam, enc):
+    return pack_dds_object(cp.ACCRDB, (
+            _pack_str(cp.RDBNAM, rdbnam, enc) +
+            _pack_uint(cp.RDBACCCL, cp.SQLAM, 2) +
+            _pack_str(cp.PRDID, 'SQL11014', enc) +
             _pack_str(cp.TYPDEFNAM, 'QTDSQLASC', enc) +
             _pack_binary(
                 cp.CRRTKN,
@@ -306,16 +344,16 @@ def packRDBCMM():
     return pack_dds_object(cp.RDBCMM, bytes())
 
 
-def _packPKGNAMCSN(database):
-    pkgnamcsn = bytearray(
-        binascii.a2b_hex(
-            '0044211353414d504c452020202020202020202020204e554c4c4944202020202020202020202020'
-            '53514c43324f323620202020202020202020414141414166416400c9'
-        )
+def _packPKGNAMCSN(database, pkgid="SQLC2026", pkgcnstkn="AAAAAfAd", pkgsn=201):
+    b = ("%-18s%-18s%-18s" % (database, "NULLID", pkgid)).encode('utf-8')
+    if pkgcnstkn is None:
+        b += b'\x01' * 8
+    else:
+        b += ("%8s" % (pkgcnstkn,)).encode('utf-8')
+    return _pack_binary(
+        cp.PKGNAMCSN,
+        b + pkgsn.to_bytes(2, byteorder='big')
     )
-    dbnam = (database + ' ' * 18).encode('utf-8')[:18]
-    pkgnamcsn[4:22] = dbnam
-    return bytes(pkgnamcsn)
 
 
 def packEXCSQLIMM(database):
@@ -337,7 +375,8 @@ def packPRPSQLSTT_derby(database):
 def packPRPSQLSTT_db2(database):
     return pack_dds_object(
         cp.PRPSQLSTT,
-        _packPKGNAMCSN(database)
+        _packPKGNAMCSN(database, "SYSSH200", "SYSLVL01", 4) +
+        _pack_binary(cp.RTNSQLDA, bytes([241]))
     )
 
 
@@ -348,10 +387,10 @@ def packDSCSQLSTT(database):
     )
 
 
-def packEXCSQLSET(database):
+def packEXCSQLSET_db2(database):
     return pack_dds_object(
         cp.EXCSQLSET,
-        _packPKGNAMCSN(database)
+        _packPKGNAMCSN(database, "SYSSH200", None, 1)
     )
 
 
@@ -367,9 +406,12 @@ def packOPNQRY_derby(database):
 def packOPNQRY_db2(database):
     return pack_dds_object(
         cp.OPNQRY,
-        _packPKGNAMCSN(database) +
-        _pack_uint(cp.QRYBLKSZ, 32767, 4) +
-        _pack_binary(cp.DYNDTAFMT, bytes([0xF1]))
+        _packPKGNAMCSN(database, "SYSSH200", "SYSLVL01", 4) +
+        _pack_uint(cp.QRYBLKSZ, 65535, 4) +
+        _pack_uint(cp.MAXBLKEXT, 65535, 2) +
+        _pack_binary(cp.QRYCLSIMP, bytes([0x01])) +
+        _pack_binary(cp.DYNDTAFMT, bytes([0xF1])) +
+        _pack_binary(0x2136, bytes([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff]))
     )
 
 
