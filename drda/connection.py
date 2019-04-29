@@ -87,6 +87,8 @@ class Connection:
             self._enc = 'utf-8'
             self.endian = 'big'
             self.prdid = 'DNC10130'
+            self.pkgid = 'SQLC2026'
+            self.pkgcnstkn = 'AAAAAfAd'
             user = 'APP'
             password = ''
             secmec = cp.SECMEC_USRIDONL
@@ -94,6 +96,8 @@ class Connection:
             self._enc = 'cp500'
             self.endian = 'little'
             self.prdid = 'SQL11014'
+            self.pkgid = 'SYSSH200'
+            self.pkgcnstkn = 'SYSLVL01'
             user = self.user
             password = self.password
             secmec = cp.SECMEC_USRIDPWD
@@ -183,7 +187,7 @@ class Connection:
         if self.db_type == 'derby':
             cur_id = ddm.write_request_dds(
                 self.sock,
-                ddm.packPRPSQLSTT_derby(self.database),
+                ddm.packPRPSQLSTT(self.pkgid, self.pkgcnstkn, 201, self.database),
                 cur_id, True, False
             )
             cur_id = ddm.write_request_dds(
@@ -219,7 +223,7 @@ class Connection:
             )
             cur_id = ddm.write_request_dds(
                 self.sock,
-                ddm.packPRPSQLSTT_db2(self.database),
+                ddm.packPRPSQLSTT(self.pkgid, self.pkgcnstkn, 4, self.database),
                 cur_id, True, False
             )
             cur_id = ddm.write_request_dds(

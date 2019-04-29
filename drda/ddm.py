@@ -318,20 +318,12 @@ def packEXCSQLIMM(database):
     )
 
 
-def packPRPSQLSTT_derby(database):
+def packPRPSQLSTT(pkgid, pkgcnstkn, pkgsn, database):
     return pack_dds_object(
         cp.PRPSQLSTT,
-        _packPKGNAMCSN(database) +
+        _packPKGNAMCSN(database, pkgid, pkgcnstkn, pkgsn) +
         _pack_binary(cp.RTNSQLDA, bytes([241])) +
         _pack_binary(cp.TYPSQLDA, bytes([4]))
-    )
-
-
-def packPRPSQLSTT_db2(database):
-    return pack_dds_object(
-        cp.PRPSQLSTT,
-        _packPKGNAMCSN(database, "SYSSH200", "SYSLVL01", 4) +
-        _pack_binary(cp.RTNSQLDA, bytes([241]))
     )
 
 
@@ -366,13 +358,6 @@ def packOPNQRY_db2(database):
         _pack_uint(cp.MAXBLKEXT, 65535, 2) +
         _pack_binary(cp.QRYCLSIMP, bytes([0x01])) +
         _pack_binary(cp.DYNDTAFMT, bytes([0xF1]))
-    )
-
-
-def packCLSQRY(database):
-    return pack_dds_object(
-        cp.CLSQRY,
-        _packPKGNAMCSN(database) + _pack_uint(cp.QRYINSID, 0, 8)
     )
 
 
