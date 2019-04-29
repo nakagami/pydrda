@@ -272,27 +272,11 @@ def packSECCHK(secmec, database, user, password, enc):
     )
 
 
-def packACCRDB_derby(rdbnam, enc):
+def packACCRDB(prdid, rdbnam, enc):
     return pack_dds_object(cp.ACCRDB, (
             _pack_str(cp.RDBNAM, rdbnam, enc) +
             _pack_uint(cp.RDBACCCL, cp.SQLAM, 2) +
-            _pack_str(cp.PRDID, 'DNC10130', enc) +
-            _pack_str(cp.TYPDEFNAM, 'QTDSQLASC', enc) +
-            _pack_binary(
-                cp.CRRTKN,
-                binascii.unhexlify(b'd5c6f0f0f0f0f0f12ec3f0c1f50155630d5a11')) +
-            _pack_binary(
-                cp.TYPDEFOVR,
-                binascii.unhexlify(b'0006119c04b80006119d04b00006119e04b8'))
-        )
-    )
-
-
-def packACCRDB_db2(rdbnam, enc):
-    return pack_dds_object(cp.ACCRDB, (
-            _pack_str(cp.RDBNAM, rdbnam, enc) +
-            _pack_uint(cp.RDBACCCL, cp.SQLAM, 2) +
-            _pack_str(cp.PRDID, 'SQL11014', enc) +
+            _pack_str(cp.PRDID, prdid, enc) +
             _pack_str(cp.TYPDEFNAM, 'QTDSQLASC', enc) +
             _pack_binary(
                 cp.CRRTKN,

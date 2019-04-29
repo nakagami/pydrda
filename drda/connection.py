@@ -86,12 +86,14 @@ class Connection:
         if self.db_type == 'derby':
             self._enc = 'utf-8'
             self.endian = 'big'
+            self.prdid = 'DNC10130'
             user = 'APP'
             password = ''
             secmec = cp.SECMEC_USRIDONL
         elif self.db_type == 'db2':
             self._enc = 'cp500'
             self.endian = 'little'
+            self.prdid = 'SQL11014'
             user = self.user
             password = self.password
             secmec = cp.SECMEC_USRIDPWD
@@ -128,20 +130,11 @@ class Connection:
             ddm.packSECCHK(secmec, self.database, user, password, self._enc),
             cur_id, False, False
         )
-        if self.db_type == 'derby':
-            cur_id = ddm.write_request_dds(
-                self.sock,
-                ddm.packACCRDB_derby(self.database, self._enc),
-                cur_id, False, True
-            )
-        elif self.db_type == 'db2':
-            cur_id = ddm.write_request_dds(
-                self.sock,
-                ddm.packACCRDB_db2(self.database, self._enc),
-                cur_id, False, True
-            )
-        else:
-            raise ValueError('Unknown database type')
+        cur_id = ddm.write_request_dds(
+            self.sock,
+            ddm.packACCRDB(self.prdid, self.database, self._enc),
+            cur_id, False, True
+        )
 
         self._parse_response()
 
