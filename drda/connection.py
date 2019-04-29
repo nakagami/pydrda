@@ -45,15 +45,9 @@ class Connection:
                 err_msg = ddm.parse_reply(obj).get(cp.SRVDGN).decode('utf-8')
             elif code_point == cp.SQLCARD:
                 if err is None:
-                    if self.db_type == 'derby':
-                        err, _ = ddm.parse_sqlcard_derby(obj, self._enc)
-                    else:
-                        err, _ = ddm.parse_sqlcard_db2(obj, err_msg, self._enc, self.endian)
+                    err, _ = ddm.parse_sqlcard(obj, self._enc, self.endian)
             elif code_point == cp.SQLDARD:
-                if self.db_type == 'derby':
-                    err, description = ddm.parse_sqldard_derby(obj, 'utf-8')
-                else:
-                    err, description = ddm.parse_sqldard_db2(obj, err_msg, 'utf-8', self.endian)
+                err, description = ddm.parse_sqldard(obj, 'utf-8', self.endian)
             elif code_point == cp.QRYDSC:
                 ln = obj[0]
                 b = obj[1:ln]

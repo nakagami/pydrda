@@ -97,25 +97,7 @@ def parse_reply(obj):
     return d
 
 
-def parse_sqlcard_derby(obj, enc):
-    sqlcode = int.from_bytes(obj[1:5], byteorder='big', signed=True)
-    sqlstate = obj[5:10].decode('ascii')
-    sqlerrproc = obj[10:18]
-    misc = obj[18:56]
-    ln = int.from_bytes(obj[56:58], byteorder='big')
-    message = obj[58:58+ln].decode(enc)
-    rest = obj[58+ln:]
-    assert rest[:3] == b'\x00\x00\xff'
-    rest = rest[3:]
-
-    if sqlcode < 0:
-        err = drda.OperationalError(sqlcode, sqlstate, message)
-    else:
-        err = None
-    return err, rest
-
-
-def parse_sqlcard_db2(obj, message, enc, endian):
+def parse_sqlcard(obj, enc, endian):
     if obj[0] == 0xff:
         return None, b''
     assert obj[0] == 0       # SQLCAGRP FLAG
@@ -139,6 +121,8 @@ def parse_sqlcard_db2(obj, message, enc, endian):
     ln = int.from_bytes(rest[:2], byteorder='big')
     sqlerrmsg_s = rest[2:2+ln]
     rest = rest[2+ln:]
+
+    message = sqlerrmsg_m or sqlerrmsg_s
 
     assert rest[0] == 0xFF  # SQLDIAGGRP
     rest = rest[1:]
@@ -188,22 +172,9 @@ def _parse_column(b):
     return (sqlname, sqltype, sqllength, sqllength, precision, scale, None), b
 
 
-def parse_sqldard_derby(obj, enc):
+def parse_sqldard(obj, enc, endian):
     description = []
-    err, rest = parse_sqlcard_derby(obj, enc)
-    if not err:
-        ln = int.from_bytes(rest[19:21], byteorder='big')
-        b = rest[21:]
-        for i in range(ln):
-            d, b = _parse_column(b)
-            description.append(d)
-
-    return err, description
-
-
-def parse_sqldard_db2(obj, message, enc, endian):
-    description = []
-    err, rest = parse_sqlcard_db2(obj, message, enc, endian)
+    err, rest = parse_sqlcard(obj, enc, endian)
     if not err:
         ln = int.from_bytes(rest[19:21], byteorder='big')
         b = rest[21:]
