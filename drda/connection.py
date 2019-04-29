@@ -45,7 +45,7 @@ class Connection:
                 err_msg = ddm.parse_reply(obj).get(cp.SRVDGN).decode('utf-8')
             elif code_point == cp.SQLCARD:
                 if err is None:
-                    err, _ = ddm.parse_sqlcard(obj, self._enc, self.endian)
+                    err, _ = ddm.parse_sqlcard(obj, self.encoding, self.endian)
             elif code_point == cp.SQLDARD:
                 err, description = ddm.parse_sqldard(obj, 'utf-8', self.endian)
             elif code_point == cp.QRYDSC:
@@ -84,25 +84,25 @@ class Connection:
                 self.db_type = 'db2'
 
         if self.db_type == 'derby':
-            self._enc = 'utf-8'
+            self.encoding = 'utf-8'
             self.endian = 'big'
             self.prdid = 'DNC10130'
             self.pkgid = 'SQLC2026'
             self.pkgcnstkn = 'AAAAAfAd'
             self.pkgsn = 201
-            user = 'APP'
-            password = ''
-            secmec = cp.SECMEC_USRIDONL
+            self.user = 'APP'
+            self.password = ''
+            self.secmec = cp.SECMEC_USRIDONL
         elif self.db_type == 'db2':
-            self._enc = 'cp500'
+            self.encoding = 'cp500'
             self.endian = 'little'
             self.prdid = 'SQL11014'
             self.pkgid = 'SYSSH200'
             self.pkgcnstkn = 'SYSLVL01'
             self.pkgsn = 65
-            user = self.user
-            password = self.password
-            secmec = cp.SECMEC_USRIDPWD
+            self.user = self.user
+            self.password = self.password
+            self.secmec = cp.SECMEC_USRIDPWD
         else:
             raise ValueError('Unknown database type')
 
@@ -124,7 +124,7 @@ class Connection:
         )
         cur_id = ddm.write_request_dds(
             self.sock,
-            ddm.packACCSEC(self.database, secmec),
+            ddm.packACCSEC(self.database, self.secmec),
             cur_id, False, True
         )
 
@@ -133,12 +133,18 @@ class Connection:
         cur_id = 1
         cur_id = ddm.write_request_dds(
             self.sock,
-            ddm.packSECCHK(secmec, self.database, user, password, self._enc),
+            ddm.packSECCHK(
+                self.secmec,
+                self.database,
+                self.user,
+                self.password,
+                self.encoding
+            ),
             cur_id, False, False
         )
         cur_id = ddm.write_request_dds(
             self.sock,
-            ddm.packACCRDB(self.prdid, self.database, self._enc),
+            ddm.packACCRDB(self.prdid, self.database, self.encoding),
             cur_id, False, True
         )
 
