@@ -99,7 +99,7 @@ class Connection:
             self.prdid = 'SQL11014'
             self.pkgid = 'SYSSH200'
             self.pkgcnstkn = 'SYSLVL01'
-            self.pkgsn = 4
+            self.pkgsn = 65
             user = self.user
             password = self.password
             secmec = cp.SECMEC_USRIDPWD
@@ -169,17 +169,41 @@ class Connection:
                 cur_id, False, True
             )
         elif self.db_type == 'db2':
-            ddm.write_requests_dds(self.sock, [
+            cur_id = ddm.write_request_dds(
+                self.sock,
                 ddm.packEXCSAT_MGRLVLLS([cp.CCSIDMGR, 1208]),
-                ddm.packEXCSQLSET(self.pkgid, self.pkgcnstkn, self.pkgsn, self.database),
+                cur_id, False, False
+            )
+            cur_id = ddm.write_request_dds(
+                self.sock,
+                ddm.packEXCSQLSET(self.pkgid, None, 1, self.database),
+                cur_id, True, False
+            )
+            cur_id = ddm.write_request_dds(
+                self.sock,
                 ddm.packSQLSTT("SET CLIENT WRKSTNNAME '{}'".format(platform.node())),
+                cur_id, True, False
+            )
+            cur_id = ddm.write_request_dds(
+                self.sock,
                 ddm.packSQLSTT("SET CURRENT LOCALE LC_CTYPE='{}'".format(locale.getlocale()[0])),
-
-
+                cur_id, False, False
+            )
+            cur_id = ddm.write_request_dds(
+                self.sock,
                 ddm.packEXCSQLIMM(self.pkgid, self.pkgcnstkn, self.pkgsn, self.database),
+                cur_id, True, False
+            )
+            cur_id = ddm.write_request_dds(
+                self.sock,
                 ddm.packSQLSTT(query),
+                cur_id, False, False
+            )
+            cur_id = ddm.write_request_dds(
+                self.sock,
                 ddm.packRDBCMM(),
-            ])
+                cur_id, False, True
+            )
         else:
             raise ValueError('Unknown database type')
         self._parse_response()

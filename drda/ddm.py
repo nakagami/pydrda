@@ -223,22 +223,6 @@ def write_request_dds(sock, o, cur_id, next_dds_has_same_id, last_packet):
     return cur_id
 
 
-def write_requests_dds(sock, obj_list):
-    "Write request DDS packets"
-    cur_id = 1
-    for i in range(len(obj_list)):
-        o = obj_list[i]
-
-        code_point = int.from_bytes(o[2:4], byteorder='big')
-        if code_point in (
-            cp.EXCSQLIMM, cp.PRPSQLSTT, cp.SQLATTR,
-        ):
-            next_dds_has_same_id = True
-        else:
-            next_dds_has_same_id = False
-
-        cur_id = write_request_dds(sock, o, cur_id, next_dds_has_same_id, i==len(obj_list) -1)
-
 def packEXCSAT(conn, mgrlvlls):
     b = b''
     for p in mgrlvlls:
