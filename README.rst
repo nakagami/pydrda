@@ -4,8 +4,6 @@ pydrda
 
 This is a DRDA protocol (https://en.wikipedia.org/wiki/DRDA) python database driver.
 
-We target *Apache Derby* now, and will add *DB2*.
-
 Requirements
 =============
 
@@ -18,6 +16,20 @@ Installation
 ::
 
     $ pip install pydrda
+
+
+Db2 example
+======================
+
+::
+
+   import drda
+
+   conn = drda.connect(host='serverhost', database='dbname', user='user', password='password', port=50000)
+   cur = conn.cursor()
+   cur.execute('select * from foo')
+   for r in cur.fetchall():
+       print(r[0], r[1])
 
 
 Apache Derby example
@@ -33,4 +45,13 @@ You need Start the Network server. http://db.apache.org/derby/papers/DerbyTut/ns
    cur.execute('select * from foo')
    for r in cur.fetchall():
        print(r[0], r[1])
+
+
+Restriction
+======================
+
+- SECMEC=1 (SECMEC_USRIDONL) for derby
+- SECMEC=3 (SECMEC_USRIDPWD) for DB2
+
+Because Db2 on IBM cloud needs SECMEC=9, this driver can't connect to Db2 on IBM cloud.
 
