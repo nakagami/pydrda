@@ -155,7 +155,7 @@ class Connection:
         if self.db_type == 'derby':
             cur_id = ddm.write_request_dds(
                 self.sock,
-                ddm.packEXCSQLIMM(self.database),
+                ddm.packEXCSQLIMM(self.pkgid, self.pkgcnstkn, self.pkgsn, self.database),
                 cur_id, True, False
             )
             cur_id = ddm.write_request_dds(
@@ -172,11 +172,11 @@ class Connection:
             ddm.write_requests_dds(self.sock, [
                 ddm.packEXCSAT_MGRLVLLS([cp.CCSIDMGR, 1208]),
                 ddm.packEXCSQLSET(self.pkgid, self.pkgcnstkn, self.pkgsn, self.database),
-                ddm.packSQLSTT_db2("SET CLIENT WRKSTNNAME '{}'".format(platform.node())),
+                ddm.packSQLSTT("SET CLIENT WRKSTNNAME '{}'".format(platform.node())),
                 ddm.packSQLSTT("SET CURRENT LOCALE LC_CTYPE='{}'".format(locale.getlocale()[0])),
 
 
-                ddm.packEXCSQLIMM(self.database),
+                ddm.packEXCSQLIMM(self.pkgid, self.pkgcnstkn, self.pkgsn, self.database),
                 ddm.packSQLSTT(query),
                 ddm.packRDBCMM(),
             ])

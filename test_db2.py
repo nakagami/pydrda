@@ -47,17 +47,18 @@ class TestDB2(unittest.TestCase):
         )
         cur = self.connection.cursor()
         try:
-            cur.execute("""
-                CREATE TABLE test (
-                    s VARCHAR(20),
-                    i int,
-                    d1 decimal(2, 1),
-                    d2 decimal(11, 2)
-                )
-            """)
+            cur.execute("DROP TABLE test")
         except drda.OperationalError:
             pass
-        cur.execute("DELETE FROM test")
+        cur.execute("""
+            CREATE TABLE test (
+                s VARCHAR(20),
+                i int,
+                d1 decimal(2, 1),
+                d2 decimal(11, 2)
+            )
+            """)
+        self.connection.commit()
 
     def tearDown(self):
         self.connection.close()
@@ -66,9 +67,9 @@ class TestDB2(unittest.TestCase):
         cur = self.connection.cursor()
         cur.execute("""
             INSERT INTO test (s, i, d1, d2) VALUES
-                ('abcdefghijklmnopq', 3, 1.1, 123456789.12),
+                ('abcdefghijklmnopq', 1, 1.1, 123456789.12),
                 ('B', 2, 1.2, 2),
-                ('C', 1, null, null)
+                ('C', 3, null, null)
         """)
         cur.execute("SELECT * FROM test")
         self.assertEqual(cur.fetchall(), [

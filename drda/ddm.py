@@ -312,10 +312,11 @@ def _packPKGNAMCSN(database, pkgid, pkgcnstkn, pkgsn):
     )
 
 
-def packEXCSQLIMM(database):
+def packEXCSQLIMM(pkgid, pkgcnstkn, pkgsn, database):
     return pack_dds_object(
         cp.EXCSQLIMM,
-        _packPKGNAMCSN(database) + _pack_binary(cp.RDBCMTOK, bytes([241]))
+        _packPKGNAMCSN(database, pkgid, pkgcnstkn, pkgsn) +
+        _pack_binary(cp.RDBCMTOK, bytes([241]))
     )
 
 
