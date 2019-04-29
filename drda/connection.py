@@ -197,7 +197,7 @@ class Connection:
             )
             cur_id = ddm.write_request_dds(
                 self.sock,
-                ddm.packOPNQRY_derby(self.database),
+                ddm.packOPNQRY(self.pkgid, self.pkgcnstkn, 201, self.database),
                 cur_id, False, True
             )
         elif self.db_type == 'db2':
@@ -238,7 +238,7 @@ class Connection:
             )
             cur_id = ddm.write_request_dds(
                 self.sock,
-                ddm.packOPNQRY_db2(self.database),
+                ddm.packOPNQRY(self.pkgid, self.pkgcnstkn, 4, self.database),
                 cur_id, False, True
             )
         else:
