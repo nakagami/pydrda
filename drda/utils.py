@@ -154,10 +154,10 @@ def read_field(t, ps, b, endian):
         if ln % 2:
             ln += 1
         ln //= 2
-        v = binascii.b2a_hex(b[:ln]).decode('ascii')
-        assert v[-1] == 'c'
-        v = v[:-1]
-        v = decimal.Decimal(v) / (10**s)
+        digits_sign = binascii.b2a_hex(b[:ln]).decode('ascii')
+        sign = 0 if digits_sign[-1] == 'c' else 1
+        v = decimal.Decimal(digits_sign[:-1])
+        v = decimal.Decimal((sign, v.as_tuple()[1], -s))
         b = b[ln:]
     elif t in (DRDA_TYPE_TIMESTAMP, DRDA_TYPE_NTIMESTAMP):
         ln = int.from_bytes(ps, byteorder='big')

@@ -68,13 +68,13 @@ class TestDB2(unittest.TestCase):
         cur.execute("""
             INSERT INTO test (s, i, d1, d2) VALUES
                 ('abcdefghijklmnopq', 1, 1.1, 123456789.12),
-                ('B', 2, 1.2, 2),
+                ('B', 2, 1.2, -2),
                 ('C', 3, null, null)
         """)
         cur.execute("SELECT * FROM test")
         self.assertEqual(cur.fetchall(), [
             ('abcdefghijklmnopq', 1, decimal.Decimal('1.1'), decimal.Decimal('123456789.12')),
-            ('B', 2, decimal.Decimal('1.2'), decimal.Decimal('2')),
+            ('B', 2, decimal.Decimal('1.2'), decimal.Decimal('-2.00')),
             ('C', 3, None, None)
         ])
 
