@@ -334,10 +334,10 @@ def packDSCSQLSTT(database):
     )
 
 
-def packEXCSQLSET_db2(database):
+def packEXCSQLSET(pkgid, pkgcnstkn, pkgsn, database):
     return pack_dds_object(
         cp.EXCSQLSET,
-        _packPKGNAMCSN(database, "SYSSH200", None, 1)
+        _packPKGNAMCSN(database, pkgid, pkgcnstkn, pkgsn)
     )
 
 

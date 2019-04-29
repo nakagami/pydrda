@@ -89,6 +89,7 @@ class Connection:
             self.prdid = 'DNC10130'
             self.pkgid = 'SQLC2026'
             self.pkgcnstkn = 'AAAAAfAd'
+            self.pkgsn = 201
             user = 'APP'
             password = ''
             secmec = cp.SECMEC_USRIDONL
@@ -98,6 +99,7 @@ class Connection:
             self.prdid = 'SQL11014'
             self.pkgid = 'SYSSH200'
             self.pkgcnstkn = 'SYSLVL01'
+            self.pkgsn = 4
             user = self.user
             password = self.password
             secmec = cp.SECMEC_USRIDPWD
@@ -169,9 +171,9 @@ class Connection:
         elif self.db_type == 'db2':
             ddm.write_requests_dds(self.sock, [
                 ddm.packEXCSAT_MGRLVLLS([cp.CCSIDMGR, 1208]),
-                ddm.packEXCSQLSET(self.database),
+                ddm.packEXCSQLSET(self.pkgid, self.pkgcnstkn, self.pkgsn, self.database),
                 ddm.packSQLSTT_db2("SET CLIENT WRKSTNNAME '{}'".format(platform.node())),
-#                ddm.packSQLSTT("SET CURRENT LOCALE LC_CTYPE='{}'".format(locale.getlocale()[0])),
+                ddm.packSQLSTT("SET CURRENT LOCALE LC_CTYPE='{}'".format(locale.getlocale()[0])),
 
 
                 ddm.packEXCSQLIMM(self.database),
@@ -187,7 +189,7 @@ class Connection:
         if self.db_type == 'derby':
             cur_id = ddm.write_request_dds(
                 self.sock,
-                ddm.packPRPSQLSTT(self.pkgid, self.pkgcnstkn, 201, self.database),
+                ddm.packPRPSQLSTT(self.pkgid, self.pkgcnstkn, self.pkgsn, self.database),
                 cur_id, True, False
             )
             cur_id = ddm.write_request_dds(
@@ -197,7 +199,7 @@ class Connection:
             )
             cur_id = ddm.write_request_dds(
                 self.sock,
-                ddm.packOPNQRY(self.pkgid, self.pkgcnstkn, 201, self.database),
+                ddm.packOPNQRY(self.pkgid, self.pkgcnstkn, self.pkgsn, self.database),
                 cur_id, False, True
             )
         elif self.db_type == 'db2':
@@ -208,7 +210,7 @@ class Connection:
             )
             cur_id = ddm.write_request_dds(
                 self.sock,
-                ddm.packEXCSQLSET_db2(self.database),
+                ddm.packEXCSQLSET(self.pkgid, self.pkgcnstkn, self.pkgsn, self.database),
                 cur_id, True, False
             )
             cur_id = ddm.write_request_dds(
@@ -223,7 +225,7 @@ class Connection:
             )
             cur_id = ddm.write_request_dds(
                 self.sock,
-                ddm.packPRPSQLSTT(self.pkgid, self.pkgcnstkn, 4, self.database),
+                ddm.packPRPSQLSTT(self.pkgid, self.pkgcnstkn, self.pkgsn, self.database),
                 cur_id, True, False
             )
             cur_id = ddm.write_request_dds(
@@ -238,7 +240,7 @@ class Connection:
             )
             cur_id = ddm.write_request_dds(
                 self.sock,
-                ddm.packOPNQRY(self.pkgid, self.pkgcnstkn, 4, self.database),
+                ddm.packOPNQRY(self.pkgid, self.pkgcnstkn, self.pkgsn, self.database),
                 cur_id, False, True
             )
         else:
