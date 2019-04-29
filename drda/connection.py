@@ -144,131 +144,79 @@ class Connection:
 
         self._parse_response()
 
+        self._set_valiables()
+
     def __enter__(self):
         return self
 
     def __exit__(self, exc, value, traceback):
         self.close()
 
+    def _set_valiables(self):
+        cur_id = 1
+        cur_id = ddm.write_request_dds(
+            self.sock,
+            ddm.packEXCSAT_MGRLVLLS([cp.CCSIDMGR, 1208]),
+            cur_id, False, False
+        )
+        cur_id = ddm.write_request_dds(
+            self.sock,
+            ddm.packEXCSQLSET(self.pkgid, None, 1, self.database),
+            cur_id, True, False
+        )
+        cur_id = ddm.write_request_dds(
+            self.sock,
+            ddm.packSQLSTT("SET CLIENT WRKSTNNAME '{}'".format(platform.node())),
+            cur_id, True, False
+        )
+        cur_id = ddm.write_request_dds(
+            self.sock,
+            ddm.packSQLSTT("SET CURRENT LOCALE LC_CTYPE='{}'".format(locale.getlocale()[0])),
+            cur_id, False, False
+        )
+        cur_id = ddm.write_request_dds(
+            self.sock,
+            ddm.packRDBCMM(),
+            cur_id, False, True
+        )
+        self._parse_response()
+
     def _execute(self, query):
         cur_id = 1
-        if self.db_type == 'derby':
-            cur_id = ddm.write_request_dds(
-                self.sock,
-                ddm.packEXCSQLIMM(self.pkgid, self.pkgcnstkn, self.pkgsn, self.database),
-                cur_id, True, False
-            )
-            cur_id = ddm.write_request_dds(
-                self.sock,
-                ddm.packSQLSTT(query),
-                cur_id, False, False
-            )
-            cur_id = ddm.write_request_dds(
-                self.sock,
-                ddm.packRDBCMM(),
-                cur_id, False, True
-            )
-        elif self.db_type == 'db2':
-            cur_id = ddm.write_request_dds(
-                self.sock,
-                ddm.packEXCSAT_MGRLVLLS([cp.CCSIDMGR, 1208]),
-                cur_id, False, False
-            )
-            cur_id = ddm.write_request_dds(
-                self.sock,
-                ddm.packEXCSQLSET(self.pkgid, None, 1, self.database),
-                cur_id, True, False
-            )
-            cur_id = ddm.write_request_dds(
-                self.sock,
-                ddm.packSQLSTT("SET CLIENT WRKSTNNAME '{}'".format(platform.node())),
-                cur_id, True, False
-            )
-            cur_id = ddm.write_request_dds(
-                self.sock,
-                ddm.packSQLSTT("SET CURRENT LOCALE LC_CTYPE='{}'".format(locale.getlocale()[0])),
-                cur_id, False, False
-            )
-            cur_id = ddm.write_request_dds(
-                self.sock,
-                ddm.packEXCSQLIMM(self.pkgid, self.pkgcnstkn, self.pkgsn, self.database),
-                cur_id, True, False
-            )
-            cur_id = ddm.write_request_dds(
-                self.sock,
-                ddm.packSQLSTT(query),
-                cur_id, False, False
-            )
-            cur_id = ddm.write_request_dds(
-                self.sock,
-                ddm.packRDBCMM(),
-                cur_id, False, True
-            )
-        else:
-            raise ValueError('Unknown database type')
+        cur_id = ddm.write_request_dds(
+            self.sock,
+            ddm.packEXCSQLIMM(self.pkgid, self.pkgcnstkn, self.pkgsn, self.database),
+            cur_id, True, False
+        )
+        cur_id = ddm.write_request_dds(
+            self.sock,
+            ddm.packSQLSTT(query),
+            cur_id, False, False
+        )
+        cur_id = ddm.write_request_dds(
+            self.sock,
+            ddm.packRDBCMM(),
+            cur_id, False, True
+        )
         self._parse_response()
 
     def _query(self, query):
         cur_id = 1
-        if self.db_type == 'derby':
-            cur_id = ddm.write_request_dds(
-                self.sock,
-                ddm.packPRPSQLSTT(self.pkgid, self.pkgcnstkn, self.pkgsn, self.database),
-                cur_id, True, False
-            )
-            cur_id = ddm.write_request_dds(
-                self.sock,
-                ddm.packSQLSTT(query),
-                cur_id, False, False
-            )
-            cur_id = ddm.write_request_dds(
-                self.sock,
-                ddm.packOPNQRY(self.pkgid, self.pkgcnstkn, self.pkgsn, self.database),
-                cur_id, False, True
-            )
-        elif self.db_type == 'db2':
-            cur_id = ddm.write_request_dds(
-                self.sock,
-                ddm.packEXCSAT_MGRLVLLS([cp.CCSIDMGR, 1208]),
-                cur_id, False, False
-            )
-            cur_id = ddm.write_request_dds(
-                self.sock,
-                ddm.packEXCSQLSET(self.pkgid, self.pkgcnstkn, self.pkgsn, self.database),
-                cur_id, True, False
-            )
-            cur_id = ddm.write_request_dds(
-                self.sock,
-                ddm.packSQLSTT("SET CLIENT WRKSTNNAME '{}'".format(platform.node())),
-                cur_id, True, False
-            )
-            cur_id = ddm.write_request_dds(
-                self.sock,
-                ddm.packSQLSTT("SET CURRENT LOCALE LC_CTYPE='{}'".format(locale.getlocale()[0])),
-                cur_id, False, False
-            )
-            cur_id = ddm.write_request_dds(
-                self.sock,
-                ddm.packPRPSQLSTT(self.pkgid, self.pkgcnstkn, self.pkgsn, self.database),
-                cur_id, True, False
-            )
-            cur_id = ddm.write_request_dds(
-                self.sock,
-                ddm.packSQLATTR("WITH HOLD "),
-                cur_id, True, False
-            )
-            cur_id = ddm.write_request_dds(
-                self.sock,
-                ddm.packSQLSTT(query),
-                cur_id, False, False
-            )
-            cur_id = ddm.write_request_dds(
-                self.sock,
-                ddm.packOPNQRY(self.pkgid, self.pkgcnstkn, self.pkgsn, self.database),
-                cur_id, False, True
-            )
-        else:
-            raise ValueError('Unknown database type')
+        cur_id = ddm.write_request_dds(
+            self.sock,
+            ddm.packPRPSQLSTT(self.pkgid, self.pkgcnstkn, self.pkgsn, self.database),
+            cur_id, True, False
+        )
+        cur_id = ddm.write_request_dds(
+            self.sock,
+            ddm.packSQLSTT(query),
+            cur_id, False, False
+        )
+        cur_id = ddm.write_request_dds(
+            self.sock,
+            ddm.packOPNQRY(self.pkgid, self.pkgcnstkn, self.pkgsn, self.database),
+            cur_id, False, True
+        )
 
         return self._parse_response()
 
