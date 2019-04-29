@@ -104,7 +104,7 @@ class Connection:
             self.password = self.password
             self.secmec = cp.SECMEC_USRIDPWD
         else:
-            raise ValueError('Unknown database type')
+            raise ValueError('Unknown database type:{}'.format(self.db_type))
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect((self.host, self.port))
