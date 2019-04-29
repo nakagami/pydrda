@@ -77,7 +77,7 @@ def parse_name(b):
     s1, b = parse_string(b)
     s2, b = parse_string(b)
     ln = int.from_bytes(b[:2], byteorder='big')
-    return s1 if s1 else s2, b
+    return s1 or s2, b
 
 
 def pack_dds_object(code_point, o):
@@ -291,7 +291,8 @@ def packACCRDB(prdid, rdbnam, enc):
 def packACCSEC(database, secmec):
     return pack_dds_object(
         cp.ACCSEC,
-        _pack_uint(cp.SECMEC, secmec, 2) + _pack_str(cp.RDBNAM, database, 'cp500'),
+        _pack_uint(cp.SECMEC, secmec, 2) +
+        _pack_str(cp.RDBNAM, database, 'cp500'),
     )
 
 
@@ -299,7 +300,7 @@ def packRDBCMM():
     return pack_dds_object(cp.RDBCMM, bytes())
 
 
-def _packPKGNAMCSN(database, pkgid="SQLC2026", pkgcnstkn="AAAAAfAd", pkgsn=201):
+def _packPKGNAMCSN(database, pkgid, pkgcnstkn, pkgsn):
     b = ("%-18s%-18s%-18s" % (database, "NULLID", pkgid)).encode('utf-8')
     if pkgcnstkn is None:
         b += b'\x01' * 8
