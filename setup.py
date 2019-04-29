@@ -24,7 +24,7 @@ cmdclass = {'test': TestCommand}
 version = "%d.%d.%d" % __import__('drda').VERSION
 
 classifiers = [
-    'Development Status :: 2 - Pre-Alpha',
+    'Development Status :: 3 - Alpha'
     'License :: OSI Approved :: MIT License',
     'Operating System :: OS Independent',
     'Programming Language :: Python',
@@ -37,10 +37,11 @@ setup(
     version=version,
     url='https://github.com/nakagami/pydrda/',
     classifiers=classifiers,
-    keywords=['Apache Derby'],
+    keywords=['Db2', 'Apache Derby'],
     author='Hajime Nakagami',
     author_email='nakagami@gmail.com',
     description='DRDA protocol database driver',
+    long_description=open('README.rst').read(),
     license="MIT",
     packages=['drda'],
     cmdclass=cmdclass,
