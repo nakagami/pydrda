@@ -135,7 +135,30 @@ def parse_sqlcard(obj, enc, endian):
     return err, rest
 
 
-def _parse_column(b, endian):
+def _parse_column_db2(b, endian):
+    precision = int.from_bytes(b[:2], byteorder=endian)
+    scale = int.from_bytes(b[2:4], byteorder=endian)
+    sqllength = int.from_bytes(b[4:12], byteorder=endian)
+    sqltype = int.from_bytes(b[12:14], byteorder=endian)
+    sqlccsid = int.from_bytes(b[14:16], byteorder='big')
+
+    b = b[16:]
+
+    b = b[6:]   # ?? skip 6 bytes
+
+    # SQLDOPTGRP
+    assert b[0] == 0x00  # not null
+    b = b[3:]
+    sqlname, b = parse_name(b)
+    sqllabel, b = parse_name(b)
+    sqlcomments, b = parse_name(b)
+
+    b = b[7:]   # ?? skip 7 bytes
+
+    return (sqlname, sqltype, sqllength, sqllength, precision, scale, None), b
+
+
+def _parse_column_derby(b, endian):
     precision = int.from_bytes(b[:2], byteorder=endian)
     scale = int.from_bytes(b[2:4], byteorder=endian)
     sqllength = int.from_bytes(b[4:12], byteorder=endian)
@@ -172,14 +195,21 @@ def _parse_column(b, endian):
     return (sqlname, sqltype, sqllength, sqllength, precision, scale, None), b
 
 
-def parse_sqldard(obj, enc, endian):
+def parse_sqldard(obj, enc, endian, db_type):
     description = []
     err, rest = parse_sqlcard(obj, enc, endian)
     if not err:
-        ln = int.from_bytes(rest[19:21], byteorder='big')
-        b = rest[21:]
+        if rest[0] == 0x00:
+            rest = rest[19:]
+        else:
+            rest = rest[1:]
+        ln = int.from_bytes(rest[0:2], byteorder=endian)
+        rest = rest[2:]
         for i in range(ln):
-            d, b = _parse_column(b, endian)
+            if db_type == 'db2':
+                d, rest = _parse_column_db2(rest, endian)
+            elif db_type == 'derby':
+                d, rest = _parse_column_derby(rest, endian)
             description.append(d)
 
     return err, description
