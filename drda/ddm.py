@@ -135,11 +135,11 @@ def parse_sqlcard(obj, enc, endian):
     return err, rest
 
 
-def _parse_column(b):
-    precision = int.from_bytes(b[:2], byteorder='big')
-    scale = int.from_bytes(b[2:4], byteorder='big')
-    sqllength = int.from_bytes(b[4:12], byteorder='big')
-    sqltype = int.from_bytes(b[12:14], byteorder='big')
+def _parse_column(b, endian):
+    precision = int.from_bytes(b[:2], byteorder=endian)
+    scale = int.from_bytes(b[2:4], byteorder=endian)
+    sqllength = int.from_bytes(b[4:12], byteorder=endian)
+    sqltype = int.from_bytes(b[12:14], byteorder=endian)
     sqlccsid = int.from_bytes(b[14:16], byteorder='big')
 
     b = b[16:]
@@ -179,7 +179,7 @@ def parse_sqldard(obj, enc, endian):
         ln = int.from_bytes(rest[19:21], byteorder='big')
         b = rest[21:]
         for i in range(ln):
-            d, b = _parse_column(b)
+            d, b = _parse_column(b, endian)
             description.append(d)
 
     return err, description
