@@ -155,7 +155,7 @@ def _parse_column_db2(b, endian):
 
     b = b[7:]   # ?? skip 7 bytes
 
-    return (sqlname, sqltype, sqllength, sqllength, precision, scale, None), b
+    return (sqllabel, sqltype, sqllength, sqllength, precision, scale, None), b
 
 
 def _parse_column_derby(b, endian):
