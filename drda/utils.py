@@ -174,7 +174,10 @@ def read_field(t, ps, b, endian):
         ln = int.from_bytes(ps, byteorder='big')
         v = b[:ln].decode('utf-8')
         b = b[ln:]
-        v = datetime.datetime.strptime(v, "%H:%M:%S")
+        try:
+            v = datetime.datetime.strptime(v, "%H:%M:%S")
+        except ValueError:
+            v = datetime.datetime.strptime(v, "%H.%M.%S")
         v = datetime.time(v.hour, v.minute, v.second)
     elif t in (DRDA_TYPE_VARGRAPH, DRDA_TYPE_NVARGRAPH):
         ln = int.from_bytes(ps, byteorder='big')
@@ -186,11 +189,11 @@ def read_field(t, ps, b, endian):
         b = b[ln:]
     elif t in (DRDA_TYPE_NFLOAT4, ):
         ln = int.from_bytes(ps, byteorder='big')
-        v = struct.unpack(">f", b[:ln])[0]
+        v = struct.unpack(">f" if endian=='big' else "<f", b[:ln])[0]
         b = b[ln:]
     elif t in (DRDA_TYPE_NFLOAT8, ):
         ln = int.from_bytes(ps, byteorder='big')
-        v = struct.unpack(">d", b[:ln])[0]
+        v = struct.unpack(">d" if endian=='big' else "<d", b[:ln])[0]
         b = b[ln:]
     else:
         raise ValueError("UnknownType(%s)" % hex(t))

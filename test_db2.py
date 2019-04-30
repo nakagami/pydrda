@@ -86,14 +86,18 @@ class TestBasic(unittest.TestCase):
 
 
 class TestDataType(unittest.TestCase):
-    host = 'localhost'
-    database = 'testdb;create=true'
-    port = 1527
+    host = os.environ['DB2_HOST']
+    database = os.environ['DB2_DATABASE']
+    user = os.environ['DB2_USER']
+    password = os.environ['DB2_PASSWORD']
+    port = int(os.environ['DB2_PORT'])
 
     def setUp(self):
         self.connection = drda.connect(
             host=self.host,
             database=self.database,
+            user=self.user,
+            password=self.password,
             port=self.port,
         )
 
