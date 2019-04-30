@@ -25,6 +25,7 @@
 import binascii
 import decimal
 import datetime
+import struct
 
 DRDA_TYPE_INTEGER = 0x02
 DRDA_TYPE_NINTEGER = 0x03
@@ -140,13 +141,12 @@ def read_field(t, ps, b, endian):
         ln = int.from_bytes(b[:2], byteorder='big')
         v = b[2:2+ln].decode('utf-8')
         b = b[2+ln:]
-    elif t in (DRDA_TYPE_SMALL, DRDA_TYPE_NSMALL):
+    elif t in (
+            DRDA_TYPE_SMALL, DRDA_TYPE_NSMALL, DRDA_TYPE_NINTEGER8,
+            DRDA_TYPE_INTEGER, DRDA_TYPE_NINTEGER
+        ):
         ln = int.from_bytes(ps, byteorder='big')
-        v = int.from_bytes(b[:ln], byteorder=endian)
-        b = b[ln:]
-    elif t in (DRDA_TYPE_INTEGER, DRDA_TYPE_NINTEGER):
-        ln = int.from_bytes(ps, byteorder='big')
-        v = int.from_bytes(b[:ln], byteorder=endian)
+        v = int.from_bytes(b[:ln], byteorder=endian, signed=True)
         b = b[ln:]
     elif t == DRDA_TYPE_NDECIMAL:
         (p, s) = (ps[0], ps[1])
@@ -183,6 +183,14 @@ def read_field(t, ps, b, endian):
     elif t in (DRDA_TYPE_GRAPHIC, DRDA_TYPE_NGRAPHIC):
         ln = int.from_bytes(ps, byteorder='big')
         v = b[:ln].decode('utf-8')
+        b = b[ln:]
+    elif t in (DRDA_TYPE_NFLOAT4, ):
+        ln = int.from_bytes(ps, byteorder='big')
+        v = struct.unpack(">f", b[:ln])[0]
+        b = b[ln:]
+    elif t in (DRDA_TYPE_NFLOAT8, ):
+        ln = int.from_bytes(ps, byteorder='big')
+        v = struct.unpack(">d", b[:ln])[0]
         b = b[ln:]
     else:
         raise ValueError("UnknownType(%s)" % hex(t))

@@ -121,6 +121,27 @@ class TestDataType(unittest.TestCase):
             datetime.datetime(2019, 4, 30, 12, 34, 56, 123456)
         )])
 
+    def test_double(self):
+        cur = self.connection.cursor()
+        try:
+            cur.execute("""
+                CREATE TABLE test_double (
+                    bi bigint,
+                    si smallint,
+                    r real,
+                    d double
+                )
+            """)
+        except drda.OperationalError:
+            pass
+        cur.execute("DELETE FROM test_double")
+        cur.execute("""
+            INSERT INTO test_double (bi, si, r, d) VALUES
+                (-1, -1, -1, -1)
+        """)
+        cur.execute("SELECT * FROM test_double")
+        self.assertEqual(cur.fetchall(), [(-1, -1, -1.0, -1.0)])
+
     def tearDown(self):
         self.connection.close()
 
