@@ -36,7 +36,7 @@ class TestBasic(unittest.TestCase):
     database = os.environ['DB2_DATABASE']
     user = os.environ['DB2_USER']
     password = os.environ['DB2_PASSWORD']
-    port = int(os.environ.get('DB2_PORT', 50000))
+    port = int(os.environ['DB2_PORT'])
 
     def setUp(self):
         self.connection = drda.connect(
@@ -48,11 +48,11 @@ class TestBasic(unittest.TestCase):
         )
         cur = self.connection.cursor()
         try:
-            cur.execute("DROP TABLE test")
+            cur.execute("DROP TABLE test_basic")
         except drda.OperationalError:
             pass
         cur.execute("""
-            CREATE TABLE test (
+            CREATE TABLE test_basic (
                 s VARCHAR(20),
                 i int,
                 d1 decimal(2, 1),
@@ -67,12 +67,12 @@ class TestBasic(unittest.TestCase):
     def test_basic(self):
         cur = self.connection.cursor()
         cur.execute("""
-            INSERT INTO test (s, i, d1, d2) VALUES
+            INSERT INTO test_basic (s, i, d1, d2) VALUES
                 ('abcdefghijklmnopq', 1, 1.1, 123456789.12),
                 ('B', 2, 1.2, -2),
                 ('C', 3, null, null)
         """)
-        cur.execute("SELECT * FROM test")
+        cur.execute("SELECT * FROM test_basic")
         self.assertEqual(cur.fetchall(), [
             ('abcdefghijklmnopq', 1, decimal.Decimal('1.1'), decimal.Decimal('123456789.12')),
             ('B', 2, decimal.Decimal('1.2'), decimal.Decimal('-2.00')),
@@ -83,6 +83,46 @@ class TestBasic(unittest.TestCase):
         cur = self.connection.cursor()
         with self.assertRaises(drda.OperationalError):
             cur.execute("invalid query"),
+
+
+class TestDataType(unittest.TestCase):
+    host = 'localhost'
+    database = 'testdb;create=true'
+    port = 1527
+
+    def setUp(self):
+        self.connection = drda.connect(
+            host=self.host,
+            database=self.database,
+            port=self.port,
+        )
+
+    def test_datetime(self):
+        cur = self.connection.cursor()
+        try:
+            cur.execute("DROP TABLE test_datetime")
+        except drda.OperationalError:
+            pass
+        cur.execute("""
+            CREATE TABLE test_datetime (
+                d date,
+                t time,
+                dt timestamp
+            )
+        """)
+        cur.execute("""
+            INSERT INTO test_datetime (d, t, dt) VALUES
+                ('2019-04-30', '12:34:56', '2019-04-30 12:34:56.123456789')
+        """)
+        cur.execute("SELECT * FROM test_datetime")
+        self.assertEqual(cur.fetchall(), [(
+            datetime.date(2019, 4, 30),
+            datetime.time(12, 34, 56),
+            datetime.datetime(2019, 4, 30, 12, 34, 56, 123456)
+        )])
+
+    def tearDown(self):
+        self.connection.close()
 
 
 if __name__ == "__main__":

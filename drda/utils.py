@@ -24,7 +24,7 @@
 
 import binascii
 import decimal
-
+import datetime
 
 DRDA_TYPE_INTEGER = 0x02
 DRDA_TYPE_NINTEGER = 0x03
@@ -163,14 +163,19 @@ def read_field(t, ps, b, endian):
         ln = int.from_bytes(ps, byteorder='big')
         v = b[:ln].decode('utf-8')
         b = b[ln:]
+        v = datetime.datetime.strptime(v[:26], "%Y-%m-%d-%H.%M.%S.%f")
     elif t in (DRDA_TYPE_DATE, DRDA_TYPE_NDATE):
         ln = int.from_bytes(ps, byteorder='big')
         v = b[:ln].decode('utf-8')
         b = b[ln:]
+        v = datetime.datetime.strptime(v, "%Y-%m-%d")
+        v = datetime.date(v.year, v.month, v.day)
     elif t in (DRDA_TYPE_TIME, DRDA_TYPE_NTIME):
         ln = int.from_bytes(ps, byteorder='big')
         v = b[:ln].decode('utf-8')
         b = b[ln:]
+        v = datetime.datetime.strptime(v, "%H:%M:%S")
+        v = datetime.time(v.hour, v.minute, v.second)
     elif t in (DRDA_TYPE_VARGRAPH, DRDA_TYPE_NVARGRAPH):
         ln = int.from_bytes(ps, byteorder='big')
         v = b[:ln].decode('utf-8')
