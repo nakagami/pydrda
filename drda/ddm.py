@@ -308,8 +308,7 @@ def packPRPSQLSTT(pkgid, pkgcnstkn, pkgsn, database):
     return pack_dds_object(
         cp.PRPSQLSTT,
         _packPKGNAMCSN(database, pkgid, pkgcnstkn, pkgsn) +
-        _pack_binary(cp.RTNSQLDA, bytes([241])) +
-        _pack_binary(cp.TYPSQLDA, bytes([4]))
+        _pack_binary(cp.RTNSQLDA, bytes([241]))
     )
 
 
