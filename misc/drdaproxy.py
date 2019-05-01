@@ -291,7 +291,8 @@ def printSQLCARD(cp, obj):
     # SQLSTATE & SQLCODE
     # https://www.ibm.com/support/knowledgecenter/SSEPH2_13.1.0/com.ibm.ims13.doc.apr/ims_ddm_sqlcard.htm
     if obj[0] == 0xFF:
-        return
+        return obj[1:]
+
     assert obj[0] == 0      # SQLCAGRP FLAG
     sqlcode = int.from_bytes(obj[1:5], byteorder=ENDIAN, signed=True)
     sqlstate = obj[5:10]
@@ -335,14 +336,16 @@ def printSQLDARD(cp, obj):
     if rest[0] == 0x00:     # SQLDHGRP is not null
         print("\tSQLDHGRP=%s" % (binascii.b2a_hex(rest[:19]).decode('ascii'),))
         rest = rest[19:]
+        ln = int.from_bytes(rest[0:2], byteorder=ENDIAN)
+        print('\tcolumn count=', ln)
+        rest = rest[2:]
+        printSQLDAGRP(rest)
     else:
         print("\tSQLDHGRP is null")
-        rest = rest[1:]
-
-    ln = int.from_bytes(rest[0:2], byteorder=ENDIAN)
-    print('\tcolumn count=', ln)
-    rest = rest[2:]
-    printSQLDAGRP(rest)
+        rest = rest[19:]
+        ln = int.from_bytes(rest[0:2], byteorder=ENDIAN)
+        print('\tparams count=', ln)
+        rest = rest[2:]
 
 
 def printSQLATTR(cp, obj):
