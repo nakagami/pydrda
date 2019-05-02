@@ -48,11 +48,14 @@ class Connection:
                 if err is None:
                     err, _ = ddm.parse_sqlcard(obj, self.encoding, self.endian)
             elif code_point == cp.SQLDARD:
-                err, _description = ddm.parse_sqldard(obj, 'utf-8', self.endian, self.db_type)
-                if description is None:
-                    description = _description
+                if obj[0] == 0xFF:
+                    err, params_description = ddm.parse_sqldard(
+                        obj, 'utf-8', self.endian, self.db_type
+                    )
                 else:
-                    params_description = _description
+                    err, description = ddm.parse_sqldard(
+                        obj, 'utf-8', self.endian, self.db_type
+                    )
             elif code_point == cp.QRYDSC:
                 ln = obj[0]
                 b = obj[1:ln]
