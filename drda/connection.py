@@ -35,7 +35,8 @@ from drda.cursor import Cursor
 class Connection:
     def _parse_response(self):
         results = collections.deque()
-        description = []
+        params_description = None
+        description = None
         err = qrydsc = None
         chained = True
         err_msg = None
@@ -47,7 +48,11 @@ class Connection:
                 if err is None:
                     err, _ = ddm.parse_sqlcard(obj, self.encoding, self.endian)
             elif code_point == cp.SQLDARD:
-                err, description = ddm.parse_sqldard(obj, 'utf-8', self.endian, self.db_type)
+                err, _description = ddm.parse_sqldard(obj, 'utf-8', self.endian, self.db_type)
+                if description is None:
+                    description = _description
+                else:
+                    params_description = _description
             elif code_point == cp.QRYDSC:
                 ln = obj[0]
                 b = obj[1:ln]
@@ -68,7 +73,7 @@ class Connection:
                     results.append(tuple(r))
         if err:
             raise err
-        return results, description
+        return results, description, params_description
 
     def __init__(self, host, database, port, user, password, db_type):
         self.host = host
@@ -187,44 +192,55 @@ class Connection:
         )
         self._parse_response()
 
-    def _execute(self, query):
-        cur_id = 1
-        cur_id = ddm.write_request_dds(
-            self.sock,
-            ddm.packEXCSQLIMM(self.pkgid, self.pkgcnstkn, self.pkgsn, self.database),
-            cur_id, True, False
-        )
-        cur_id = ddm.write_request_dds(
-            self.sock,
-            ddm.packSQLSTT(query),
-            cur_id, False, False
-        )
-        cur_id = ddm.write_request_dds(
-            self.sock,
-            ddm.packRDBCMM(),
-            cur_id, False, True
-        )
-        self._parse_response()
+    def _execute(self, query, args):
+        if args:
+            pass
+        else:
+            cur_id = 1
+            cur_id = ddm.write_request_dds(
+                self.sock,
+                ddm.packEXCSQLIMM(
+                    self.pkgid,
+                    self.pkgcnstkn,
+                    self.pkgsn,
+                    self.database
+                ),
+                cur_id, True, False
+            )
+            cur_id = ddm.write_request_dds(
+                self.sock,
+                ddm.packSQLSTT(query),
+                cur_id, False, False
+            )
+            cur_id = ddm.write_request_dds(
+                self.sock,
+                ddm.packRDBCMM(),
+                cur_id, False, True
+            )
+            self._parse_response()
 
-    def _query(self, query):
-        cur_id = 1
-        cur_id = ddm.write_request_dds(
-            self.sock,
-            ddm.packPRPSQLSTT(self.pkgid, self.pkgcnstkn, self.pkgsn, self.database),
-            cur_id, True, False
-        )
-        cur_id = ddm.write_request_dds(
-            self.sock,
-            ddm.packSQLSTT(query),
-            cur_id, False, False
-        )
-        cur_id = ddm.write_request_dds(
-            self.sock,
-            ddm.packOPNQRY(self.pkgid, self.pkgcnstkn, self.pkgsn, self.database),
-            cur_id, False, True
-        )
-
-        return self._parse_response()
+    def _query(self, query, args):
+        if args:
+            pass
+        else:
+            cur_id = 1
+            cur_id = ddm.write_request_dds(
+                self.sock,
+                ddm.packPRPSQLSTT(self.pkgid, self.pkgcnstkn, self.pkgsn, self.database),
+                cur_id, True, False
+            )
+            cur_id = ddm.write_request_dds(
+                self.sock,
+                ddm.packSQLSTT(query),
+                cur_id, False, False
+            )
+            cur_id = ddm.write_request_dds(
+                self.sock,
+                ddm.packOPNQRY(self.pkgid, self.pkgcnstkn, self.pkgsn, self.database),
+                cur_id, False, True
+            )
+            rows, description, params_description = self._parse_response()
+            return rows, description
 
     def is_connect(self):
         return bool(self.sock)
@@ -233,13 +249,13 @@ class Connection:
         return Cursor(self)
 
     def begin(self):
-        self._execute("START TRANSACTION")
+        self._execute("START TRANSACTION", [])
 
     def commit(self):
-        self._execute("COMMIT")
+        self._execute("COMMIT", [])
 
     def rollback(self):
-        self._execute("ROLLBACK")
+        self._execute("ROLLBACK", [])
 
     def close(self):
         cur_id = 1

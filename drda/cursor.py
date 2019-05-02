@@ -52,20 +52,12 @@ class Cursor:
     def setoutputsize(size, column=None):
         pass
 
-    def execute(self, query, args=()):
-        if args:
-            escaped_args = tuple(
-                escape_parameter(arg).replace(u'%', u'%%') for arg in args
-            )
-            query = query.replace(u'%', u'%%').replace(u'%%s', u'%s')
-            query = query % escaped_args
-            query = query.replace(u'%%', u'%')
-
+    def execute(self, query, args=[]):
         self.query = query
         if query.strip().split()[0].upper() == 'SELECT':
-            self._rows, self.description = self.connection._query(self.query)
+            self._rows, self.description = self.connection._query(self.query, args)
         else:
-            self.connection._execute(self.query)
+            self.connection._execute(self.query, args)
 
     def executemany(self, query, seq_of_params):
         rowcount = 0
