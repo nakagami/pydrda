@@ -290,62 +290,70 @@ def printSQLCARD(cp, obj):
     print("%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')), end='')
     # SQLSTATE & SQLCODE
     # https://www.ibm.com/support/knowledgecenter/SSEPH2_13.1.0/com.ibm.ims13.doc.apr/ims_ddm_sqlcard.htm
+
+    # SQLCAGRP
     if obj[0] == 0xFF:
-        return obj[1:]
+        rest = obj[1:]
+        print("\n\tSQLCAGRP is null")
+    else:
+        assert obj[0] == 0
+        sqlcode = int.from_bytes(obj[1:5], byteorder=ENDIAN, signed=True)
+        sqlstate = obj[5:10]
+        sqlerrproc = obj[10:18]
+        rest = obj[18:]
 
-    assert obj[0] == 0      # SQLCAGRP FLAG
-    sqlcode = int.from_bytes(obj[1:5], byteorder=ENDIAN, signed=True)
-    sqlstate = obj[5:10]
-    sqlerrproc = obj[10:18]
+        # QLCAXGRP
+        assert obj[18] == 0     # SQLCAXGRP FLAG is not null
+        sqlerrd = obj[19:25]
+        sqlwarn = obj[25:36]
 
-    assert obj[18] == 0     # SQLCAXGRP FLAG
-    sqlerrd = obj[19:25]
-    sqlwarn = obj[25:36]
+        rest = obj[36+18:]
+        ln = int.from_bytes(rest[:2], byteorder='big')
+        sqlrdbname = rest[2:2+ln].decode('utf-8')
+        rest = rest[2+ln:]
 
-    rest = obj[36+18:]
-    ln = int.from_bytes(rest[:2], byteorder='big')
-    sqlrdbname = rest[2:2+ln].decode('utf-8')
-    rest = rest[2+ln:]
+        ln = int.from_bytes(rest[:2], byteorder='big')
+        sqlerrmsg_m = rest[2:2+ln]
+        rest = rest[2+ln:]
 
-    ln = int.from_bytes(rest[:2], byteorder='big')
-    sqlerrmsg_m = rest[2:2+ln]
-    rest = rest[2+ln:]
+        ln = int.from_bytes(rest[:2], byteorder='big')
+        sqlerrmsg_s = rest[2:2+ln]
+        rest = rest[2+ln:]
 
-    ln = int.from_bytes(rest[:2], byteorder='big')
-    sqlerrmsg_s = rest[2:2+ln]
-    rest = rest[2+ln:]
+        # SQLDIAGGRP
+        assert rest[0] == 0xFF  # SQLDIAGGRP is null
+        rest = rest[1:]
 
-    assert rest[0] == 0xFF  # SQLDIAGGRP
-    rest = rest[1:]
+        print("\n\tSQLCAGRP:sqlcode=%d,sqlstate=%s,sqlrdbname=%s,sqlerrmsg_m=%s,sqlerrmsg_s=%s,sqlerrproc=%s" % (
+            sqlcode,
+            sqlstate.decode('ascii'),
+            sqlrdbname,
+            sqlerrmsg_m,
+            sqlerrmsg_s,
+            sqlerrproc,
+        ))
 
-    print("\t\tsqlcode=%d,sqlstate=%s,sqlrdbname=%s,sqlerrmsg_m=%s,sqlerrmsg_s=%s,sqlerrproc=%s,rest=%s" % (
-        sqlcode,
-        sqlstate.decode('ascii'),
-        sqlrdbname,
-        sqlerrmsg_m,
-        sqlerrmsg_s,
-        sqlerrproc,
-        rest,
-    ))
     return rest
 
 
 def printSQLDARD(cp, obj):
     # https://www.ibm.com/support/knowledgecenter/SSEPH2_13.1.0/com.ibm.ims13.doc.apr/ims_ddm_sqldard.htm
+    has_name = obj[0] == 0x00
     rest = printSQLCARD(cp, obj)
     if rest[0] == 0x00:     # SQLDHGRP is not null
-        print("\tSQLDHGRP=%s" % (binascii.b2a_hex(rest[:19]).decode('ascii'),))
-        rest = rest[19:]
-        ln = int.from_bytes(rest[0:2], byteorder=ENDIAN)
-        print('\tcolumn count=', ln)
-        rest = rest[2:]
-        printSQLDAGRP(rest)
+        print("\tSQLDHGRP=%s" % (binascii.b2a_hex(rest[:13]).decode('ascii'),), end=' ')
+        rest = rest[13:]
+        sqlrdbnam, rest = parse_string(rest)
+        sqlschema_m, rest = parse_string(rest)
+        sqlschema_s, rest = parse_string(rest)
+        print('%s,%s,%s' % (sqlrdbnam, sqlschema_m, sqlschema_s))
     else:
         print("\tSQLDHGRP is null")
-        rest = rest[19:]
-        ln = int.from_bytes(rest[0:2], byteorder=ENDIAN)
-        print('\tparams count=', ln)
-        rest = rest[2:]
+        rest = rest[1:]
+    ln = int.from_bytes(rest[0:2], byteorder=ENDIAN)
+    print('\tcolumn count=', ln)
+    rest = rest[2:]
+    printSQLDAGRP(rest, has_name)
 
 
 def printSQLATTR(cp, obj):
@@ -369,7 +377,7 @@ def printSQLDTA(cp, obj):
         ln = int.from_bytes(obj[i:i+2], byteorder='big')
         cp = CODE_POINT[int.from_bytes(obj[i+2:i+4], byteorder='big')]
         binary = obj[i+4:i+ln]
-        print("\t%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')), end='')
+        print("\t%s:%s" % (cp, binascii.b2a_hex(binary).decode('ascii')), end='')
         asc_dump(binary)
 
         i += ln
@@ -402,10 +410,11 @@ def printSQLCINRD(cp, obj):
 
     print("\tsqldhold=%d,ncols=%d" % (sqldhold, ncols))
 
-    printSQLDAGRP(b)
+    printSQLDAGRP(b, False)
 
 
-def printSQLDAGRP(b):
+def printSQLDAGRP(b, has_name):
+    print("\tSQLDAGRP:%s" % (binascii.b2a_hex(b).decode('ascii')))
 
     while b:
         precision = int.from_bytes(b[0:2], byteorder=ENDIAN)
@@ -414,21 +423,25 @@ def printSQLDAGRP(b):
         sqltype = int.from_bytes(b[12:14], byteorder=ENDIAN)
         ccsid = int.from_bytes(b[14:16], byteorder='big')
         b = b[16:]
+        if has_name:
+            b = b[6:]   # ?? skip 6 bytes
 
-        b = b[6:]   # ?? skip 6 bytes
+            # SQLDOPTGRP
+            assert b[0] == 0
+            b = b[1:]
+            b = b[2:]   # skip SQLUNNAMED
+            sqlname, b = parse_name(b)
+            sqllabel, b = parse_name(b)
+            sqlcomments, b = parse_name(b)
+            b = b[7:]   # ?? skip 7 bytes
+        else:
+            sqllabel = None
+            b = b[29:]
 
-        # SQLDOPTGRP
-        assert b[0] == 0
-        b = b[1:]
-        b = b[2:]   # skip SQLUNNAMED
-        sqlname, b = parse_name(b)
-        sqllabel, b = parse_name(b)
-        sqlcomments, b = parse_name(b)
-
-        b = b[7:]   # ?? skip 7 bytes
-
-        print('sqllabel,precision,scale,length,sqltype',
+        print('\tsqllabel,precision,scale,length,sqltype',
             sqllabel, precision, scale, length, sqltype)
+
+
 
     assert len(b) == 0
 
@@ -604,7 +617,9 @@ if __name__ == '__main__':
     server = sys.argv[1].split(':')
     server_name = server[0]
     if len(server) == 1:
+        # apatch derby
         server_port = 1527
+        ENDIAN = 'big'
     else:
         server_port = int(server[1])
 
