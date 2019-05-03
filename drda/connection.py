@@ -252,7 +252,7 @@ class Connection:
             )
             cur_id = ddm.write_request_dds(
                 self.sock,
-                ddm.packSQLDTA(params_description, args),
+                ddm.packSQLDTA(params_description, args, self.endian),
                 cur_id, False, True
             )
 

@@ -363,17 +363,39 @@ def packEXCSQLSET(pkgid, pkgcnstkn, pkgsn, database):
     )
 
 
-def packSQLDTA(params_desc, params):
-    # TODO: use params_desc
+def _fdodsc(sqltype):
+    if sqltype == 449:
+        return binascii.unhexlify(b'393fff')
+    elif sqltype == 497:
+        return binascii.unhexlify(b'030004')
+    else:
+        raise ValueError("_fdodsc():Unknown type {}".format(sqltype))
+
+
+def _fdodta(sqltype, v, endian):
+    if sqltype == 449:
+        v = str(v)
+        return len(v).to_bytes(4, byteorder='big') + v.encode('utf_16_be')
+    elif sqltype == 497:
+        v = int(v)
+        return b'\x00' + v.to_bytes(4, byteorder=endian)
+    else:
+        raise ValueError("_fdodsc():Unknown type {}".format(sqltype))
+
+
+def packSQLDTA(params_desc, params, endian):
     ln = len(params)
-    fdodsc = (bytes([(1 + ln) * 3]) +
-            binascii.unhexlify(b'76d0') +
-            (binascii.unhexlify(b'393fff') * ln) +
-            binascii.unhexlify(b'0671e4d00001'))
+    assert ln == len(params_desc)
+
+    fdodsc = bytes([(1 + ln) * 3]) + binascii.unhexlify(b'76d0')
     fdodta = b''
-    for param in params:
-        fdodta += len(param).to_bytes(4, byteorder='big')
-        fdodta += str(param).encode('utf_16_be')
+
+    for i in range(ln):
+        fdodsc += _fdodsc(params_desc[i][1])
+        fdodta += _fdodta(params_desc[i][1], params[i], endian)
+
+    fdodsc += binascii.unhexlify(b'0671e4d00001')
+
     return pack_dds_object(
         cp.SQLDTA,
         pack_dds_object(cp.FDODSC, fdodsc) +
