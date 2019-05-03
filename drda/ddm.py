@@ -394,6 +394,9 @@ def packSQLDTA(params_desc, params, endian):
         fdodsc += _fdodsc(params_desc[i][1])
         fdodta += _fdodta(params_desc[i][1], params[i], endian)
 
+    if (len(fdodsc) + len(fdodta)) % 2:
+        fdodta = b'\x00' + fdodta
+
     fdodsc += binascii.unhexlify(b'0671e4d00001')
 
     return pack_dds_object(
