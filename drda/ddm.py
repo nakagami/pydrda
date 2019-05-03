@@ -296,7 +296,7 @@ def packACCRDB(prdid, rdbnam, enc):
             _pack_str(cp.RDBNAM, rdbnam, enc) +
             _pack_uint(cp.RDBACCCL, cp.SQLAM, 2) +
             _pack_str(cp.PRDID, prdid, enc) +
-            _pack_str(cp.TYPDEFNAM, 'QTDSQLASC', enc) +
+            _pack_str(cp.TYPDEFNAM, 'QTDSQLX86', enc) +
             _pack_binary(
                 cp.CRRTKN,
                 binascii.unhexlify(b'd5c6f0f0f0f0f0f12ec3f0c1f50155630d5a11')) +
