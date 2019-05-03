@@ -224,7 +224,40 @@ class Connection:
 
     def _query(self, query, args):
         if args:
-            pass
+            cur_id = 1
+            cur_id = ddm.write_request_dds(
+                self.sock,
+                ddm.packPRPSQLSTT(self.pkgid, self.pkgcnstkn, self.pkgsn, self.database),
+                cur_id, True, False
+            )
+            cur_id = ddm.write_request_dds(
+                self.sock,
+                ddm.packSQLSTT(query),
+                cur_id, False, False
+            )
+            cur_id = ddm.write_request_dds(
+                self.sock,
+                ddm.packDSCSQLSTT(self.pkgid, self.pkgcnstkn, self.pkgsn, self.database),
+                cur_id, False, True
+            )
+            rows, description, params_description = self._parse_response()
+
+            cur_id = 1
+            cur_id = ddm.write_request_dds(
+                self.sock,
+                ddm.packOPNQRY_with_params(
+                    self.pkgid, self.pkgcnstkn, self.pkgsn, self.database
+                ),
+                cur_id, True, False
+            )
+            cur_id = ddm.write_request_dds(
+                self.sock,
+                ddm.packSQLDTA(params_description, args),
+                cur_id, False, True
+            )
+
+            rows, _, _ = self._parse_response()
+            return rows, description
         else:
             cur_id = 1
             cur_id = ddm.write_request_dds(

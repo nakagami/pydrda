@@ -79,6 +79,11 @@ class TestBasic(unittest.TestCase):
             ('B', 2, decimal.Decimal('1.2'), decimal.Decimal('2')),
             ('C', 3, None, None)
         ])
+        with self.assertRaises(NotImplementedError):
+            cur.execute(
+                "SELECT * FROM test_basic where s=?",
+                ["abcdefghijklmnopq"]
+            )
 
     def test_error(self):
         cur = self.connection.cursor()

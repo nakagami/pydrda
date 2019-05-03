@@ -53,6 +53,10 @@ class Cursor:
         pass
 
     def execute(self, query, args=[]):
+        if args and self.connection.db_type == 'derby':
+            raise NotImplementedError(
+                "pydrda can't execute with paramters against derby"
+            )
         self.query = query
         if query.strip().split()[0].upper() == 'SELECT':
             self._rows, self.description = self.connection._query(self.query, args)

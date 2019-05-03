@@ -99,7 +99,8 @@ def parse_reply(obj):
 
 def parse_sqlcard(obj, enc, endian):
     if obj[0] == 0xff:
-        return None, b''
+        return None, obj[1:]
+
     assert obj[0] == 0       # SQLCAGRP FLAG
     sqlcode = int.from_bytes(obj[1:5], byteorder=endian, signed=True)
     sqlstate = obj[5:10]
@@ -135,7 +136,7 @@ def parse_sqlcard(obj, enc, endian):
     return err, rest
 
 
-def _parse_column_db2(b, endian):
+def _parse_column_db2(b, endian, has_name):
     precision = int.from_bytes(b[:2], byteorder=endian)
     scale = int.from_bytes(b[2:4], byteorder=endian)
     sqllength = int.from_bytes(b[4:12], byteorder=endian)
@@ -143,22 +144,23 @@ def _parse_column_db2(b, endian):
     sqlccsid = int.from_bytes(b[14:16], byteorder='big')
 
     b = b[16:]
-
-    b = b[6:]   # ?? skip 6 bytes
-
-    # SQLDOPTGRP
-    assert b[0] == 0x00  # not null
-    b = b[3:]
-    sqlname, b = parse_name(b)
-    sqllabel, b = parse_name(b)
-    sqlcomments, b = parse_name(b)
-
-    b = b[7:]   # ?? skip 7 bytes
+    if has_name:
+        b = b[6:]   # ?? skip 6 bytes
+        # SQLDOPTGRP
+        assert b[0] == 0x00  # not null
+        b = b[3:]
+        sqlname, b = parse_name(b)
+        sqllabel, b = parse_name(b)
+        sqlcomments, b = parse_name(b)
+        b = b[7:]   # ?? skip 7 bytes
+    else:
+        sqllabel = None
+        b = b[29:]
 
     return (sqllabel, sqltype, sqllength, sqllength, precision, scale, None), b
 
 
-def _parse_column_derby(b, endian):
+def _parse_column_derby(b, endian, has_name):
     precision = int.from_bytes(b[:2], byteorder=endian)
     scale = int.from_bytes(b[2:4], byteorder=endian)
     sqllength = int.from_bytes(b[4:12], byteorder=endian)
@@ -197,19 +199,22 @@ def _parse_column_derby(b, endian):
 
 def parse_sqldard(obj, enc, endian, db_type):
     description = []
+    has_name = obj[0] == 0x00
     err, rest = parse_sqlcard(obj, enc, endian)
     if not err:
         if rest[0] == 0x00:
-            rest = rest[19:]
+            rest = rest[13:]
+            sqlrdbnam, rest = parse_string(rest)
+            sqlschema, rest = parse_name(rest)
         else:
             rest = rest[1:]
         ln = int.from_bytes(rest[0:2], byteorder=endian)
         rest = rest[2:]
         for i in range(ln):
             if db_type == 'db2':
-                d, rest = _parse_column_db2(rest, endian)
+                d, rest = _parse_column_db2(rest, endian, has_name)
             elif db_type == 'derby':
-                d, rest = _parse_column_derby(rest, endian)
+                d, rest = _parse_column_derby(rest, endian, has_name)
             description.append(d)
 
     return err, description
@@ -235,7 +240,7 @@ def write_request_dds(sock, o, cur_id, next_dds_has_same_id, last_packet):
     "Write request DDS packets"
     code_point = int.from_bytes(o[2:4], byteorder='big')
     _send_to_sock(sock, (len(o)+6).to_bytes(2, byteorder='big'))
-    if code_point in (cp.SQLSTT, cp.SQLATTR):
+    if code_point in (cp.SQLSTT, cp.SQLATTR, cp.SQLDTA):
         flag = 3    # DSS object
     else:
         flag = 1    # DSS request
@@ -342,10 +347,12 @@ def packPRPSQLSTT(pkgid, pkgcnstkn, pkgsn, database):
     )
 
 
-def packDSCSQLSTT(database):
+def packDSCSQLSTT(pkgid, pkgcnstkn, pkgsn, database):
     return pack_dds_object(
         cp.DSCSQLSTT,
-        _packPKGNAMCSN(database) + _pack_uint(cp.QRYINSID, 0, 8)
+        _packPKGNAMCSN(database, pkgid, pkgcnstkn, pkgsn) +
+#        _pack_uint(cp.QRYINSID, 0, 8) +
+        _pack_binary(cp.TYPSQLDA, bytes([1]))
     )
 
 
@@ -353,6 +360,35 @@ def packEXCSQLSET(pkgid, pkgcnstkn, pkgsn, database):
     return pack_dds_object(
         cp.EXCSQLSET,
         _packPKGNAMCSN(database, pkgid, pkgcnstkn, pkgsn)
+    )
+
+
+def packSQLDTA(params_desc, params):
+    # TODO: use params_desc
+    ln = len(params)
+    fdodsc = (bytes([(1 + ln) * 3]) +
+            binascii.unhexlify(b'76d0') +
+            (binascii.unhexlify(b'393fff') * ln) +
+            binascii.unhexlify(b'0671e4d00001'))
+    fdodta = b''
+    for param in params:
+        fdodta += len(param).to_bytes(4, byteorder='big')
+        fdodta += str(param).encode('utf_16_be')
+    return pack_dds_object(
+        cp.SQLDTA,
+        pack_dds_object(cp.FDODSC, fdodsc) +
+        pack_dds_object(cp.FDODTA, fdodta)
+    )
+
+
+def packOPNQRY_with_params(pkgid, pkgcnstkn, pkgsn, database):
+    return pack_dds_object(
+        cp.OPNQRY,
+        _packPKGNAMCSN(database, pkgid, pkgcnstkn, pkgsn) +
+        _pack_uint(cp.QRYBLKSZ, 65535, 4) +
+        _pack_uint(cp.MAXBLKEXT, 65535, 2) +
+        _pack_binary(cp.QRYCLSIMP, bytes([0x01])) +
+        _pack_binary(cp.DYNDTAFMT, bytes([0xf1]))
     )
 
 

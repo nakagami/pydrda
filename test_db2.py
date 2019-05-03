@@ -85,6 +85,20 @@ class TestBasic(unittest.TestCase):
             ('C', 3, None, None)
         ])
 
+        cur.execute(
+            "SELECT * FROM test_basic where s=?",
+            ["abcdefghijklmnopq"]
+        )
+        self.assertEqual(cur.description, [
+            ('S', 449, 20, 20, 0, 0, None),
+            ('I', 497, 4, 4, 0, 0, None),
+            ('D1', 485, 0, 0, 2, 1, None),
+            ('D2', 485, 0, 0, 11, 2, None)
+        ])
+        self.assertEqual(cur.fetchall(), [
+            ('abcdefghijklmnopq', 1, decimal.Decimal('1.1'), decimal.Decimal('123456789.12')),
+        ])
+
     def test_error(self):
         cur = self.connection.cursor()
         with self.assertRaises(drda.OperationalError):
