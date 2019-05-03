@@ -255,8 +255,16 @@ class Connection:
                 ddm.packSQLDTA(params_description, args, self.endian),
                 cur_id, False, True
             )
-
             rows, _, _ = self._parse_response()
+
+            cur_id = 1
+            cur_id = ddm.write_request_dds(
+                self.sock,
+                ddm.packRDBCMM(),
+                cur_id, False, True
+            )
+            _, _, _ = self._parse_response()
+
             return rows, description
         else:
             cur_id = 1
