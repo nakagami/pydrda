@@ -27,7 +27,7 @@ Db2 example
 
    conn = drda.connect(host='serverhost', database='dbname', user='user', password='password', port=50000)
    cur = conn.cursor()
-   cur.execute('select * from foo')
+   cur.execute('select * from foo where name=?', ['alice'])
    for r in cur.fetchall():
        print(r[0], r[1])
 
@@ -50,8 +50,13 @@ You need Start the Network server. http://db.apache.org/derby/papers/DerbyTut/ns
 Restriction
 ======================
 
-- SECMEC=1 (SECMEC_USRIDONL) for derby
-- SECMEC=3 (SECMEC_USRIDPWD) for DB2
+Apatch Derby
+--------------
 
-Because Db2 on IBM cloud needs SECMEC=9, this driver can't connect to Db2 on IBM cloud.
+That can't execute with parameters against derby.
+
+Db2
+--------------
+
+Because Db2 on IBM cloud needs SECMEC=9(send encrypted user and password), this driver can't connect to Db2 on IBM cloud.
 
