@@ -45,4 +45,5 @@ setup(
     license="MIT",
     packages=['drda'],
     cmdclass=cmdclass,
+    install_requires=['pyDes'],
 )
