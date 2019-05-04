@@ -376,7 +376,7 @@ def _fdodsc(description):
     if sqltype == 449:
         return binascii.unhexlify(b'393fff')
     elif sqltype == 485:
-        pass
+        return bytes([0x0f, precision, scale])
     elif sqltype == 497:
         return binascii.unhexlify(b'030004')
     else:
@@ -389,7 +389,16 @@ def _fdodta(description, v):
         v = str(v)
         return len(v).to_bytes(4, byteorder='big') + v.encode('utf_16_be')
     elif sqltype == 485:
-        pass
+        sign, digits, exponent = v.as_tuple()
+        d = bytes([ord(b'0') + n for n in digits])
+        d = (b'0' * (precision + scale) + d)[-(precision +scale):]
+        d += b"d" if sign else b"c"
+        if len(d) % 2:
+            v = b'0' + v
+        v = binascii.unhexlify(d)
+        if v[0] != 0:
+            v = b'\x00' + v
+        return v
     elif sqltype == 497:
         v = int(v)
         return b'\x00' + v.to_bytes(4, byteorder='little')

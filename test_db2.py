@@ -108,8 +108,8 @@ class TestBasic(unittest.TestCase):
         ])
 
         cur.execute(
-            "SELECT * FROM test_basic where i=?",
-            [1]
+            "SELECT * FROM test_basic where i=? and d1=? and d2=?",
+            [1, decimal.Decimal('1.1'), decimal.Decimal('123456789.12')]
         )
         self.assertEqual(cur.fetchall(), [
             ('abcdefghijklmnopq', 1, decimal.Decimal('1.1'), decimal.Decimal('123456789.12')),
