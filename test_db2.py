@@ -115,6 +115,15 @@ class TestBasic(unittest.TestCase):
             ('abcdefghijklmnopq', 1, decimal.Decimal('1.1'), decimal.Decimal('123456789.12')),
         ])
 
+        cur.execute("UPDATE test_basic SET s='abc' WHERE i=?", [1])
+        cur.execute(
+            "SELECT * FROM test_basic where i=?",
+            [1]
+        )
+        self.assertEqual(cur.fetchall(), [
+            ('abc', 1, decimal.Decimal('1.1'), decimal.Decimal('123456789.12')),
+        ])
+
     def test_error(self):
         cur = self.connection.cursor()
         with self.assertRaises(drda.OperationalError):

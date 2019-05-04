@@ -331,6 +331,14 @@ def _packPKGNAMCSN(database, pkgid, pkgcnstkn, pkgsn):
     )
 
 
+def packEXCSQLSTT(pkgid, pkgcnstkn, pkgsn, database):
+    return pack_dds_object(
+        cp.EXCSQLIMM,
+        _packPKGNAMCSN(database, pkgid, pkgcnstkn, pkgsn) +
+        _pack_binary(cp.RDBCMTOK, bytes([241]))
+    )
+
+
 def packEXCSQLIMM(pkgid, pkgcnstkn, pkgsn, database):
     return pack_dds_object(
         cp.EXCSQLIMM,
