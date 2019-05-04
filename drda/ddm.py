@@ -371,22 +371,28 @@ def packEXCSQLSET(pkgid, pkgcnstkn, pkgsn, database):
     )
 
 
-def _fdodsc(sqltype):
+def _fdodsc(description):
+    _, sqltype, sqllength, _, precision, scale, _ = description
     if sqltype == 449:
         return binascii.unhexlify(b'393fff')
+    elif sqltype == 485:
+        pass
     elif sqltype == 497:
         return binascii.unhexlify(b'030004')
     else:
         raise ValueError("_fdodsc():Unknown type {}".format(sqltype))
 
 
-def _fdodta(sqltype, v, endian):
+def _fdodta(description, v):
+    _, sqltype, sqllength, _, precision, scale, _ = description
     if sqltype == 449:
         v = str(v)
         return len(v).to_bytes(4, byteorder='big') + v.encode('utf_16_be')
+    elif sqltype == 485:
+        pass
     elif sqltype == 497:
         v = int(v)
-        return b'\x00' + v.to_bytes(4, byteorder=endian)
+        return b'\x00' + v.to_bytes(4, byteorder='little')
     else:
         raise ValueError("_fdodsc():Unknown type {}".format(sqltype))
 
@@ -399,8 +405,8 @@ def packSQLDTA(params_desc, params, endian):
     fdodta = b''
 
     for i in range(ln):
-        fdodsc += _fdodsc(params_desc[i][1])
-        fdodta += _fdodta(params_desc[i][1], params[i], endian)
+        fdodsc += _fdodsc(params_desc[i])
+        fdodta += _fdodta(params_desc[i], params[i])
 
     if (len(fdodsc) + len(fdodta)) % 2:
         fdodta = b'\x00' + fdodta
