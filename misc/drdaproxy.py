@@ -230,6 +230,7 @@ CODE_POINT = {
     0x1906: 'XIDCNT',
     0x1913: 'CCSIDXML',
     0x214B: 'DYNDTAFMT',
+    0x1909: '?1909?',
     0x2136: '?2136?',
     0x2137: '?2137?',
     0x245A: '?245A?',
@@ -484,7 +485,7 @@ def printObject(cp, obj):
     'SQLCINRD': printSQLCINRD,
     'QRYDSC': printQRYDSC,
     'QRYDTA': printQRYDTA,
-    }.get(cp, printUnknown)(cp, obj)
+    }.get(cp, printCodePoint)(cp, obj)
 
 
 def printCodePoint(cp, obj):
