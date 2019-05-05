@@ -53,10 +53,11 @@ Restriction
 Apatch Derby
 --------------
 
-That can't execute with parameters against derby.
+This driver can't execute with parameters against derby.
 
 Db2
 --------------
 
 Because Db2 on IBM cloud needs SECMEC=9(send encrypted user and password), this driver can't connect to Db2 on IBM cloud.
 
+https://wiki.apache.org/db-derby/SecurityMechanism
