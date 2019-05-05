@@ -50,18 +50,16 @@ You need Start the Network server. http://db.apache.org/derby/papers/DerbyTut/ns
 Supported Databases
 ======================
 
+Db2
+--------------
+
+https://www.ibm.com/analytics/db2
+
+Because Db2 on IBM cloud needs SECMEC=9(send encrypted user and password), this driver can't connect to Db2 on IBM cloud.  https://wiki.apache.org/db-derby/SecurityMechanism
+
 Apatch Derby
 --------------
 
 https://db.apache.org/derby/
 
 This driver can't execute with parameters against derby.
-
-Db2
---------------
-
-Db2 https://www.ibm.com/analytics/db2
-
-Because Db2 on IBM cloud needs SECMEC=9(send encrypted user and password), this driver can't connect to Db2 on IBM cloud.
-
-https://wiki.apache.org/db-derby/SecurityMechanism
