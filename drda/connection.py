@@ -28,6 +28,7 @@ import collections
 
 from drda import codepoint as cp
 from drda import ddm
+from drda import secmec9
 from drda import utils
 from drda.cursor import Cursor
 
@@ -91,7 +92,7 @@ class Connection:
                     obj = obj[ln:]
                     if sub_cp == cp.SECMEC:
                         secmec = int.from_bytes(v, byteorder='big')
-                    elif sub_cp == cp.SETKN:
+                    elif sub_cp == cp.SECTKN:
                         sectkn = v
         return secmec, sectkn
 
@@ -128,6 +129,7 @@ class Connection:
             self.user = self.user
             self.password = self.password
             self.secmec = cp.SECMEC_USRIDPWD
+            self.dh_private = secmec9.get_private()
         else:
             raise ValueError('Unknown database type:{}'.format(self.db_type))
 
@@ -149,19 +151,23 @@ class Connection:
         )
         cur_id = ddm.write_request_dds(
             self.sock,
-            ddm.packACCSEC(self.database, self.secmec),
+            ddm.packACCSEC(
+                self.database,
+                self.secmec,
+                secmec9.calc_public(self.dh_private)
+                    if self.secmec == cp.SECMEC_EUSRIDPWD else None
+            ),
             cur_id, False, True
         )
 
-        secmec, sectkn = self._parse_accsecrd()
-        # print("secmec,sectkn=", secmec, sectkn)
-        self.secmec = secmec
+        self.secmec, self.sectkn = self._parse_accsecrd()
 
         cur_id = 1
         cur_id = ddm.write_request_dds(
             self.sock,
             ddm.packSECCHK(
                 self.secmec,
+                self.sectkn,
                 self.database,
                 self.user,
                 self.password,

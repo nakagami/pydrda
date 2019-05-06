@@ -281,7 +281,7 @@ def packEXCSAT_MGRLVLLS(mgrlvlls):
     return pack_dds_object(cp.EXCSAT, (_pack_binary(cp.MGRLVLLS, b)))
 
 
-def packSECCHK(secmec, database, user, password, enc):
+def packSECCHK(secmec, sectkn, database, user, password, enc):
     return pack_dds_object(cp.SECCHK, (
             _pack_uint(cp.SECMEC, secmec, 2) +
             _pack_str(cp.RDBNAM, database, enc) +
@@ -307,7 +307,7 @@ def packACCRDB(prdid, rdbnam, enc):
     )
 
 
-def packACCSEC(database, secmec, sectkn=None):
+def packACCSEC(database, secmec, sectkn):
     body = (_pack_uint(cp.SECMEC, secmec, 2) +
         _pack_str(cp.RDBNAM, database, 'cp500'))
     if sectkn:
