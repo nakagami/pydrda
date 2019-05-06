@@ -78,6 +78,23 @@ class Connection:
             raise err
         return results, description, params_description
 
+    def _parse_accsecrd(self):
+        secmec = sectkn = None
+        chained = True
+        while chained:
+            dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock)
+            if code_point == cp.ACCSECRD:
+                while len(obj):
+                    ln = int.from_bytes(obj[:2], byteorder='big')
+                    sub_cp = int.from_bytes(obj[2:4], byteorder='big')
+                    v = obj[4:ln]
+                    obj = obj[ln:]
+                    if sub_cp == cp.SECMEC:
+                        secmec = int.from_bytes(v, byteorder='big')
+                    elif sub_cp == cp.SETKN:
+                        sectkn = v
+        return secmec, sectkn
+
     def __init__(self, host, database, port, user, password, db_type):
         self.host = host
         self.database = (database + ' ' * 18)[:18]
@@ -136,7 +153,9 @@ class Connection:
             cur_id, False, True
         )
 
-        self._parse_response()
+        secmec, sectkn = self._parse_accsecrd()
+        # print("secmec,sectkn=", secmec, sectkn)
+        self.secmec = secmec
 
         cur_id = 1
         cur_id = ddm.write_request_dds(
