@@ -22,6 +22,7 @@
 # SOFTWARE.
 ##############################################################################
 import socket
+import ssl
 import platform
 import locale
 import collections
@@ -96,7 +97,7 @@ class Connection:
                         sectkn = v
         return secmec, sectkn
 
-    def __init__(self, host, database, port, user, password, db_type):
+    def __init__(self, host, database, port, user, password, use_ssl, db_type):
         self.host = host
         self.database = (database + ' ' * 18)[:18]
         self.port = port
@@ -136,6 +137,8 @@ class Connection:
             raise ValueError('Unknown database type:{}'.format(self.db_type))
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        if use_ssl:
+            self.sock = ssl.wrap_socket(self.sock)
         self.sock.connect((self.host, self.port))
 
         cur_id = 1

@@ -118,5 +118,5 @@ class NotSupportedError(DatabaseError):
         DatabaseError.__init__(self, 'NotSupportedError')
 
 
-def connect(host, database, port, user=None, password=None, db_type=None):
-    return Connection(host, database, port, user, password, db_type)
+def connect(host, database, port, user=None, password=None, use_ssl=False, db_type=None):
+    return Connection(host, database, port, user, password, use_ssl, db_type)
