@@ -17,9 +17,16 @@ Installation
 
     $ pip install pydrda
 
-
-Db2 example
+Supported Databases
 ======================
+
+
+Db2
+------------------------
+
+https://www.ibm.com/analytics/db2
+
+Example
 
 ::
 
@@ -31,11 +38,28 @@ Db2 example
    for r in cur.fetchall():
        print(r[0], r[1])
 
+(with ssl connection)
 
-Apache Derby example
-======================
+::
+
+   import drda
+
+   conn = drda.connect(host='serverhost', database='dbname', use_ssl=True, user='user', password='password', port=50001)
+   cur = conn.cursor()
+   cur.execute('select * from foo where name=?', ['alice'])
+   for r in cur.fetchall():
+       print(r[0], r[1])
+
+
+Apache Derby
+==============
+
+https://db.apache.org/derby/
 
 You need Start the Network server. http://db.apache.org/derby/papers/DerbyTut/ns_intro.html#start_ns
+
+Example
+
 ::
 
    import drda
@@ -45,21 +69,5 @@ You need Start the Network server. http://db.apache.org/derby/papers/DerbyTut/ns
    cur.execute('select * from foo')
    for r in cur.fetchall():
        print(r[0], r[1])
-
-
-Supported Databases
-======================
-
-Db2
---------------
-
-https://www.ibm.com/analytics/db2
-
-Because Db2 on IBM cloud needs SECMEC=9(send encrypted user and password), this driver can't connect to Db2 on IBM cloud.  https://wiki.apache.org/db-derby/SecurityMechanism
-
-Apatch Derby
---------------
-
-https://db.apache.org/derby/
 
 This driver can't execute with parameters against derby.
