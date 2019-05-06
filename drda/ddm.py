@@ -25,6 +25,7 @@ import platform
 import binascii
 import drda
 from drda import codepoint as cp
+from drda import secmec9
 
 
 def _recv_from_sock(sock, nbytes):
@@ -281,14 +282,24 @@ def packEXCSAT_MGRLVLLS(mgrlvlls):
     return pack_dds_object(cp.EXCSAT, (_pack_binary(cp.MGRLVLLS, b)))
 
 
-def packSECCHK(secmec, sectkn, database, user, password, enc):
-    return pack_dds_object(cp.SECCHK, (
-            _pack_uint(cp.SECMEC, secmec, 2) +
-            _pack_str(cp.RDBNAM, database, enc) +
-            _pack_str(cp.USRID, user, enc) +
-            _pack_str(cp.PASSWORD, password, enc)
+def packSECCHK(secmec, sectkn, private_key, database, user, password, enc):
+    if secmec == cp.SECMEC_EUSRIDPWD:
+        des = secmec9.des(sectkn, private_key)
+        return pack_dds_object(cp.SECCHK, (
+                _pack_uint(cp.SECMEC, secmec, 2) +
+                _pack_str(cp.RDBNAM, database, enc) +
+                _pack_binary(cp.SECTKN, des.encrypt(user.encode(enc))) +
+                _pack_binary(cp.SECTKN, des.encrypt(password.encode(enc)))
+            )
         )
-    )
+    else:
+        return pack_dds_object(cp.SECCHK, (
+                _pack_uint(cp.SECMEC, secmec, 2) +
+                _pack_str(cp.RDBNAM, database, enc) +
+                _pack_str(cp.USRID, user, enc) +
+                _pack_str(cp.PASSWORD, password, enc)
+            )
+        )
 
 
 def packACCRDB(prdid, rdbnam, enc):

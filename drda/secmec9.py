@@ -24,8 +24,6 @@
 # https://wiki.apache.org/db-derby/SecurityMechanism
 
 import random
-import pyDes
-
 
 # DH Key exchange
 # https://en.wikipedia.org/wiki/Diffie-Hellman_key_exchange
@@ -49,13 +47,14 @@ def calc_session_key(public, private):
 
 
 # DES/CBC/PKCS5Padding encryption
-def des(sever_sectkn, client_private):
+def des(server_sectkn, client_private):
+    import pyDes
     assert len(server_sectkn) == 32
     # calculate session key from server_sectkn and client_private
     # get des key (8bytes) from session key
 
     server_public = int.from_bytes(server_sectkn, byteorder='big')
-    session_key = calc_session_key(server_public)
+    session_key = calc_session_key(server_public, client_private)
 
     iv = server_sectkn[12:20]
     key = session_key[12:20]

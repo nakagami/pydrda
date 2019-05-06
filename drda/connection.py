@@ -119,6 +119,7 @@ class Connection:
             self.user = 'APP'
             self.password = ''
             self.secmec = cp.SECMEC_USRIDONL
+            self.private_key = None
         elif self.db_type == 'db2':
             self.encoding = 'cp500'
             self.endian = 'little'
@@ -128,8 +129,9 @@ class Connection:
             self.pkgsn = 65
             self.user = self.user
             self.password = self.password
-            self.secmec = cp.SECMEC_USRIDPWD
-            self.dh_private = secmec9.get_private()
+            # self.secmec = cp.SECMEC_USRIDPWD
+            self.secmec = cp.SECMEC_EUSRIDPWD
+            self.private_key = secmec9.get_private()
         else:
             raise ValueError('Unknown database type:{}'.format(self.db_type))
 
@@ -154,7 +156,7 @@ class Connection:
             ddm.packACCSEC(
                 self.database,
                 self.secmec,
-                secmec9.calc_public(self.dh_private)
+                secmec9.calc_public(self.private_key).to_bytes(32, byteorder='big')
                     if self.secmec == cp.SECMEC_EUSRIDPWD else None
             ),
             cur_id, False, True
@@ -168,6 +170,7 @@ class Connection:
             ddm.packSECCHK(
                 self.secmec,
                 self.sectkn,
+                self.private_key,
                 self.database,
                 self.user,
                 self.password,
