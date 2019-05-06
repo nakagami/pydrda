@@ -307,12 +307,12 @@ def packACCRDB(prdid, rdbnam, enc):
     )
 
 
-def packACCSEC(database, secmec):
-    return pack_dds_object(
-        cp.ACCSEC,
-        _pack_uint(cp.SECMEC, secmec, 2) +
-        _pack_str(cp.RDBNAM, database, 'cp500'),
-    )
+def packACCSEC(database, secmec, sectkn=None):
+    body = (_pack_uint(cp.SECMEC, secmec, 2) +
+        _pack_str(cp.RDBNAM, database, 'cp500'))
+    if sectkn:
+        body += _pack_binary(cp.SECTKN, sectkn)
+    return pack_dds_object(cp.ACCSEC, body)
 
 
 def packRDBCMM():
