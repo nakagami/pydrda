@@ -92,7 +92,7 @@ class Connection:
                     v = obj[4:ln]
                     obj = obj[ln:]
                     if sub_cp == cp.SECMEC:
-                        secmec = int.from_bytes(v, byteorder='big')
+                        secmec = int.from_bytes(v[:2], byteorder='big')
                     elif sub_cp == cp.SECTKN:
                         sectkn = v
         return secmec, sectkn
@@ -165,14 +165,27 @@ class Connection:
             cur_id, False, True
         )
 
-        self.secmec, self.sectkn = self._parse_accsecrd()
+        secmec, sectkn = self._parse_accsecrd()
 
         cur_id = 1
+        if secmec != self.secmec:
+            self.secmec = secmec
+            cur_id = ddm.write_request_dds(
+                self.sock,
+                ddm.packACCSEC(
+                    self.database,
+                    self.secmec,
+                    secmec9.calc_public(self.private_key).to_bytes(32, byteorder='big')
+                        if self.secmec == cp.SECMEC_EUSRIDPWD else None
+                ),
+                cur_id, False, False
+            )
+
         cur_id = ddm.write_request_dds(
             self.sock,
             ddm.packSECCHK(
-                self.secmec,
-                self.sectkn,
+                secmec,
+                sectkn,
                 self.private_key,
                 self.database,
                 self.user,
