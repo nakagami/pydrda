@@ -195,6 +195,19 @@ class TestDataType(unittest.TestCase):
         self.connection.close()
 
 
+class TestBasic(unittest.TestCase):
+    def test_secmec9(self):
+        from drda import secmec9
+        a = secmec9.get_private()
+        b = secmec9.get_private()
+        A = secmec9.calc_public(a)
+        B = secmec9.calc_public(b)
+        self.assertEqual(
+            secmec9.calc_session_key(A, b),
+            secmec9.calc_session_key(B, a)
+        )
+
+
 if __name__ == "__main__":
     import unittest
     unittest.main()
