@@ -295,7 +295,7 @@ def packSECCHK(secmec, sectkn, private_key, database, user, password, enc):
         )
     else:
         return pack_dds_object(cp.SECCHK, (
-                _pack_uint(consts.SECMEC, secmec, 2) +
+                _pack_uint(cp.SECMEC, secmec, 2) +
                 _pack_str(cp.RDBNAM, database, enc) +
                 _pack_str(cp.USRID, user, enc) +
                 _pack_str(cp.PASSWORD, password, enc)
@@ -385,11 +385,11 @@ def packEXCSQLSET(pkgid, pkgcnstkn, pkgsn, database):
 
 def _fdodsc(description):
     _, sqltype, sqllength, _, precision, scale, _ = description
-    if sqltype == 449:
+    if sqltype == consts.DB2_SQLTYPE_NVARCHAR:
         return binascii.unhexlify(b'393fff')
-    elif sqltype == 485:
+    elif sqltype == consts.DB2_SQLTYPE_NDECIMAL:
         return bytes([0x0f, precision, scale])
-    elif sqltype == 497:
+    elif sqltype == consts.DB2_SQLTYPE_NINTEGER:
         return binascii.unhexlify(b'030004')
     else:
         raise ValueError("_fdodsc():Unknown type {}".format(sqltype))
@@ -397,10 +397,10 @@ def _fdodsc(description):
 
 def _fdodta(description, v):
     _, sqltype, sqllength, _, precision, scale, _ = description
-    if sqltype == 449:
+    if sqltype == consts.DB2_SQLTYPE_NVARCHAR:
         v = str(v)
         return len(v).to_bytes(4, byteorder='big') + v.encode('utf_16_be')
-    elif sqltype == 485:
+    elif sqltype == consts.DB2_SQLTYPE_NDECIMAL:
         sign, digits, exponent = v.as_tuple()
         d = bytes([ord(b'0') + n for n in digits])
         d = (b'0' * (precision + scale) + d)[-(precision +scale):]
@@ -411,7 +411,7 @@ def _fdodta(description, v):
         if v[0] != 0:
             v = b'\x00' + v
         return v
-    elif sqltype == 497:
+    elif sqltype == consts.DB2_SQLTYPE_NINTEGER:
         v = int(v)
         return b'\x00' + v.to_bytes(4, byteorder='little')
     else:
