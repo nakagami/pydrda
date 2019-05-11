@@ -189,7 +189,10 @@ class TestDataType(unittest.TestCase):
                 (-1, -1, -1, -1)
         """)
         cur.execute("SELECT * FROM test_double")
-        self.assertEqual(cur.fetchall(), [(-1, -1, -1.0, -1.0)])
+        self.assertEqual(cur.fetchall(), [(-2, -3, -4.0, -5.0)])
+
+        cur.execute("SELECT * FROM test_double where bi=?", [-2])
+        self.assertEqual(cur.fetchall(), [(-2, -3, -4.0, -5.0)])
 
     def tearDown(self):
         self.connection.close()
