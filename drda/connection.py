@@ -177,7 +177,7 @@ class Connection:
                     self.database,
                     self.secmec,
                     secmec9.calc_public(self.private_key).to_bytes(32, byteorder='big')
-                        if self.secmec == cp.SECMEC_EUSRIDPWD else None
+                        if self.secmec == consts.SECMEC_EUSRIDPWD else None
                 ),
                 cur_id, False, False
             )

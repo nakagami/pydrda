@@ -391,6 +391,8 @@ def _fdodsc(description):
         return bytes([0x0f, precision, scale])
     elif sqltype == consts.DB2_SQLTYPE_NINTEGER:
         return binascii.unhexlify(b'030004')
+    elif sqltype == consts.DB2_SQLTYPE_NBIGINT:
+        return binascii.unhexlify(b'170008')
     else:
         raise ValueError("_fdodsc():Unknown type {}".format(sqltype))
 
@@ -413,7 +415,10 @@ def _fdodta(description, v):
         return v
     elif sqltype == consts.DB2_SQLTYPE_NINTEGER:
         v = int(v)
-        return b'\x00' + v.to_bytes(4, byteorder='little')
+        return b'\x00' + v.to_bytes(4, byteorder='little', signed=True)
+    elif sqltype == consts.DB2_SQLTYPE_NBIGINT:
+        v = int(v)
+        return b'\x00' + v.to_bytes(8, byteorder='little', signed=True)
     else:
         raise ValueError("_fdodsc():Unknown type {}".format(sqltype))
 
