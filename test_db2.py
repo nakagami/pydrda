@@ -161,7 +161,7 @@ class TestDataType(unittest.TestCase):
         """)
         cur.execute("""
             INSERT INTO test_datetime (d, t, dt) VALUES
-                ('2019-04-30', '12:34:56', '2019-04-30 12:34:56.123456789')
+                ('2019-04-30', '12:34:56', '2019-04-30 12:34:56.123456')
         """)
         cur.execute("SELECT * FROM test_datetime")
         self.assertEqual(cur.fetchall(), [(
