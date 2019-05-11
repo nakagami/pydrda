@@ -2,7 +2,10 @@
 pydrda
 =============
 
-This is a DRDA protocol (https://en.wikipedia.org/wiki/DRDA) pure python database driver.
+This is a DRDA protocol (https://en.wikipedia.org/wiki/DRDA) database driver.
+
+- Pure python
+- Compliant with PEP-249 (https://www.python.org/dev/peps/pep-0249/)
 
 Requirements
 =============
