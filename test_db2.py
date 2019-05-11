@@ -191,7 +191,10 @@ class TestDataType(unittest.TestCase):
         cur.execute("SELECT * FROM test_double")
         self.assertEqual(cur.fetchall(), [(-2, -3, -4.0, -5.0)])
 
-        cur.execute("SELECT * FROM test_double where bi=? and si=?", [-2, -3])
+        cur.execute(
+            "SELECT * FROM test_double where bi=? and si=? and r=? and d=?",
+            [-2, -3, -4.0, -5.0]
+        )
         self.assertEqual(cur.fetchall(), [(-2, -3, -4.0, -5.0)])
 
     def tearDown(self):

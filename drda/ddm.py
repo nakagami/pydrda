@@ -23,6 +23,7 @@
 ##############################################################################
 import platform
 import binascii
+import struct
 import drda
 from drda import codepoint as cp
 from drda import consts
@@ -390,11 +391,13 @@ def _fdodsc(description):
     elif sqltype == consts.DB2_SQLTYPE_NDECIMAL:
         return bytes([0x0f, precision, scale])
     elif sqltype == consts.DB2_SQLTYPE_NSMALL:
-        return binascii.unhexlify(b'050002')
+        return bytes([0x05, 0x00, sqllength])
     elif sqltype == consts.DB2_SQLTYPE_NINTEGER:
-        return binascii.unhexlify(b'030004')
+        return bytes([0x03, 0x00, sqllength])
     elif sqltype == consts.DB2_SQLTYPE_NBIGINT:
-        return binascii.unhexlify(b'170008')
+        return bytes([0x17, 0x00, sqllength])
+    elif sqltype == consts.DB2_SQLTYPE_NFLOAT:
+        return bytes([0x0d if sqllength==4 else 0x0b, 0x00, sqllength])
     else:
         raise ValueError("_fdodsc():Unknown type {}".format(sqltype))
 
@@ -424,8 +427,17 @@ def _fdodta(description, v):
     elif sqltype == consts.DB2_SQLTYPE_NBIGINT:
         v = int(v)
         return b'\x00' + v.to_bytes(8, byteorder='little', signed=True)
+    elif sqltype == consts.DB2_SQLTYPE_NFLOAT:
+        v = float(v)
+        if sqllength == 4:
+            v = struct.pack("<f", v)
+        elif sqllength == 8:
+            v = struct.pack("<d", v)
+        else:
+            raise ValueError("Can't convert to FDODTA", v)
+        return b'\x00' + v
     else:
-        raise ValueError("_fdodsc():Unknown type {}".format(sqltype))
+        raise ValueError("_fdodta():Unknown type {}".format(sqltype))
 
 
 def packSQLDTA(params_desc, params, endian):
