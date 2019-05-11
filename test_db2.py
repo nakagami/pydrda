@@ -186,7 +186,7 @@ class TestDataType(unittest.TestCase):
         cur.execute("DELETE FROM test_double")
         cur.execute("""
             INSERT INTO test_double (bi, si, r, d) VALUES
-                (-1, -1, -1, -1)
+                (-2, -3, -4, -5)
         """)
         cur.execute("SELECT * FROM test_double")
         self.assertEqual(cur.fetchall(), [(-2, -3, -4.0, -5.0)])

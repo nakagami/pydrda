@@ -25,6 +25,7 @@ import platform
 import binascii
 import drda
 from drda import codepoint as cp
+from drda import consts
 from drda import secmec9
 
 
@@ -283,7 +284,7 @@ def packEXCSAT_MGRLVLLS(mgrlvlls):
 
 
 def packSECCHK(secmec, sectkn, private_key, database, user, password, enc):
-    if secmec == cp.SECMEC_EUSRIDPWD:
+    if secmec == consts.SECMEC_EUSRIDPWD:
         des = secmec9.des(sectkn, private_key)
         return pack_dds_object(cp.SECCHK, (
                 _pack_uint(cp.SECMEC, secmec, 2) +
@@ -294,7 +295,7 @@ def packSECCHK(secmec, sectkn, private_key, database, user, password, enc):
         )
     else:
         return pack_dds_object(cp.SECCHK, (
-                _pack_uint(cp.SECMEC, secmec, 2) +
+                _pack_uint(consts.SECMEC, secmec, 2) +
                 _pack_str(cp.RDBNAM, database, enc) +
                 _pack_str(cp.USRID, user, enc) +
                 _pack_str(cp.PASSWORD, password, enc)

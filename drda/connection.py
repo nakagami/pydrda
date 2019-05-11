@@ -28,6 +28,7 @@ import locale
 import collections
 
 from drda import codepoint as cp
+from drda import consts
 from drda import ddm
 from drda import secmec9
 from drda import utils
@@ -110,7 +111,7 @@ class Connection:
             elif self.user is not None:
                 self.db_type = 'db2'
 
-        self.secmec = cp.SECMEC_EUSRIDPWD
+        self.secmec = consts.SECMEC_EUSRIDPWD
         if self.db_type == 'derby':
             self.encoding = 'utf-8'
             self.endian = 'big'
@@ -120,7 +121,7 @@ class Connection:
             self.pkgsn = 201
             self.user = 'APP'
             self.password = ''
-            self.secmec = cp.SECMEC_USRIDONL
+            self.secmec = consts.SECMEC_USRIDONL
             self.private_key = None
         elif self.db_type == 'db2':
             self.encoding = 'cp500'
@@ -160,7 +161,7 @@ class Connection:
                 self.database,
                 self.secmec,
                 secmec9.calc_public(self.private_key).to_bytes(32, byteorder='big')
-                    if self.secmec == cp.SECMEC_EUSRIDPWD else None
+                    if self.secmec == consts.SECMEC_EUSRIDPWD else None
             ),
             cur_id, False, True
         )
