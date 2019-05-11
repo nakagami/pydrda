@@ -24,6 +24,7 @@
 import platform
 import binascii
 import struct
+import datetime
 import drda
 from drda import codepoint as cp
 from drda import consts
@@ -398,6 +399,12 @@ def _fdodsc(description):
         return bytes([0x17, 0x00, sqllength])
     elif sqltype == consts.DB2_SQLTYPE_NFLOAT:
         return bytes([0x0d if sqllength==4 else 0x0b, 0x00, sqllength])
+    elif sqltype == consts.DB2_SQLTYPE_NDATE:
+        return binascii.unhexlify(b'21000a')
+    elif sqltype == consts.DB2_SQLTYPE_NTIME:
+        return binascii.unhexlify(b'230008')
+    elif sqltype == consts.DB2_SQLTYPE_NTIMESTAMP:
+        return binascii.unhexlify(b'250020')
     else:
         raise ValueError("_fdodsc():Unknown type {}".format(sqltype))
 
@@ -435,6 +442,15 @@ def _fdodta(description, v):
             v = struct.pack("<d", v)
         else:
             raise ValueError("Can't convert to FDODTA", v)
+        return b'\x00' + v
+    elif sqltype == consts.DB2_SQLTYPE_NDATE:
+        v = v.strftime("%Y-%m-%d").encode('utf-8')
+        return b'\x00' + v
+    elif sqltype == consts.DB2_SQLTYPE_NTIME:
+        v = v.strftime("%H:%M:%S").encode('utf-8')
+        return b'\x00' + v
+    elif sqltype == consts.DB2_SQLTYPE_NTIMESTAMP:
+        v = v.strftime("%Y-%m-%d-%H.%M.%S.%f      ").encode('utf-8')
         return b'\x00' + v
     else:
         raise ValueError("_fdodta():Unknown type {}".format(sqltype))

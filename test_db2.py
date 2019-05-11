@@ -170,6 +170,17 @@ class TestDataType(unittest.TestCase):
             datetime.datetime(2019, 4, 30, 12, 34, 56, 123456)
         )])
 
+        cur.execute("SELECT * FROM test_datetime where d=? and t=? and dt=?", [
+            datetime.date(2019, 4, 30),
+            datetime.time(12, 34, 56),
+            datetime.datetime(2019, 4, 30, 12, 34, 56, 123456)
+        ])
+        self.assertEqual(cur.fetchall(), [(
+            datetime.date(2019, 4, 30),
+            datetime.time(12, 34, 56),
+            datetime.datetime(2019, 4, 30, 12, 34, 56, 123456)
+        )])
+
     def test_double(self):
         cur = self.connection.cursor()
         try:
