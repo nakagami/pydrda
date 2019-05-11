@@ -7,7 +7,7 @@ This is a DRDA protocol (https://en.wikipedia.org/wiki/DRDA) pure python databas
 Requirements
 =============
 
-- Python 3.5
+- Python 3.5+
 
 
 Installation
@@ -70,4 +70,4 @@ Example
    for r in cur.fetchall():
        print(r[0], r[1])
 
-This driver can't execute with parameters against derby.
+This driver can't execute with parameters against Apache Derby.
