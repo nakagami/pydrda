@@ -110,6 +110,7 @@ class Connection:
             elif self.user is not None:
                 self.db_type = 'db2'
 
+        self.secmec = cp.SECMEC_EUSRIDPWD
         if self.db_type == 'derby':
             self.encoding = 'utf-8'
             self.endian = 'big'
@@ -130,8 +131,6 @@ class Connection:
             self.pkgsn = 65
             self.user = self.user
             self.password = self.password
-            # self.secmec = cp.SECMEC_USRIDPWD
-            self.secmec = cp.SECMEC_EUSRIDPWD
             self.private_key = secmec9.get_private()
         else:
             raise ValueError('Unknown database type:{}'.format(self.db_type))
@@ -154,6 +153,7 @@ class Connection:
             ]),
             cur_id, False, False
         )
+
         cur_id = ddm.write_request_dds(
             self.sock,
             ddm.packACCSEC(
