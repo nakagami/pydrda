@@ -53,7 +53,7 @@ class TestBasic(unittest.TestCase):
             pass
         cur.execute("""
             CREATE TABLE test_basic (
-                s VARCHAR(20),
+                s varchar(20),
                 i int,
                 d1 decimal(2, 1),
                 d2 decimal(11, 2)
@@ -207,6 +207,22 @@ class TestDataType(unittest.TestCase):
             [-2, -3, -4.0, -5.0]
         )
         self.assertEqual(cur.fetchall(), [(-2, -3, -4.0, -5.0)])
+
+
+    def test_string(self):
+        cur = self.connection.cursor()
+        try:
+            cur.execute("""
+                CREATE TABLE test_string (
+                    a character(20),
+                    b varchar(20),
+                    c clob(20),
+                    d graphic(20),
+                    e vargraphic(20)
+                )
+            """)
+        except drda.OperationalError:
+            pass
 
     def tearDown(self):
         self.connection.close()
