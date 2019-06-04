@@ -137,7 +137,7 @@ def read_field(t, ps, b, endian):
         ln = int.from_bytes(b[:2], byteorder='big')
         v = b[2:2+ln].decode('utf-8')
         b = b[2+ln:]
-    elif t == DRDA_TYPE_NVARCHAR:
+    elif t == DRDA_TYPE_VARCHAR:
         ln = int.from_bytes(b[:2], byteorder='big')
         v = b[2:2+ln].decode('utf-8')
         b = b[2+ln:]
