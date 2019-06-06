@@ -196,10 +196,14 @@ def read_field(t, ps, b, endian):
         ln = int.from_bytes(ps, byteorder='big')
         v = struct.unpack(">d" if endian=='big' else "<d", b[:ln])[0]
         b = b[ln:]
-    elif t in (DRDA_TYPE_BOOLEAN, DRDA_TYPE_NBOOLEAN):
+    elif t in (DRDA_TYPE_NBOOLEAN,):
         ln = int.from_bytes(ps, byteorder='big')
         v = int.from_bytes(b[1:1+ln], byteorder='big')
         b = b[1+ln:]
+    elif t in (DRDA_TYPE_BOOLEAN,):
+        ln = int.from_bytes(ps, byteorder='big')
+        v = int.from_bytes(b[:ln], byteorder='big')
+        b = b[ln:]
     else:
         raise ValueError("UnknownType(%s)" % hex(t))
     return v, b
