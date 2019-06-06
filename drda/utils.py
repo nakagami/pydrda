@@ -103,7 +103,8 @@ DRDA_TYPE_SDATALINK = 0x4C
 DRDA_TYPE_NSDATALINK = 0x4D
 DRDA_TYPE_MDATALINK = 0x4E
 DRDA_TYPE_NMDATALINK = 0x4F
-
+DRDA_TYPE_BOOLEAN = 0xBE
+DRDA_TYPE_NBOOLEAN = 0xBF
 
 def read_field(t, ps, b, endian):
     """
@@ -137,13 +138,13 @@ def read_field(t, ps, b, endian):
         ln = int.from_bytes(b[:2], byteorder='big')
         v = b[2:2+ln].decode('utf-8')
         b = b[2+ln:]
-    elif t == DRDA_TYPE_VARCHAR:
+    elif t in (DRDA_TYPE_VARCHAR, DRDA_TYPE_NVARCHAR, DRDA_TYPE_LONG):
         ln = int.from_bytes(b[:2], byteorder='big')
         v = b[2:2+ln].decode('utf-8')
         b = b[2+ln:]
     elif t in (
             DRDA_TYPE_SMALL, DRDA_TYPE_NSMALL, DRDA_TYPE_NINTEGER8,
-            DRDA_TYPE_INTEGER, DRDA_TYPE_NINTEGER
+            DRDA_TYPE_INTEGER8, DRDA_TYPE_INTEGER, DRDA_TYPE_NINTEGER, 
         ):
         ln = int.from_bytes(ps, byteorder='big')
         v = int.from_bytes(b[:ln], byteorder=endian, signed=True)
@@ -187,14 +188,18 @@ def read_field(t, ps, b, endian):
         ln = int.from_bytes(ps, byteorder='big')
         v = b[:ln].decode('utf-8')
         b = b[ln:]
-    elif t in (DRDA_TYPE_NFLOAT4, ):
+    elif t in (DRDA_TYPE_NFLOAT4, DRDA_TYPE_FLOAT4):
         ln = int.from_bytes(ps, byteorder='big')
         v = struct.unpack(">f" if endian=='big' else "<f", b[:ln])[0]
         b = b[ln:]
-    elif t in (DRDA_TYPE_NFLOAT8, ):
+    elif t in (DRDA_TYPE_NFLOAT8, DRDA_TYPE_FLOAT8):
         ln = int.from_bytes(ps, byteorder='big')
         v = struct.unpack(">d" if endian=='big' else "<d", b[:ln])[0]
         b = b[ln:]
+    elif t in (DRDA_TYPE_BOOLEAN, DRDA_TYPE_NBOOLEAN):
+        ln = int.from_bytes(ps, byteorder='big')
+        v = int.from_bytes(b[1:1+ln], byteorder='big')
+        b = b[1+ln:]
     else:
         raise ValueError("UnknownType(%s)" % hex(t))
     return v, b
