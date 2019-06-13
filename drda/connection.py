@@ -87,8 +87,13 @@ class Connection:
                         results.append(tuple(r))
 
             if open_query:
-                # TODO: QNTQRY
-                pass
+                ddm.write_request_dds(
+                    self.sock,
+                    ddm.packCNTQRY(
+                        self.pkgid, self.pkgcnstkn, self.pkgsn, self.database
+                    ),
+                    1, False, True
+                )
             else:
                 break
 
