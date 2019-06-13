@@ -66,6 +66,15 @@ class TestBasic(unittest.TestCase):
 
     def test_basic(self):
         cur = self.connection.cursor()
+        cur.execute("SELECT * FROM test_basic")
+        self.assertEqual(cur.description, [
+            ('S', 449, 20, 20, 0, 0, None),
+            ('I', 497, 4, 4, 0, 0, None),
+            ('D1', 485, 0, 0, 2, 1, None),
+            ('D2', 485, 0, 0, 11, 2, None)
+        ])
+        self.assertEqual(cur.fetchall(), [])
+
         cur.execute("""
             INSERT INTO test_basic (s, i, d1, d2) VALUES
                 ('abcdefghijklmnopq', 1, 1.1, 123456789.12),
