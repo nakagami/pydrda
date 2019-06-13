@@ -44,7 +44,7 @@ class Connection:
         chained = True
         err_msg = None
 
-        open_query = False
+        more_data = False
         while True:
             while chained:
                 dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock)
@@ -64,9 +64,10 @@ class Connection:
                             obj, 'utf-8', self.endian, self.db_type
                         )
                 elif code_point == cp.OPNQRYRM:
-                    open_query = True
+                    if self.db_type == 'db2':
+                        more_data = True
                 elif code_point == cp.ENDQRYRM:
-                    open_query = False
+                    more_data = False
                 elif code_point == cp.QRYDSC:
                     ln = obj[0]
                     b = obj[1:ln]
@@ -86,7 +87,7 @@ class Connection:
                             r.append(v)
                         results.append(tuple(r))
 
-            if open_query:
+            if more_data:
                 ddm.write_request_dds(
                     self.sock,
                     ddm.packCNTQRY(
