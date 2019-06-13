@@ -43,40 +43,55 @@ class Connection:
         err = qrydsc = None
         chained = True
         err_msg = None
-        while chained:
-            dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock)
-            if code_point == cp.SQLERRRM:
-                err_msg = ddm.parse_reply(obj).get(cp.SRVDGN).decode('utf-8')
-            elif code_point == cp.SQLCARD:
-                if err is None:
-                    err, _ = ddm.parse_sqlcard(obj, self.encoding, self.endian)
-            elif code_point == cp.SQLDARD:
-                if obj[0] == 0xFF:
-                    err, params_description = ddm.parse_sqldard(
-                        obj, 'utf-8', self.endian, self.db_type
-                    )
-                else:
-                    err, description = ddm.parse_sqldard(
-                        obj, 'utf-8', self.endian, self.db_type
-                    )
-            elif code_point == cp.QRYDSC:
-                ln = obj[0]
-                b = obj[1:ln]
-                assert b[:2] == b'\x76\xd0'
-                b = b[2:]
-                # [(DRDA_TYPE_xxxx, size_binary), ...]
-                qrydsc = [(c[0], c[1:]) for c in [b[i:i+3] for i in range(0, len(b), 3)]]
-            elif code_point == cp.QRYDTA:
-                b = obj
-                while len(b):
-                    if (b[0], b[1]) != (0xff, 0x00):
-                        break
+
+        open_query = False
+        while True:
+            while chained:
+                dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock)
+                if code_point == cp.SQLERRRM:
+                    err_msg = ddm.parse_reply(obj).get(cp.SRVDGN).decode('utf-8')
+                elif code_point == cp.SQLCARD:
+                    if err is None:
+                        err, _ = ddm.parse_sqlcard(obj, self.encoding, self.endian)
+                    recieve_sqlcard = True
+                elif code_point == cp.SQLDARD:
+                    if obj[0] == 0xFF:
+                        err, params_description = ddm.parse_sqldard(
+                            obj, 'utf-8', self.endian, self.db_type
+                        )
+                    else:
+                        err, description = ddm.parse_sqldard(
+                            obj, 'utf-8', self.endian, self.db_type
+                        )
+                elif code_point == cp.OPNQRYRM:
+                    open_query = True
+                elif code_point == cp.ENDQRYRM:
+                    open_query = False
+                elif code_point == cp.QRYDSC:
+                    ln = obj[0]
+                    b = obj[1:ln]
+                    assert b[:2] == b'\x76\xd0'
                     b = b[2:]
-                    r = []
-                    for t, ps in qrydsc:
-                        v, b = utils.read_field(t, ps, b, self.endian)
-                        r.append(v)
-                    results.append(tuple(r))
+                    # [(DRDA_TYPE_xxxx, size_binary), ...]
+                    qrydsc = [(c[0], c[1:]) for c in [b[i:i+3] for i in range(0, len(b), 3)]]
+                elif code_point == cp.QRYDTA:
+                    b = obj
+                    while len(b):
+                        if (b[0], b[1]) != (0xff, 0x00):
+                            break
+                        b = b[2:]
+                        r = []
+                        for t, ps in qrydsc:
+                            v, b = utils.read_field(t, ps, b, self.endian)
+                            r.append(v)
+                        results.append(tuple(r))
+
+            if open_query:
+                # TODO: QNTQRY
+                pass
+            else:
+                break
+
         if err:
             raise err
         return results, description, params_description
