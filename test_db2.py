@@ -228,7 +228,7 @@ class TestDataType(unittest.TestCase):
         self.connection.close()
 
 
-class TestBasic(unittest.TestCase):
+class TestSecmec(unittest.TestCase):
     def test_secmec9(self):
         from drda import secmec9
         a = secmec9.get_private()
