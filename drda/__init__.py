@@ -26,7 +26,7 @@ import datetime
 import decimal
 from .connection import Connection
 
-VERSION = (0, 4, 1)
+VERSION = (0, 4, 2)
 __version__ = '%s.%s.%s' % VERSION
 apilevel = '2.0'
 threadsafety = 1
