@@ -138,6 +138,10 @@ def read_field(t, ps, b, endian):
         ln = int.from_bytes(b[:2], byteorder='big')
         v = b[2:2+ln].decode('utf-8')
         b = b[2+ln:]
+    elif t in (DRDA_TYPE_LONGMIX, DRDA_TYPE_NLONGMIX):
+        ln = int.from_bytes(b[:2], byteorder='big')
+        v = b[2:2+ln].decode('utf-8')
+        b = b[2+ln:]
     elif t in (DRDA_TYPE_VARCHAR, DRDA_TYPE_NVARCHAR, DRDA_TYPE_LONG):
         ln = int.from_bytes(b[:2], byteorder='big')
         v = b[2:2+ln].decode('utf-8')
