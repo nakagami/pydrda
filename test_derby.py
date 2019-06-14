@@ -209,7 +209,6 @@ class TestDataType(unittest.TestCase):
         cur.execute("SELECT * FROM test_float8_not_null")
         self.assertEqual(cur.fetchall(), [(-1.0, )])
 
-    @unittest.skip("skip bool")
     def test_bool(self):
         cur = self.connection.cursor()
         try:

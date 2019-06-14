@@ -124,7 +124,7 @@ def read_field(t, ps, b, endian):
         DRDA_TYPE_NVARCHAR, DRDA_TYPE_NLONG, DRDA_TYPE_NGRAPHIC, DRDA_TYPE_NVARGRAPH,
         DRDA_TYPE_NLONGRAPH, DRDA_TYPE_NMIX, DRDA_TYPE_NVARMIX, DRDA_TYPE_NLONGMIX,
         DRDA_TYPE_NCSTRMIX, DRDA_TYPE_NPSCLBYTE, DRDA_TYPE_NLSTR, DRDA_TYPE_NLSTRMIX,
-        DRDA_TYPE_NSDATALINK, DRDA_TYPE_NMDATALINK,
+        DRDA_TYPE_NSDATALINK, DRDA_TYPE_NMDATALINK, DRDA_TYPE_NBOOLEAN,
     ):
         (isnull, b) = (b[0] == 0xFF, b[1:])
         if isnull:
@@ -196,13 +196,9 @@ def read_field(t, ps, b, endian):
         ln = int.from_bytes(ps, byteorder='big')
         v = struct.unpack(">d" if endian=='big' else "<d", b[:ln])[0]
         b = b[ln:]
-    elif t in (DRDA_TYPE_NBOOLEAN,):
+    elif t in (DRDA_TYPE_BOOLEAN, DRDA_TYPE_NBOOLEAN):
         ln = int.from_bytes(ps, byteorder='big')
-        v = int.from_bytes(b[1:1+ln], byteorder='big')
-        b = b[1+ln:]
-    elif t in (DRDA_TYPE_BOOLEAN,):
-        ln = int.from_bytes(ps, byteorder='big')
-        v = int.from_bytes(b[:ln], byteorder='big')
+        v = True if int.from_bytes(b[:ln], byteorder='big') else False
         b = b[ln:]
     else:
         raise ValueError("UnknownType(%s)" % hex(t))
