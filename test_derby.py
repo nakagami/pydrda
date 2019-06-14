@@ -136,6 +136,99 @@ class TestDataType(unittest.TestCase):
             datetime.datetime(2019, 4, 30, 12, 34, 56, 123456)
         )])
 
+    def test_not_null(self):
+        cur = self.connection.cursor()
+
+        # VARCHAR
+        try:
+            cur.execute("""
+                CREATE TABLE test_varchar_not_null (
+                    s varchar(20) not null
+                )
+            """)
+        except drda.OperationalError:
+            pass
+        cur.execute("DELETE FROM test_varchar_not_null")
+        cur.execute("""
+            INSERT INTO test_varchar_not_null (s) VALUES
+            ('abcdefghijklmnopq'), ('B'), ('C')
+        """)
+        cur.execute("SELECT * FROM test_varchar_not_null")
+        self.assertEqual(cur.fetchall(), [
+            ('abcdefghijklmnopq', ), ('B', ), ('C', )
+        ])
+
+        # LONGVARCHAR
+        try:
+            cur.execute("""
+                CREATE TABLE test_long_varchar_not_null (
+                    s long varchar not null
+                )
+            """)
+        except drda.OperationalError as e:
+            pass
+        cur.execute("DELETE FROM test_long_varchar_not_null")
+        cur.execute("""
+            INSERT INTO test_long_varchar_not_null (s) VALUES
+            ('abcdefghijklmnopq')
+        """)
+        cur.execute("SELECT * FROM test_long_varchar_not_null")
+        self.assertEqual(cur.fetchall(), [
+            ('abcdefghijklmnopq', )
+        ])
+
+        # INTEGER8
+        try:
+            cur.execute("""
+                CREATE TABLE test_bigint_not_null (
+                    bi bigint not null
+                )
+            """)
+        except drda.OperationalError:
+            pass
+        cur.execute("DELETE FROM test_bigint_not_null")
+        cur.execute("""
+            INSERT INTO test_bigint_not_null (bi) VALUES (-1)
+        """)
+        cur.execute("SELECT * FROM test_bigint_not_null")
+        self.assertEqual(cur.fetchall(), [(-1, )])
+
+        # FLOAT8
+        try:
+            cur.execute("""
+                CREATE TABLE test_float8_not_null (
+                    d double not null
+                )
+            """)
+        except drda.OperationalError:
+            pass
+        cur.execute("DELETE FROM test_float8_not_null")
+        cur.execute("""
+            INSERT INTO test_float8_not_null (d) VALUES (-1)
+        """)
+        cur.execute("SELECT * FROM test_float8_not_null")
+        self.assertEqual(cur.fetchall(), [(-1.0, )])
+
+    @unittest.skip("skip bool")
+    def test_bool(self):
+        cur = self.connection.cursor()
+        try:
+            cur.execute("""
+                CREATE TABLE test_bool (
+                    b1 boolean,
+                    b2 boolean not null,
+                    b3 boolean
+                )
+            """)
+        except drda.OperationalError:
+            pass
+        cur.execute("DELETE FROM test_bool")
+        cur.execute("""
+            INSERT INTO test_bool (b1, b2, b3) VALUES (TRUE, FALSE, NULL)
+        """)
+        cur.execute("SELECT * FROM test_bool")
+        self.assertEqual(cur.fetchall(), [(True, False, None)])
+
     def test_double(self):
         cur = self.connection.cursor()
         try:
