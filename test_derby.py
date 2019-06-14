@@ -158,7 +158,7 @@ class TestDataType(unittest.TestCase):
             ('abcdefghijklmnopq', ), ('B', ), ('C', )
         ])
 
-        # LONGVARCHAR
+        # LONG VARCHAR
         try:
             cur.execute("""
                 CREATE TABLE test_long_varchar_not_null (
