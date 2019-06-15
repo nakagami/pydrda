@@ -10,9 +10,16 @@ jobs:
           command: |
             apt update
             apt upgrade -y
-      - run: apt-get install -y python3
+      - run: apt-get install -y python3 python3-venv
 
       - checkout
       - run:
+          name: create venv and pip install packages
+          command: |
+            python3 -m venv venv
+            . venv/bin/activate
+            pip install -U pip
+            pip install pyDes
+      - run:
           name: run tests
-          command: python3 test_db2.py
+          command: venv/bin/python test_db2.py
