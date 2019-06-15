@@ -10,7 +10,7 @@ jobs:
           command: |
             apt update
             apt upgrade -y
-      - run: apt-get install -y python3
+      - run: apt-get install -y python3 python3-venv
       - checkout
       - run:
           name: create venv and pip install packages
