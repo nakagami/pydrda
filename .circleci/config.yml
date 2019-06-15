@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: ircleci/openjdk:latest
+      - image: circleci/openjdk:latest
 
     steps:
       - run:
