@@ -254,7 +254,7 @@ class Connection:
         )
         cur_id = ddm.write_request_dds(
             self.sock,
-            ddm.packSQLSTT("SET CURRENT LOCALE LC_CTYPE='{}'".format(lc_typle)),
+            ddm.packSQLSTT("SET CURRENT LOCALE LC_CTYPE='{}'".format(lc_type)),
             cur_id, False, False
         )
         cur_id = ddm.write_request_dds(
