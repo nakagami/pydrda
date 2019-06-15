@@ -233,7 +233,9 @@ class Connection:
         self.close()
 
     def _set_valiables(self):
-        print(locale.getlocale())
+        lc_type = locale.getlocale()[0]
+        if lc_type is None:
+            lc_type = "en_US"
         cur_id = 1
         cur_id = ddm.write_request_dds(
             self.sock,
@@ -252,7 +254,7 @@ class Connection:
         )
         cur_id = ddm.write_request_dds(
             self.sock,
-            ddm.packSQLSTT("SET CURRENT LOCALE LC_CTYPE='{}'".format(locale.getlocale()[0])),
+            ddm.packSQLSTT("SET CURRENT LOCALE LC_CTYPE='{}'".format(lc_typle)),
             cur_id, False, False
         )
         cur_id = ddm.write_request_dds(
