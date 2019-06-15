@@ -233,7 +233,7 @@ class Connection:
         self.close()
 
     def _set_valiables(self):
-        print(locale.getlocal())
+        print(locale.getlocale())
         cur_id = 1
         cur_id = ddm.write_request_dds(
             self.sock,
