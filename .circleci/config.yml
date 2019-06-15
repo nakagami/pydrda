@@ -10,6 +10,8 @@ jobs:
           command: |
             apt update
             apt upgrade -y
+      - run: apt-get install python3
+
       - checkout
       - run:
           name: run tests
