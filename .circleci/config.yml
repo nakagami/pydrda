@@ -1,0 +1,16 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: ubuntu:18.04
+
+    steps:
+      - run:
+          name: apt update & upgrade
+          command: |
+            apt update
+            apt upgrade -y
+      - checkout
+      - run:
+          name: run tests
+          command: python3 test_db2.py
