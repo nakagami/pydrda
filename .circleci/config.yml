@@ -10,7 +10,7 @@ jobs:
           command: |
             apt update
             apt upgrade -y
-      - run: apt-get install python3
+      - run: apt-get install -y python3
 
       - checkout
       - run:
