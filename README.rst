@@ -59,7 +59,8 @@ Apache Derby
 
 https://db.apache.org/derby/
 
-You need Start the Network server. http://db.apache.org/derby/papers/DerbyTut/ns_intro.html#start_ns
+You need to start derby as a network server.
+http://db.apache.org/derby/papers/DerbyTut/ns_intro.html#start_ns
 
 Example
 
