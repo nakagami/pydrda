@@ -234,7 +234,6 @@ def read_dds(sock):
     number = int.from_bytes(b[4:6],  byteorder='big')
     obj = _recv_from_sock(sock, ln-6)
 
-    assert int.from_bytes(obj[:2], byteorder='big') == ln - 6
     code_point = int.from_bytes(obj[2:4], byteorder='big')
 
     return dds_type, chained, number, code_point, obj[4:]
