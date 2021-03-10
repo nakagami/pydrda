@@ -26,7 +26,7 @@ jobs:
       run: |
         curl -O https://downloads.apache.org//db/derby/db-derby-10.15.2.0/db-derby-10.15.2.0-bin.tar.gz
         tar zxf db-derby-10.15.2.0-bin.tar.gz
-        nohup db-derby-10.15.2.0-bin/bin/startNetworkServer &
+        sh db-derby-10.15.2.0-bin/bin/startNetworkServer &
         python test_derby.py
         python -m pip install pyDes
         python test_db2.py
