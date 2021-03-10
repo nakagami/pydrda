@@ -22,8 +22,7 @@ jobs:
      
     steps:
     - uses: actions/checkout@v2
-    - name: Install dependencies
+    - name: Install dependencies and test
       run: |
-        python -m pip install --upgrade pip
         python -m pip install pyDes
         python test_db2.py
