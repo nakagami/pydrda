@@ -20,6 +20,13 @@ Installation
 
     $ pip install pydrda
 
+And if you want to connect to DB2, you need
+
+::
+
+    $ pip install pyDes
+
+
 Supported Databases
 ======================
 
