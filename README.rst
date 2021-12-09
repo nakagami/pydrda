@@ -87,7 +87,7 @@ Unit Tests
 ================
 
 DB2
-+++++
+------
 
 Start DB2 server
 ::
@@ -100,7 +100,7 @@ Execute test
    python test_db2.py
 
 Apache Derby
-+++++++++++++++
+---------------
 
 Install JavaDB and
 
