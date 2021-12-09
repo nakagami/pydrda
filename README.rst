@@ -102,7 +102,7 @@ Execute test
 Apache Derby
 ---------------
 
-Install JavaDB and
+Install Apatch Derby https://db.apache.org/derby/ and
 
 Start as server
 ::
