@@ -102,15 +102,15 @@ Execute test
 Apache Derby
 ---------------
 
-Install Apatch Derby https://db.apache.org/derby/ and
-
-Start as server
+Install Apatch Derby https://db.apache.org/derby/ and start as a server
 ::
 
-   $ startNetworkServer
-
+   $ curl -O https://downloads.apache.org//db/derby/db-derby-10.15.2.0/db-derby-10.15.2.0-bin.tar.gz
+   $ tar zxf db-derby-10.15.2.0-bin.tar.gz
+   $ echo 'grant {permission java.lang.RuntimePermission "getenv.SOURCE_DATE_EPOCH", "read";};' > ${HOME}/.java.policy
+   $ db-derby-10.15.2.0-bin/bin/startNetworkServer &
 
 Execute test
 ::
 
-   python test_db2.py
+   python test_derby.py
