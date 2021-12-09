@@ -82,3 +82,35 @@ Example
        print(r[0], r[1])
 
 This driver can't execute with parameters against Apache Derby.
+
+Unit Tests
+================
+
+DB2
++++++
+
+Start DB2 server
+::
+
+   $ docker run -itd --name mydb2 --privileged=true -p 50000:50000 -e LICENSE=accept -e DB2INST1_PASSWORD=password -e DBNAME=testdb -v /tmp/db2:/database ibmcom/db2
+
+Execute test
+::
+
+   python test_db2.py
+
+Apache Derby
++++++++++++++++
+
+Install JavaDB and
+
+Start as server
+::
+
+   $ startNetworkServer
+
+
+Execute test
+::
+
+   python test_db2.py
