@@ -106,6 +106,7 @@ DRDA_TYPE_NMDATALINK = 0x4F
 DRDA_TYPE_BOOLEAN = 0xBE
 DRDA_TYPE_NBOOLEAN = 0xBF
 
+
 def read_field(t, ps, b, endian):
     """
     read one field value from bytes.
@@ -148,8 +149,7 @@ def read_field(t, ps, b, endian):
         b = b[2+ln:]
     elif t in (
             DRDA_TYPE_SMALL, DRDA_TYPE_NSMALL, DRDA_TYPE_NINTEGER8,
-            DRDA_TYPE_INTEGER8, DRDA_TYPE_INTEGER, DRDA_TYPE_NINTEGER, 
-        ):
+            DRDA_TYPE_INTEGER8, DRDA_TYPE_INTEGER, DRDA_TYPE_NINTEGER):
         ln = int.from_bytes(ps, byteorder='big')
         v = int.from_bytes(b[:ln], byteorder=endian, signed=True)
         b = b[ln:]
@@ -194,11 +194,11 @@ def read_field(t, ps, b, endian):
         b = b[ln:]
     elif t in (DRDA_TYPE_NFLOAT4, DRDA_TYPE_FLOAT4):
         ln = int.from_bytes(ps, byteorder='big')
-        v = struct.unpack(">f" if endian=='big' else "<f", b[:ln])[0]
+        v = struct.unpack(">f" if endian == 'big' else "<f", b[:ln])[0]
         b = b[ln:]
     elif t in (DRDA_TYPE_NFLOAT8, DRDA_TYPE_FLOAT8):
         ln = int.from_bytes(ps, byteorder='big')
-        v = struct.unpack(">d" if endian=='big' else "<d", b[:ln])[0]
+        v = struct.unpack(">d" if endian == 'big' else "<d", b[:ln])[0]
         b = b[ln:]
     elif t in (DRDA_TYPE_BOOLEAN, DRDA_TYPE_NBOOLEAN):
         ln = int.from_bytes(ps, byteorder='big')

@@ -84,7 +84,7 @@ def parse_name(b):
     "parse VCM or VCS"
     s1, b = parse_string(b)
     s2, b = parse_string(b)
-    ln = int.from_bytes(b[:2], byteorder='big')
+    # int.from_bytes(b[:2], byteorder='big')
     return s1 or s2, b
 
 
@@ -240,7 +240,7 @@ def read_dds(sock):
     chained = b[3] & 0b01000000
     number = int.from_bytes(b[4:6],  byteorder='big')
     obj = _recv_from_sock(sock, ln-6)
-    
+
     if len(obj) != ln - 6:
         raise ConnectionError("invalid DDS packet from socket")
 
@@ -331,8 +331,7 @@ def packACCRDB(prdid, rdbnam, enc):
 
 
 def packACCSEC(database, secmec, sectkn):
-    body = (_pack_uint(cp.SECMEC, secmec, 2) +
-        _pack_str(cp.RDBNAM, database, 'cp500'))
+    body = _pack_uint(cp.SECMEC, secmec, 2) + _pack_str(cp.RDBNAM, database, 'cp500')
     if sectkn:
         body += _pack_binary(cp.SECTKN, sectkn)
     return pack_dds_object(cp.ACCSEC, body)
@@ -381,9 +380,7 @@ def packPRPSQLSTT(pkgid, pkgcnstkn, pkgsn, database):
 def packDSCSQLSTT(pkgid, pkgcnstkn, pkgsn, database):
     return pack_dds_object(
         cp.DSCSQLSTT,
-        _packPKGNAMCSN(database, pkgid, pkgcnstkn, pkgsn) +
-#        _pack_uint(cp.QRYINSID, 0, 8) +
-        _pack_binary(cp.TYPSQLDA, bytes([1]))
+        _packPKGNAMCSN(database, pkgid, pkgcnstkn, pkgsn) + _pack_binary(cp.TYPSQLDA, bytes([1]))
     )
 
 
@@ -407,7 +404,7 @@ def _fdodsc(description):
     elif sqltype == consts.DB2_SQLTYPE_NBIGINT:
         return bytes([0x17, 0x00, sqllength])
     elif sqltype == consts.DB2_SQLTYPE_NFLOAT:
-        return bytes([0x0d if sqllength==4 else 0x0b, 0x00, sqllength])
+        return bytes([0x0d if sqllength == 4 else 0x0b, 0x00, sqllength])
     elif sqltype == consts.DB2_SQLTYPE_NDATE:
         return binascii.unhexlify(b'21000a')
     elif sqltype == consts.DB2_SQLTYPE_NTIME:
@@ -426,7 +423,7 @@ def _fdodta(description, v):
     elif sqltype == consts.DB2_SQLTYPE_NDECIMAL:
         sign, digits, exponent = v.as_tuple()
         d = bytes([ord(b'0') + n for n in digits])
-        d = (b'0' * (precision + scale) + d)[-(precision +scale):]
+        d = (b'0' * (precision + scale) + d)[-(precision + scale):]
         d += b"d" if sign else b"c"
         if len(d) % 2:
             v = b'0' + v
