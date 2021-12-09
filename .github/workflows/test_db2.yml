@@ -9,16 +9,30 @@ on:
   pull_request:
     branches: [ master ]
 
+services:
+
+  db2:
+    image: ibmcom/db2
+    restart: always
+    privileged: true
+    environment:
+      LICENSE: accept
+      DB2INSTANCE: db2inst1
+      DB2INST1_PASSWORD: password
+      DBNAME: testdb
+    ports:
+      - 50000:50000
+
 jobs:
   build:
 
     runs-on: ubuntu-latest
     env:
-     DB2_HOST: ${{ secrets.DB2_HOST }}
-     DB2_DATABASE: ${{ secrets.DB2_DATABASE }}
-     DB2_USER: ${{ secrets.DB2_USER }}
-     DB2_PASSWORD: ${{ secrets.DB2_PASSWORD }}
-     DB2_PORT: ${{ secrets.DB2_PORT }}
+     DB2_HOST: localhost
+     DB2_DATABASE: testdb
+     DB2_USER: db2inst1
+     DB2_PASSWORD: password
+     DB2_PORT: 50000
      
     steps:
     - uses: actions/checkout@v2
