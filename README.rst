@@ -97,7 +97,7 @@ Start Db2 server
 Execute test
 ::
 
-   python test_db2.py
+   $ python test_db2.py
 
 Apache Derby
 ---------------
@@ -113,4 +113,4 @@ Install Apatch Derby https://db.apache.org/derby/ and start as a server
 Execute test
 ::
 
-   python test_derby.py
+   $ python test_derby.py
