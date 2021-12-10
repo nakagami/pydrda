@@ -20,7 +20,7 @@ Installation
 
     $ pip install pydrda
 
-And if you want to connect to DB2, you need
+And if you want to connect to Db2, you need
 
 ::
 
@@ -86,10 +86,10 @@ This driver can't execute with parameters against Apache Derby.
 Unit Tests
 ================
 
-DB2
+Db2
 ------
 
-Start DB2 server
+Start Db2 server
 ::
 
    $ docker run -itd --name mydb2 --privileged=true -p 50000:50000 -e LICENSE=accept -e DB2INST1_PASSWORD=password -e DBNAME=testdb -v /tmp/db2:/database ibmcom/db2
