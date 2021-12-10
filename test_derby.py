@@ -22,17 +22,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 ##############################################################################
-"""
-Tests for derby
-
-::
-
-   $ curl -O https://downloads.apache.org//db/derby/db-derby-10.15.2.0/db-derby-10.15.2.0-bin.tar.gz
-   $ tar zxf db-derby-10.15.2.0-bin.tar.gz
-   $ echo 'grant {permission java.lang.RuntimePermission "getenv.SOURCE_DATE_EPOCH", "read";};' > ${HOME}/.java.policy
-   $ db-derby-10.15.2.0-bin/bin/startNetworkServer &
-   $ python test_derby.py
-"""
+"""Tests for derby"""
 import unittest
 import io
 import decimal
@@ -40,16 +30,18 @@ import datetime
 import decimal
 import drda
 
-class TestBasic(unittest.TestCase):
-    host = 'localhost'
-    database = 'testdb;create=true'
-    port = 1527
 
+HOST = 'localhost'
+DATABASE = 'testdb;create=true'
+PORT = 1527
+
+
+class TestBasic(unittest.TestCase):
     def setUp(self):
         self.connection = drda.connect(
-            host=self.host,
-            database=self.database,
-            port=self.port,
+            host=HOST,
+            database=DATABASE,
+            port=PORT,
         )
         cur = self.connection.cursor()
         try:
@@ -110,15 +102,11 @@ class TestBasic(unittest.TestCase):
 
 
 class TestDataType(unittest.TestCase):
-    host = 'localhost'
-    database = 'testdb;create=true'
-    port = 1527
-
     def setUp(self):
         self.connection = drda.connect(
-            host=self.host,
-            database=self.database,
-            port=self.port,
+            host=HOST,
+            database=DATABASE,
+            port=PORT
         )
 
     def test_datetime(self):
