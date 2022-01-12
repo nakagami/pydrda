@@ -226,7 +226,7 @@ class Connection:
 
         self._parse_response()
 
-        self._set_valiables()
+        self._set_variables()
 
     def __enter__(self):
         return self
@@ -234,7 +234,7 @@ class Connection:
     def __exit__(self, exc, value, traceback):
         self.close()
 
-    def _set_valiables(self):
+    def _set_variables(self):
         lc_type = locale.getlocale()[0]
         if lc_type is None:
             lc_type = "en_US"
