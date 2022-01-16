@@ -66,14 +66,13 @@ ROWID = DBAPITypeObject()
 
 
 class Error(Exception):
-    def __init__(self, sqlcode, sqlstate, message):
-        self.sqlcode = sqlcode
-        self.sqlstate = sqlstate
+    def __init__(self, code_point, message):
+        self.code_point = code_point
         self.message = message
         super(Error, self).__init__()
 
     def __str__(self):
-        return "%d:%s:%s" % (self.sqlcode, self.sqlstate, self.message)
+        return "%s:%s" % (hex(self.code_point), self.message)
 
 
 class Warning(Exception):

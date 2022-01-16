@@ -117,6 +117,10 @@ class Connection:
                         secmec = int.from_bytes(v[:2], byteorder='big')
                     elif sub_cp == cp.SECTKN:
                         sectkn = v
+            elif code_point == cp.RDBNFNRM:
+                from drda import DatabaseError
+                raise DatabaseError(code_point, "database not found")
+
         return secmec, sectkn
 
     def __init__(self, host, database, port, user, password, use_ssl, ssl_ca_certs, db_type, timeout):
