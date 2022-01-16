@@ -31,7 +31,7 @@ import decimal
 import drda
 
 HOST = os.environ.get("DB2_HOST", "localhost")
-DATABASE = os.envidon.get("DB2_DATABASE", "testdb")
+DATABASE = os.environ.get("DB2_DATABASE", "testdb")
 USER = os.environ.get("DB2_USER", "db2inst1")
 PASSWORD = os.environ.get("DB2_PASSWORD", "password")
 PORT = int(os.environ.get("DB2_PORT", 50000))
