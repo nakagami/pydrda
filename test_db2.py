@@ -30,11 +30,12 @@ import datetime
 import decimal
 import drda
 
-HOST = 'localhost'
-DATABASE = 'testdb'
-USER = 'db2inst1'
-PASSWORD = 'password'
-PORT = 50000
+HOST = os.environ.get("DB2_HOST", "localhost")
+DATABASE = os.envidon.get("DB2_DATABASE", "testdb")
+USER = os.environ.get("DB2_USER", "db2inst1")
+PASSWORD = os.environ.get("DB2_PASSWORD", "password")
+PORT = int(os.environ.get("DB2_PORT", 50000))
+SSL_CA_CERTS = os.environ.get("DB2_SSL_CA_CERTS")
 
 class TestBasic(unittest.TestCase):
 
@@ -45,6 +46,8 @@ class TestBasic(unittest.TestCase):
             user=USER,
             password=PASSWORD,
             port=PORT,
+            use_ssl=bool(SSL_CA_CERTS),
+            ssl_ca_certs=SSL_CA_CERTS,
         )
         cur = self.connection.cursor()
         try:
@@ -147,6 +150,8 @@ class TestDataType(unittest.TestCase):
             user=USER,
             password=PASSWORD,
             port=PORT,
+            use_ssl=bool(SSL_CA_CERTS),
+            ssl_ca_certs=SSL_CA_CERTS,
         )
 
     def test_datetime(self):

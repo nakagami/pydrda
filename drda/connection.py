@@ -119,7 +119,7 @@ class Connection:
                         sectkn = v
         return secmec, sectkn
 
-    def __init__(self, host, database, port, user, password, use_ssl, db_type, timeout):
+    def __init__(self, host, database, port, user, password, use_ssl, ssl_ca_certs, db_type, timeout):
         self.host = host
         self.database = (database + ' ' * 18)[:18]
         self.port = port
@@ -161,7 +161,7 @@ class Connection:
         if timeout is not None:
             self.sock.settimeout(timeout)
         if use_ssl:
-            self.sock = ssl.wrap_socket(self.sock)
+            self.sock = ssl.wrap_socket(self.sock, ca_certs=ssl_ca_certs)
         self.sock.connect((self.host, self.port))
 
         cur_id = 1
