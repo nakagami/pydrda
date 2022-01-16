@@ -38,27 +38,45 @@ https://www.ibm.com/analytics/db2
 
 Example
 
-::
-
-   import drda
-
-   conn = drda.connect(host='serverhost', database='dbname', user='user', password='password', port=50000)
-   cur = conn.cursor()
-   cur.execute('select * from foo where name=?', ['alice'])
-   for r in cur.fetchall():
-       print(r[0], r[1])
-
-(with ssl connection)
+No SSL
++++++++++++++++++++++++++++++++++++++++++
 
 ::
 
    import drda
 
-   conn = drda.connect(host='serverhost', database='dbname', use_ssl=True, user='user', password='password', port=50001)
+   conn = drda.connect(host='serverhost', database='dbname', user='user', password='password', port=xxxxx)
    cur = conn.cursor()
    cur.execute('select * from foo where name=?', ['alice'])
    for r in cur.fetchall():
        print(r[0], r[1])
+
+With SSL connection
++++++++++++++++++++++++++++++++++++++++++
+
+::
+
+   import drda
+
+   conn = drda.connect(host='serverhost', database='dbname', use_ssl=True, user='user', password='password', port=xxxxx)
+   cur = conn.cursor()
+   cur.execute('select * from foo where name=?', ['alice'])
+   for r in cur.fetchall():
+       print(r[0], r[1])
+
+With SSL and client certificate
++++++++++++++++++++++++++++++++++++++++++
+
+The connection information in cloud.ibm.com has certificate_base64 parameter always.
+
+After base64 decoding the value of the certificate_base64 and saving it as a file somewhere, set path to that file as shown below.
+
+::
+
+   import drda
+
+   conn = drda.connect(host='serverhost', database='dbname', use_ssl=True, ssl_ca_certs='/some/what/path/cert.crt', user='user', password='password', port=xxxxx)
+
 
 
 Apache Derby
