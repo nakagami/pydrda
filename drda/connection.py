@@ -119,7 +119,7 @@ class Connection:
                         sectkn = v
             elif code_point == cp.RDBNFNRM:
                 from drda import DatabaseError
-                raise DatabaseError(code_point, "database not found")
+                raise DatabaseError(0, 0, "database not found")
 
         return secmec, sectkn
 

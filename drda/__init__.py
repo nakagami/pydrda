@@ -66,8 +66,9 @@ ROWID = DBAPITypeObject()
 
 
 class Error(Exception):
-    def __init__(self, code_point, message):
-        self.code_point = code_point
+    def __init__(self, sqlcode, sqlstate, message):
+        self.sqlcode = sqlcode
+        self.sqlstate = sqlstate
         self.message = message
         super(Error, self).__init__()
 
