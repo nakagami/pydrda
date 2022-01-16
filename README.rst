@@ -67,10 +67,6 @@ With SSL connection
 With SSL and client certificate
 +++++++++++++++++++++++++++++++++++++++++
 
-The connection information in cloud.ibm.com has certificate_base64 parameter always.
-
-After base64 decoding the value of the certificate_base64 and saving it as a file somewhere, set path to that file as shown below.
-
 ::
 
    import drda
