@@ -73,7 +73,7 @@ class Error(Exception):
         super(Error, self).__init__()
 
     def __str__(self):
-        return "%s:%s" % (hex(self.code_point), self.message)
+        return "%d:%s:%s" % (self.sqlcode, self.sqlstate, self.message)
 
 
 class Warning(Exception):
