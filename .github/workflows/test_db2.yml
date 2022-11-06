@@ -37,5 +37,5 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Test
       run: |
-        sleep 10
+        sleep 20
         python test_db2.py
