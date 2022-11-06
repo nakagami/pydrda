@@ -30,6 +30,7 @@ jobs:
     - name: Check connect database
       run: |
         docker exec -t mydb2 bash -c "sudo -i -u db2inst1 db2 'connect to testdb'"
+        sleep 20
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v3
@@ -37,5 +38,4 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Test
       run: |
-        sleep 20
         python test_db2.py
