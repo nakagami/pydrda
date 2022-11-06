@@ -18,7 +18,7 @@ jobs:
         python-version: ['3.5', '3.6', '3.7', '3.8', '3.9', '3.10', '3.11']
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Start db2 container
       run: |
@@ -32,7 +32,7 @@ jobs:
         docker exec -t mydb2 bash -c "sudo -i -u db2inst1 db2 'connect to testdb'"
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
     - name: Test
