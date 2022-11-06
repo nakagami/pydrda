@@ -20,7 +20,7 @@ Installation
 
     $ pip install pydrda
 
-And if you want to connect to Db2, you need
+If you want to connect to Db2, you may need to install pyDes.
 
 ::
 
