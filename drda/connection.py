@@ -49,7 +49,7 @@ class Connection:
             while chained:
                 dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock)
                 if code_point == cp.SQLERRRM:
-                    err_msg = ddm.parse_reply(obj).get(cp.SRVDGN).decode('utf-8')
+                    err_msg = ddm.parse_reply(obj).get(cp.SRVDGN)
                 elif code_point == cp.SQLCARD:
                     if err is None:
                         err, _ = ddm.parse_sqlcard(obj, self.encoding, self.endian)
