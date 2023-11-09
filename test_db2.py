@@ -168,9 +168,11 @@ class TestDataType(unittest.TestCase):
             )
         """)
         cur.execute("""
-            INSERT INTO test_datetime (d, t, dt) VALUES
-                ('2019-04-30', '12:34:56', '2019-04-30 12:34:56.123456')
-        """)
+            INSERT INTO test_datetime (d, t, dt) VALUES (?, ?, ?)""", [
+            datetime.date(2019, 4, 30),
+            datetime.time(12, 34, 56),
+            datetime.datetime(2019, 4, 30, 12, 34, 56, 123456)
+        ])
         cur.execute("SELECT * FROM test_datetime")
         self.assertEqual(cur.fetchall(), [(
             datetime.date(2019, 4, 30),
@@ -323,6 +325,24 @@ class TestDataType(unittest.TestCase):
             """)
         except drda.OperationalError:
             pass
+
+    def test_issue15(self):
+        cur = self.connection.cursor()
+        try:
+            cur.execute("DROP TABLE test_issue15")
+        except drda.OperationalError:
+            pass
+        cur.execute("""
+            CREATE TABLE test_issue15 (
+                id int,
+                s1 varchar(30),
+                s2 varchar(30),
+                d date
+            )
+        """)
+        cur.execute("INSERT INTO test_issue15(id,s1,s2,d) values(?,?,?,?)", [
+            121,'hello', 'world again', datetime.date.fromisoformat('2023-11-08')
+        ])
 
     def tearDown(self):
         self.connection.close()
