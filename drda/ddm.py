@@ -419,7 +419,7 @@ def _fdodta(description, v):
     _, sqltype, sqllength, _, precision, scale, _ = description
     if sqltype == consts.DB2_SQLTYPE_NVARCHAR:
         v = str(v)
-        return len(v).to_bytes(4, byteorder='big') + v.encode('utf_16_be')
+        return b'\x00' + len(v).to_bytes(2, byteorder='big') + v.encode('utf_16_be')
     elif sqltype == consts.DB2_SQLTYPE_NDECIMAL:
         sign, digits, exponent = v.as_tuple()
         d = bytes([ord(b'0') + n for n in digits])
