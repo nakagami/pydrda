@@ -340,9 +340,10 @@ class TestDataType(unittest.TestCase):
                 d date
             )
         """)
-        cur.execute("INSERT INTO test_issue15(id,s1,s2,d) values(?,?,?,?)", [
-            121,'hello', 'world again', datetime.date.fromisoformat('2023-11-08')
-        ])
+        row = (121,'hello', 'world again', datetime.date.fromisoformat('2023-11-08'))
+        cur.execute("INSERT INTO test_issue15(id,s1,s2,d) values(?,?,?,?)", row)
+        cur.execute("SELECT * FROM test_issue15")
+        self.assertEqual(cur.fetchall(), [row])
 
     def tearDown(self):
         self.connection.close()
