@@ -52,6 +52,7 @@ CODE_POINT = {
     0x200F: 'RDBRLLBCK',
     0x2010: 'REBIND',
     0x2012: 'DSCRDBTBL',
+    0x210E: 'RTNSETSTT',
     0x214C: 'FREPRVREF',
     0x2412: 'SQLDTA',
     0x2413: 'SQLDTARD',
@@ -507,7 +508,7 @@ def printCodePoint(cp, obj):
         elif cp in (
             'SECMEC', 'PBSD_ISO', 'UOWDSP', 'SVRCOD', 'SECCHKCD',
             'RDBCMTOK', 'OUTEXP', 'QRYBLKSZ', 'MAXBLKEXT', 'MAXRSLCNT',
-            'RSLSETFLG', 'QRYROWSET', 'TYPSQLDA', 'QRYINSID',
+            'RSLSETFLG', 'QRYROWSET', 'TYPSQLDA', 'QRYINSID', 'RTNSETSTT',
         ):
             print("\t%s:%s(len=%d)" % (cp, int.from_bytes(binary, byteorder='big'), len(binary)))
         elif cp in ('MGRLVLLS', ):
