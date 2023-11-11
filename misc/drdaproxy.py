@@ -52,7 +52,6 @@ CODE_POINT = {
     0x200F: 'RDBRLLBCK',
     0x2010: 'REBIND',
     0x2012: 'DSCRDBTBL',
-    0x210E: 'RTNSETSTT',
     0x214C: 'FREPRVREF',
     0x2412: 'SQLDTA',
     0x2413: 'SQLDTARD',
@@ -264,9 +263,9 @@ def parse_string(b):
     "parse VCM"
     ln = int.from_bytes(b[:2], byteorder='big')
     if ln:
-        s = b[2:2+ln].decode('utf-8')
+        s = b[2:2+ln]
     else:
-        s = ''
+        s = b''
     return s, b[2+ln:]
 
 
@@ -466,10 +465,10 @@ def printQRYDSC(cp, obj):
 
 
 def printQRYDTA(cp, obj):
-    # https://www.ibm.com/support/knowledgecenter/SSEPH2_12.1.0/com.ibm.ims12.doc.apr/ims_ddm_qrydta.htm
+    # https://www.ibm.com/docs/en/ims/14.1.0?topic=objects-qrydta-reply-object-x241b
     print("%s:%s" % (cp, binascii.b2a_hex(obj).decode('ascii')), end='')
     asc_dump(obj)
-    assert obj[0] == 0xFF   # aibStream
+    print("\tAIB NULL indicator:%s" % (hex(obj[0]),))   # aibStream
     assert obj[1] == 0x00   # dbpcbStream
 
 def printUnknown(cp, obj):
@@ -486,6 +485,7 @@ def printObject(cp, obj):
     'SQLDTA': printSQLDTA,
     'SQLCINRD': printSQLCINRD,
     'QRYDSC': printQRYDSC,
+    'OUTOVR': printQRYDSC,
     'QRYDTA': printQRYDTA,
     }.get(cp, printCodePoint)(cp, obj)
 
@@ -508,7 +508,7 @@ def printCodePoint(cp, obj):
         elif cp in (
             'SECMEC', 'PBSD_ISO', 'UOWDSP', 'SVRCOD', 'SECCHKCD',
             'RDBCMTOK', 'OUTEXP', 'QRYBLKSZ', 'MAXBLKEXT', 'MAXRSLCNT',
-            'RSLSETFLG', 'QRYROWSET', 'TYPSQLDA', 'QRYINSID', 'RTNSETSTT',
+            'RSLSETFLG', 'QRYROWSET', 'TYPSQLDA', 'QRYINSID',
         ):
             print("\t%s:%s(len=%d)" % (cp, int.from_bytes(binary, byteorder='big'), len(binary)))
         elif cp in ('MGRLVLLS', ):
