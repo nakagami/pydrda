@@ -48,6 +48,8 @@ class TestBasic(unittest.TestCase):
             cur.execute("""
                 CREATE TABLE test_basic (
                     s VARCHAR(20),
+                    b clob,
+                    c clob,
                     i int,
                     d1 decimal(2, 1),
                     d2 decimal(11, 2)
@@ -65,30 +67,51 @@ class TestBasic(unittest.TestCase):
         cur.execute("SELECT * FROM test_basic")
         self.assertEqual(cur.description, [
             ('S', 449, 20, 20, 20, 0, None),
+            ('B', 409, 2147483647, 2147483647, 31, 0, None),
+            ('C', 409, 2147483647, 2147483647, 31, 0, None),
             ('I', 497, 4, 4, 10, 0, None),
             ('D1', 485, 513, 513, 2, 1, None),
-            ('D2', 485, 2818, 2818, 11, 2, None)
+            ('D2', 485, 2818, 2818, 11, 2, None),
         ])
         self.assertEqual(cur.fetchall(), [])
 
         cur.execute("""
-            INSERT INTO test_basic (s, i, d1, d2) VALUES
-                ('abcdefghijklmnopq', 1, 1.1, 123456789.12),
-                ('B', 2, 1.2, 2),
-                ('C', 3, null, null)
+            INSERT INTO test_basic (s, b, c, i, d1, d2) VALUES
+                ('abcdefghijklmnopq', 'AAAAA', 'aaaaa', 1, 1.1, 123456789.12),
+                ('S2', 'BBBBB', 'bbbbb', 2, 1.2, 2),
+                ('S3', 'CCCCC', 'ccccc', 3, null, null)
         """)
-        cur.execute("SELECT * FROM test_basic")
+
+        # select without clob
+        cur.execute("SELECT s, i, d1, d2 FROM test_basic")
         self.assertEqual(cur.description, [
             ('S', 449, 20, 20, 20, 0, None),
             ('I', 497, 4, 4, 10, 0, None),
             ('D1', 485, 513, 513, 2, 1, None),
-            ('D2', 485, 2818, 2818, 11, 2, None)
+            ('D2', 485, 2818, 2818, 11, 2, None),
         ])
         self.assertEqual(cur.fetchall(), [
             ('abcdefghijklmnopq', 1, decimal.Decimal('1.1'), decimal.Decimal('123456789.12')),
-            ('B', 2, decimal.Decimal('1.2'), decimal.Decimal('2')),
-            ('C', 3, None, None)
+            ('S2', 2, decimal.Decimal('1.2'), decimal.Decimal('2')),
+            ('S3', 3, None, None)
         ])
+
+        # select with clob
+        cur.execute("SELECT * FROM test_basic")
+        self.assertEqual(cur.description, [
+            ('S', 449, 20, 20, 20, 0, None),
+            ('B', 409, 2147483647, 2147483647, 31, 0, None),
+            ('C', 409, 2147483647, 2147483647, 31, 0, None),
+            ('I', 497, 4, 4, 10, 0, None),
+            ('D1', 485, 513, 513, 2, 1, None),
+            ('D2', 485, 2818, 2818, 11, 2, None),
+        ])
+        #self.assertEqual(cur.fetchall(), [
+        #    ('abcdefghijklmnopq', 'AAAAA', 'aaaaa', 1, decimal.Decimal('1.1'), decimal.Decimal('123456789.12')),
+        #    ('S2', 'BBBBB', 'bbbbb', 2, decimal.Decimal('1.2'), decimal.Decimal('2')),
+        #    ('S3', 'CCCCC', 'ccccc', 3, None, None),
+        #])
+
         with self.assertRaises(NotImplementedError):
             cur.execute(
                 "SELECT * FROM test_basic where s=?",
