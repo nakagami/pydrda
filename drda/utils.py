@@ -125,13 +125,13 @@ def read_from_stream(stream, nbytes, max_attempts=16):
     return received
 
 
-def read_field(t, ps, b, endian):
+def read_field(t, ps, stream, endian):
     """
     read one field value from bytes.
     return value, rest bytes
     t: type
     ps:  precision and scale or length
-    b: input bytes
+    stream: input bytes stream
     """
     if t in (
         DRDA_TYPE_NINTEGER, DRDA_TYPE_NSMALL, DRDA_TYPE_N1BYTE_INT, DRDA_TYPE_NFLOAT16,
@@ -145,58 +145,48 @@ def read_field(t, ps, b, endian):
         DRDA_TYPE_NCSTRMIX, DRDA_TYPE_NPSCLBYTE, DRDA_TYPE_NLSTR, DRDA_TYPE_NLSTRMIX,
         DRDA_TYPE_NSDATALINK, DRDA_TYPE_NMDATALINK, DRDA_TYPE_NBOOLEAN,
     ):
-        (isnull, b) = (b[0] == 0xFF, b[1:])
-        if isnull:
-            return None, b
+        if read_from_stream(stream, 1) == b'\xFF':
+            return None
 
     if t in (DRDA_TYPE_MIX, DRDA_TYPE_NMIX):
         ln = int.from_bytes(ps, byteorder='big')
-        v = b[:ln].decode('utf-8')
-        b = b[ln:]
+        v = read_from_stream(ln).decode('utf-8')
     elif t in (DRDA_TYPE_VARMIX, DRDA_TYPE_NVARMIX):
-        ln = int.from_bytes(b[:2], byteorder='big')
-        v = b[2:2+ln].decode('utf-8')
-        b = b[2+ln:]
+        ln = int.from_bytes(read_from_stream(stream, 2), byteorder='big')
+        v = read_from_stream(stream, ln).decode('utf-8')
     elif t in (DRDA_TYPE_LONGMIX, DRDA_TYPE_NLONGMIX):
-        ln = int.from_bytes(b[:2], byteorder='big')
-        v = b[2:2+ln].decode('utf-8')
-        b = b[2+ln:]
+        ln = int.from_bytes(read_from_stream(stream, 2), byteorder='big')
+        v = read_from_stream(stream, ln).decode('utf-8')
     elif t in (DRDA_TYPE_VARCHAR, DRDA_TYPE_NVARCHAR, DRDA_TYPE_LONG):
-        ln = int.from_bytes(b[:2], byteorder='big')
-        v = b[2:2+ln].decode('utf-8')
-        b = b[2+ln:]
+        ln = int.from_bytes(read_from_stream(stream, 2), byteorder='big')
+        v = read_from_stream(stream, ln).decode('utf-8')
     elif t in (
             DRDA_TYPE_SMALL, DRDA_TYPE_NSMALL, DRDA_TYPE_NINTEGER8,
             DRDA_TYPE_INTEGER8, DRDA_TYPE_INTEGER, DRDA_TYPE_NINTEGER):
         ln = int.from_bytes(ps, byteorder='big')
-        v = int.from_bytes(b[:ln], byteorder=endian, signed=True)
-        b = b[ln:]
+        v = int.from_bytes(read_from_stream(stream, ln), byteorder=endian, signed=True)
     elif t == DRDA_TYPE_NDECIMAL:
         (p, s) = (ps[0], ps[1])
         ln = p + 1
         if ln % 2:
             ln += 1
         ln //= 2
-        digits_sign = binascii.b2a_hex(b[:ln]).decode('ascii')
+        digits_sign = binascii.b2a_hex(read_from_stream(stream, ln)).decode('ascii')
         sign = 0 if digits_sign[-1] == 'c' else 1
         v = decimal.Decimal(digits_sign[:-1])
         v = decimal.Decimal((sign, v.as_tuple()[1], -s))
-        b = b[ln:]
     elif t in (DRDA_TYPE_TIMESTAMP, DRDA_TYPE_NTIMESTAMP):
         ln = int.from_bytes(ps, byteorder='big')
-        v = b[:ln].decode('utf-8')
-        b = b[ln:]
+        v = read_from_stream(stream, ln).decode('utf-8')
         v = datetime.datetime.strptime(v[:26], "%Y-%m-%d-%H.%M.%S.%f")
     elif t in (DRDA_TYPE_DATE, DRDA_TYPE_NDATE):
         ln = int.from_bytes(ps, byteorder='big')
-        v = b[:ln].decode('utf-8')
-        b = b[ln:]
+        v = read_from_stream(stream, ln).decode('utf-8')
         v = datetime.datetime.strptime(v, "%Y-%m-%d")
         v = datetime.date(v.year, v.month, v.day)
     elif t in (DRDA_TYPE_TIME, DRDA_TYPE_NTIME):
         ln = int.from_bytes(ps, byteorder='big')
-        v = b[:ln].decode('utf-8')
-        b = b[ln:]
+        v = read_from_stream(stream, ln).decode('utf-8')
         try:
             v = datetime.datetime.strptime(v, "%H:%M:%S")
         except ValueError:
@@ -204,27 +194,22 @@ def read_field(t, ps, b, endian):
         v = datetime.time(v.hour, v.minute, v.second)
     elif t in (DRDA_TYPE_VARGRAPH, DRDA_TYPE_NVARGRAPH):
         ln = int.from_bytes(ps, byteorder='big')
-        v = b[:ln].decode('utf-8')
-        b = b[ln:]
+        v = read_from_stream(stream, ln).decode('utf-8')
     elif t in (DRDA_TYPE_GRAPHIC, DRDA_TYPE_NGRAPHIC):
         ln = int.from_bytes(ps, byteorder='big')
-        v = b[:ln].decode('utf-8')
-        b = b[ln:]
+        v = read_from_stream(stream, ln).decode('utf-8')
     elif t in (DRDA_TYPE_NFLOAT4, DRDA_TYPE_FLOAT4):
         ln = int.from_bytes(ps, byteorder='big')
-        v = struct.unpack(">f" if endian == 'big' else "<f", b[:ln])[0]
-        b = b[ln:]
+        v = struct.unpack(">f" if endian == 'big' else "<f", read_from_stream(stream, ln))[0]
     elif t in (DRDA_TYPE_NFLOAT8, DRDA_TYPE_FLOAT8):
         ln = int.from_bytes(ps, byteorder='big')
-        v = struct.unpack(">d" if endian == 'big' else "<d", b[:ln])[0]
-        b = b[ln:]
+        v = struct.unpack(">d" if endian == 'big' else "<d", read_from_stream(stream, ln))[0]
     elif t in (DRDA_TYPE_BOOLEAN, DRDA_TYPE_NBOOLEAN):
         ln = int.from_bytes(ps, byteorder='big')
-        v = True if int.from_bytes(b[:ln], byteorder='big') else False
-        b = b[ln:]
+        v = True if int.from_bytes(read_from_stream(stream, ln), byteorder='big') else False
     else:
         raise ValueError("UnknownType(%s)" % hex(t))
-    return v, b
+    return v
 
 
 def escape_parameter(v):

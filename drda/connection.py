@@ -21,6 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 ##############################################################################
+import io
 import socket
 import ssl
 import platform
@@ -76,14 +77,13 @@ class Connection:
                     # [(DRDA_TYPE_xxxx, size_binary), ...]
                     qrydsc = [(c[0], c[1:]) for c in [b[i:i+3] for i in range(0, len(b), 3)]]
                 elif code_point == cp.QRYDTA:
-                    b = obj
-                    while len(b):
+                    stream = io.BytesIO(obj)
+                    while b := utils.read_from_stream(stream, 2):
                         if (b[0], b[1]) != (0xff, 0x00):
                             break
-                        b = b[2:]
                         r = []
                         for t, ps in qrydsc:
-                            v, b = utils.read_field(t, ps, b, self.endian)
+                            v = utils.read_field(t, ps, stream, self.endian)
                             r.append(v)
                         results.append(tuple(r))
 
