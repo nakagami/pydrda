@@ -151,13 +151,11 @@ def read_field(t, ps, stream, endian):
     if t in (DRDA_TYPE_MIX, DRDA_TYPE_NMIX):
         ln = int.from_bytes(ps, byteorder='big')
         v = read_from_stream(stream, ln).decode('utf-8')
-    elif t in (DRDA_TYPE_VARMIX, DRDA_TYPE_NVARMIX):
-        ln = int.from_bytes(read_from_stream(stream, 2), byteorder='big')
-        v = read_from_stream(stream, ln).decode('utf-8')
-    elif t in (DRDA_TYPE_LONGMIX, DRDA_TYPE_NLONGMIX):
-        ln = int.from_bytes(read_from_stream(stream, 2), byteorder='big')
-        v = read_from_stream(stream, ln).decode('utf-8')
-    elif t in (DRDA_TYPE_VARCHAR, DRDA_TYPE_NVARCHAR, DRDA_TYPE_LONG):
+    elif t in (
+        DRDA_TYPE_VARMIX, DRDA_TYPE_NVARMIX,
+        DRDA_TYPE_LONGMIX, DRDA_TYPE_NLONGMIX,
+        DRDA_TYPE_VARCHAR, DRDA_TYPE_NVARCHAR, DRDA_TYPE_LONG,
+    ):
         ln = int.from_bytes(read_from_stream(stream, 2), byteorder='big')
         v = read_from_stream(stream, ln).decode('utf-8')
     elif t in (
