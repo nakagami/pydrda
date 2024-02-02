@@ -10,7 +10,7 @@ This is a DRDA protocol (https://en.wikipedia.org/wiki/DRDA) database driver.
 Requirements
 =============
 
-- Python 3.7+
+- Python 3.8+
 
 
 Installation
