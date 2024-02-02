@@ -108,7 +108,7 @@ Db2
 Start Db2 server
 ::
 
-   $ docker run -itd --name mydb2 --privileged=true -p 50000:50000 -e LICENSE=accept -e DB2INST1_PASSWORD=password -e DBNAME=testdb -v /tmp/db2:/database ibmcom/db2
+   $ docker run -itd --name db2 --privileged=true -p 50000:50000 -e LICENSE=accept -e DB2INST1_PASSWORD=password -e DBNAME=testdb --platform=linux/amd64 icr.io/db2_community/db2
 
 Execute test
 ::
