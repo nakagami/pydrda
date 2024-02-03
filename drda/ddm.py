@@ -28,7 +28,6 @@ import drda
 from drda import codepoint as cp
 from drda import consts
 from drda import secmec9
-from drda import utils
 
 
 def _recv_from_sock(sock, nbytes, max_attempts=16):
@@ -240,25 +239,25 @@ def read_dds(sock, db_type):
     dds_type = b[3] & 0b1111
     chained = b[3] & 0b01000000
     number = int.from_bytes(b[4:6],  byteorder='big')
-    obj_ln = int.from_bytes(utils.read_from_stream(sock, 2), byteorder='big')
-    code_point = int.from_bytes(utils.read_from_stream(sock, 2), byteorder='big')
+    obj_ln = int.from_bytes(_recv_from_sock(sock, 2), byteorder='big')
+    code_point = int.from_bytes(_recv_from_sock(sock, 2), byteorder='big')
     if dds_ln == 0xFFFF:
         assert code_point == 0x241B     # QRYDTA
         if db_type == 'db2':
             assert obj_ln == 32772      # ???
-            obj = utils.read_from_stream(sock, 32757)   # ???
+            obj = _recv_from_sock(sock, 32757)   # ???
             while True:
-                next_ln = int.from_bytes(utils.read_from_stream(sock, 2), byteorder='big')
-                extra = utils.read_from_stream(sock, next_ln-2)
+                next_ln = int.from_bytes(_recv_from_sock(sock, 2), byteorder='big')
+                extra = _recv_from_sock(sock, next_ln-2)
                 obj += extra
         elif db_type == 'derby':
             obj = b''
             while True:
-                next_ln = int.from_bytes(utils.read_from_stream(sock, 4), byteorder='big')
-                extra = utils.read_from_stream(sock, next_ln)
+                next_ln = int.from_bytes(_recv_from_sock(sock, 4), byteorder='big')
+                extra = _recv_from_sock(sock, next_ln)
                 obj += extra
     else:
-        obj = utils.read_from_stream(sock, obj_ln - 4)
+        obj = _recv_from_sock(sock, obj_ln - 4)
         if (len(obj) != dds_ln - 10) or (obj_ln != dds_ln - 6):
             raise ConnectionError("invalid DDS packet from socket")
         assert len(obj) == (obj_ln - 4)
