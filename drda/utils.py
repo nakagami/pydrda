@@ -107,23 +107,8 @@ DRDA_TYPE_BOOLEAN = 0xBE
 DRDA_TYPE_NBOOLEAN = 0xBF
 
 
-def read_from_stream(stream, nbytes, max_attempts=16):
-    if hasattr(stream, "read"):
-        return stream.read(nbytes)
-
-    n = nbytes
-    attempts = 0
-    received = b''
-    while n > 0 and attempts < max_attempts:
-        bs = stream.recv(n)
-        if len(bs) > 0:
-            received += bs
-            n -= len(bs)
-            attempts = 0
-        else:
-            attempts += 1
-    return received
-
+def read_from_stream(stream, nbytes):
+    return stream.read(nbytes)
 
 def read_field(t, ps, stream, endian):
     """

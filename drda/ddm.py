@@ -28,7 +28,21 @@ import drda
 from drda import codepoint as cp
 from drda import consts
 from drda import secmec9
-from drda import utils
+
+
+def _recv_from_sock(sock, nbytes, max_attempts=16):
+    n = nbytes
+    attempts = 0
+    received = b''
+    while n > 0 and attempts < max_attempts:
+        bs = sock.recv(n)
+        if len(bs) > 0:
+            received += bs
+            n -= len(bs)
+            attempts = 0
+        else:
+            attempts += 1
+    return received
 
 
 def _send_to_sock(sock, b):
@@ -216,7 +230,7 @@ def parse_sqldard(obj, enc, endian, db_type):
 
 def read_dds(sock):
     "Read one DDS packet from socket"
-    b = utils.read_from_stream(sock, 6)
+    b = _recv_from_sock(sock, 6)
 
     if len(b) != 6 or b[2] != 0xD0:
         raise ConnectionError("invalid DDS packet from socket")
@@ -225,7 +239,7 @@ def read_dds(sock):
     dds_type = b[3] & 0b1111
     chained = b[3] & 0b01000000
     number = int.from_bytes(b[4:6],  byteorder='big')
-    obj = utils.read_from_stream(sock, ln-6)
+    obj = _recv_from_sock(sock, ln-6)
 
     if len(obj) != ln - 6:
         raise ConnectionError("invalid DDS packet from socket")
