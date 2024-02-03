@@ -48,7 +48,7 @@ class Connection:
         more_data = False
         while True:
             while chained:
-                dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock)
+                dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock, self.db_type)
                 if code_point == cp.SQLERRRM:
                     err_msg = ddm.parse_reply(obj).get(cp.SRVDGN)
                 elif code_point == cp.SQLCARD:
@@ -106,7 +106,7 @@ class Connection:
         secmec = sectkn = None
         chained = True
         while chained:
-            dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock)
+            dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock, self.db_type)
             if code_point == cp.ACCSECRD:
                 while len(obj):
                     ln = int.from_bytes(obj[:2], byteorder='big')

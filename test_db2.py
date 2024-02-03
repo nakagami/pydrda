@@ -141,6 +141,25 @@ class TestBasic(unittest.TestCase):
         with self.assertRaises(drda.OperationalError):
             cur.execute("invalid query"),
 
+    @unittest.skip
+    def test_issue_18(self):
+        cur = self.connection.cursor()
+        try:
+            cur.execute("DROP TABLE test_issue18")
+        except drda.OperationalError:
+            pass
+        cur.execute("""
+            CREATE TABLE test_issue18 (
+                s varchar(4096)
+            )
+        """)
+        s = "x" * 4096
+        count = 20
+        for _ in range(count):
+            cur.execute("INSERT INTO test_issue18(s) values(?)", [s])
+        cur.execute("SELECT * FROM test_issue18")
+        self.assertEqual(cur.fetchall(), [s] * count)
+
 
 class TestDataType(unittest.TestCase):
     def setUp(self):

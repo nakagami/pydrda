@@ -228,25 +228,41 @@ def parse_sqldard(obj, enc, endian, db_type):
     return err, description
 
 
-def read_dds(sock):
+def read_dds(sock, db_type):
     "Read one DDS packet from socket"
     b = _recv_from_sock(sock, 6)
 
     if len(b) != 6 or b[2] != 0xD0:
-        raise ConnectionError("invalid DDS packet from socket")
+        raise ConnectionError(f"invalid DDS packet from socket:{binascii.hexlify(b).decode('utf-8')}")
 
-    ln = int.from_bytes(b[:2], byteorder='big')
+    dds_ln = int.from_bytes(b[:2], byteorder='big')
     dds_type = b[3] & 0b1111
     chained = b[3] & 0b01000000
     number = int.from_bytes(b[4:6],  byteorder='big')
-    obj = _recv_from_sock(sock, ln-6)
+    obj_ln = int.from_bytes(utils.read_from_stream(sock, 2), byteorder='big')
+    code_point = int.from_bytes(utils.read_from_stream(sock, 2), byteorder='big')
+    if dds_ln == 0xFFFF:
+        assert code_point == 0x241B     # QRYDTA
+        if db_type == 'db2':
+            assert obj_ln == 32772      # ???
+            obj = utils.read_from_stream(sock, 32757)   # ???
+            while True:
+                next_ln = int.from_bytes(utils.read_from_stream(sock, 2), byteorder='big')
+                extra = utils.read_from_stream(sock, next_ln-2)
+                obj += extra
+        elif db_type == 'derby':
+            obj = b''
+            while True:
+                next_ln = int.from_bytes(utils.read_from_stream(sock, 4), byteorder='big')
+                extra = utils.read_from_stream(sock, next_ln)
+                obj += extra
+    else:
+        obj = utils.read_from_stream(sock, obj_ln - 4)
+        if (len(obj) != dds_ln - 10) or (obj_ln != dds_ln - 6):
+            raise ConnectionError("invalid DDS packet from socket")
+        assert len(obj) == (obj_ln - 4)
 
-    if len(obj) != ln - 6:
-        raise ConnectionError("invalid DDS packet from socket")
-
-    code_point = int.from_bytes(obj[2:4], byteorder='big')
-
-    return dds_type, chained, number, code_point, obj[4:]
+    return dds_type, chained, number, code_point, obj
 
 
 def write_request_dds(sock, o, cur_id, next_dds_has_same_id, last_packet):
