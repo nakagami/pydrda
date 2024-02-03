@@ -28,6 +28,7 @@ import drda
 from drda import codepoint as cp
 from drda import consts
 from drda import secmec9
+from drda import utils
 
 
 def _recv_from_sock(sock, nbytes, max_attempts=16):
