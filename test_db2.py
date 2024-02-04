@@ -158,10 +158,10 @@ class TestBasic(unittest.TestCase):
         for _ in range(count):
             cur.execute("INSERT INTO test_issue18(s) values(?)", [s])
         cur.execute("SELECT * FROM test_issue18")
-        self.assertEqual(
-            list(cur.fetchall()),
-            [(s,) for _ in range(count)],
-        )
+        results = list(cur.fetchall())
+        for r in results:
+            self.assertEqual(r, (s,))
+        self.assertEqual(len(results), count)
 
 
 class TestDataType(unittest.TestCase):

@@ -269,7 +269,6 @@ class TestDataType(unittest.TestCase):
         cur.execute("SELECT * FROM test_double")
         self.assertEqual(cur.fetchall(), [(-1, -1, -1.0, -1.0)])
 
-    @unittest.skip
     def test_issue18(self):
         cur = self.connection.cursor()
         try:
@@ -286,10 +285,10 @@ class TestDataType(unittest.TestCase):
         for _ in range(count):
             cur.execute(f"INSERT INTO test_issue18(s) values('{s}')")
         cur.execute("SELECT * FROM test_issue18")
-        self.assertEqual(
-            list(cur.fetchall()),
-            [(s,) for _ in range(count)],
-        )
+        results = list(cur.fetchall())
+        for r in results:
+            self.assertEqual(r, (s,))
+        self.assertEqual(len(results), count)
 
     def tearDown(self):
         self.connection.close()

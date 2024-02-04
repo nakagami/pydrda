@@ -241,21 +241,21 @@ def read_dss(sock, db_type):
     correlation_id = int.from_bytes(b[4:6],  byteorder='big')
     obj_ln = int.from_bytes(_recv_from_sock(sock, 2), byteorder='big')
     code_point = int.from_bytes(_recv_from_sock(sock, 2), byteorder='big')
+
     if dss_ln == 0xFFFF:
         assert code_point == 0x241B     # QRYDTA
         if db_type == 'db2':
             assert obj_ln == 32772      # ???
             obj = _recv_from_sock(sock, 32757)   # ???
-            while True:
-                next_ln = int.from_bytes(_recv_from_sock(sock, 2), byteorder='big')
-                extra = _recv_from_sock(sock, next_ln-2)
-                obj += extra
+            next_ln = int.from_bytes(_recv_from_sock(sock, 2), byteorder='big')
+            extra = _recv_from_sock(sock, next_ln-2)
+            obj += extra
         elif db_type == 'derby':
-            obj = b''
-            while True:
-                next_ln = int.from_bytes(_recv_from_sock(sock, 4), byteorder='big')
-                extra = _recv_from_sock(sock, next_ln)
-                obj += extra
+            next_ln = int.from_bytes(_recv_from_sock(sock, 4), byteorder='big')
+            obj = _recv_from_sock(sock, 32753)   # ???
+            next_ln = int.from_bytes(_recv_from_sock(sock, 2), byteorder='big')
+            extra = _recv_from_sock(sock, next_ln-2)
+            obj += extra
     else:
         obj = _recv_from_sock(sock, obj_ln - 4)
         if (len(obj) != dss_ln - 10) or (obj_ln != dss_ln - 6):
