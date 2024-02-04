@@ -270,7 +270,7 @@ class TestDataType(unittest.TestCase):
         self.assertEqual(cur.fetchall(), [(-1, -1, -1.0, -1.0)])
 
     @unittest.skip
-    def test_issue_18(self):
+    def test_issue18(self):
         cur = self.connection.cursor()
         try:
             cur.execute("DROP TABLE test_issue18")
@@ -281,12 +281,15 @@ class TestDataType(unittest.TestCase):
                 s varchar(4096)
             )
         """)
+        s = "x" * 4096
         count = 20
         for _ in range(count):
-            s = "x" * 4096
             cur.execute(f"INSERT INTO test_issue18(s) values('{s}')")
         cur.execute("SELECT * FROM test_issue18")
-        self.assertEqual(cur.fetchall(), [s] * count)
+        self.assertEqual(
+            list(cur.fetchall()),
+            [(s,) for _ in range(count)],
+        )
 
     def tearDown(self):
         self.connection.close()

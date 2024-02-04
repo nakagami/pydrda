@@ -142,7 +142,7 @@ class TestBasic(unittest.TestCase):
             cur.execute("invalid query"),
 
     @unittest.skip
-    def test_issue_18(self):
+    def test_issue18(self):
         cur = self.connection.cursor()
         try:
             cur.execute("DROP TABLE test_issue18")
@@ -158,7 +158,10 @@ class TestBasic(unittest.TestCase):
         for _ in range(count):
             cur.execute("INSERT INTO test_issue18(s) values(?)", [s])
         cur.execute("SELECT * FROM test_issue18")
-        self.assertEqual(cur.fetchall(), [s] * count)
+        self.assertEqual(
+            list(cur.fetchall()),
+            [(s,) for _ in range(count)],
+        )
 
 
 class TestDataType(unittest.TestCase):
