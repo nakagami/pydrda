@@ -89,7 +89,7 @@ def parse_name(b):
 
 
 def pack_dss_object(code_point, o):
-    "pack to DDS packet"
+    "pack to DSS packet"
     return (len(o)+4).to_bytes(2, byteorder='big') + code_point.to_bytes(2, byteorder='big') + o
 
 
@@ -229,11 +229,11 @@ def parse_sqldard(obj, enc, endian, db_type):
 
 
 def read_dss(sock, db_type):
-    "Read one DDS packet from socket"
+    "Read one DSS packet from socket"
     b = _recv_from_sock(sock, 6)
 
     if len(b) != 6 or b[2] != 0xD0:
-        raise ConnectionError(f"invalid DDS packet from socket:{binascii.hexlify(b).decode('utf-8')}")
+        raise ConnectionError(f"invalid DSS packet from socket:{binascii.hexlify(b).decode('utf-8')}")
 
     dss_ln = int.from_bytes(b[:2], byteorder='big')
     dss_type = b[3] & 0b1111
@@ -259,14 +259,14 @@ def read_dss(sock, db_type):
     else:
         obj = _recv_from_sock(sock, obj_ln - 4)
         if (len(obj) != dss_ln - 10) or (obj_ln != dss_ln - 6):
-            raise ConnectionError("invalid DDS packet from socket")
+            raise ConnectionError("invalid DSS packet from socket")
         assert len(obj) == (obj_ln - 4)
 
     return dss_type, chained, number, code_point, obj
 
 
 def write_request_dss(sock, o, cur_id, next_dss_has_same_id, last_packet):
-    "Write request DDS packets"
+    "Write request DSS packets"
     code_point = int.from_bytes(o[2:4], byteorder='big')
     _send_to_sock(sock, (len(o)+6).to_bytes(2, byteorder='big'))
     if code_point in (cp.SQLSTT, cp.SQLATTR, cp.SQLDTA):
