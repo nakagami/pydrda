@@ -48,7 +48,7 @@ class Connection:
         more_data = False
         while True:
             while chained:
-                dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock, self.db_type)
+                dss_type, chained, number, code_point, obj = ddm.read_dss(self.sock, self.db_type)
                 if code_point == cp.SQLERRRM:
                     err_msg = ddm.parse_reply(obj).get(cp.SRVDGN)
                 elif code_point == cp.SQLCARD:
@@ -88,7 +88,7 @@ class Connection:
                         results.append(tuple(r))
 
             if more_data:
-                ddm.write_request_dds(
+                ddm.write_request_dss(
                     self.sock,
                     ddm.packCNTQRY(
                         self.pkgid, self.pkgcnstkn, self.pkgsn, self.database
@@ -106,7 +106,7 @@ class Connection:
         secmec = sectkn = None
         chained = True
         while chained:
-            dds_type, chained, number, code_point, obj = ddm.read_dds(self.sock, self.db_type)
+            dss_type, chained, number, code_point, obj = ddm.read_dss(self.sock, self.db_type)
             if code_point == cp.ACCSECRD:
                 while len(obj):
                     ln = int.from_bytes(obj[:2], byteorder='big')
@@ -169,7 +169,7 @@ class Connection:
         self.sock.connect((self.host, self.port))
 
         cur_id = 1
-        cur_id = ddm.write_request_dds(
+        cur_id = ddm.write_request_dss(
             self.sock,
             ddm.packEXCSAT(self, [
                 cp.AGENT, 10,
@@ -182,7 +182,7 @@ class Connection:
             cur_id, False, False
         )
 
-        cur_id = ddm.write_request_dds(
+        cur_id = ddm.write_request_dss(
             self.sock,
             ddm.packACCSEC(
                 self.database,
@@ -198,7 +198,7 @@ class Connection:
         cur_id = 1
         if secmec != self.secmec:
             self.secmec = secmec
-            cur_id = ddm.write_request_dds(
+            cur_id = ddm.write_request_dss(
                 self.sock,
                 ddm.packACCSEC(
                     self.database,
@@ -209,7 +209,7 @@ class Connection:
                 cur_id, False, False
             )
 
-        cur_id = ddm.write_request_dds(
+        cur_id = ddm.write_request_dss(
             self.sock,
             ddm.packSECCHK(
                 secmec,
@@ -222,7 +222,7 @@ class Connection:
             ),
             cur_id, False, False
         )
-        cur_id = ddm.write_request_dds(
+        cur_id = ddm.write_request_dss(
             self.sock,
             ddm.packACCRDB(self.prdid, self.database, self.encoding),
             cur_id, False, True
@@ -243,27 +243,27 @@ class Connection:
         if lc_type is None:
             lc_type = "en_US"
         cur_id = 1
-        cur_id = ddm.write_request_dds(
+        cur_id = ddm.write_request_dss(
             self.sock,
             ddm.packEXCSAT_MGRLVLLS([cp.CCSIDMGR, 1208]),
             cur_id, False, False
         )
-        cur_id = ddm.write_request_dds(
+        cur_id = ddm.write_request_dss(
             self.sock,
             ddm.packEXCSQLSET(self.pkgid, None, 1, self.database),
             cur_id, True, False
         )
-        cur_id = ddm.write_request_dds(
+        cur_id = ddm.write_request_dss(
             self.sock,
             ddm.packSQLSTT("SET CLIENT WRKSTNNAME '{}'".format(platform.node())),
             cur_id, True, False
         )
-        cur_id = ddm.write_request_dds(
+        cur_id = ddm.write_request_dss(
             self.sock,
             ddm.packSQLSTT("SET CURRENT LOCALE LC_CTYPE='{}'".format(lc_type)),
             cur_id, False, False
         )
-        cur_id = ddm.write_request_dds(
+        cur_id = ddm.write_request_dss(
             self.sock,
             ddm.packRDBCMM(),
             cur_id, False, True
@@ -273,17 +273,17 @@ class Connection:
     def _execute(self, query, args):
         if args:
             cur_id = 1
-            cur_id = ddm.write_request_dds(
+            cur_id = ddm.write_request_dss(
                 self.sock,
                 ddm.packPRPSQLSTT(self.pkgid, self.pkgcnstkn, self.pkgsn, self.database),
                 cur_id, True, False
             )
-            cur_id = ddm.write_request_dds(
+            cur_id = ddm.write_request_dss(
                 self.sock,
                 ddm.packSQLSTT(query),
                 cur_id, False, False
             )
-            cur_id = ddm.write_request_dds(
+            cur_id = ddm.write_request_dss(
                 self.sock,
                 ddm.packDSCSQLSTT(self.pkgid, self.pkgcnstkn, self.pkgsn, self.database),
                 cur_id, False, True
@@ -291,17 +291,17 @@ class Connection:
             _, _, params_description = self._parse_response()
 
             cur_id = 1
-            cur_id = ddm.write_request_dds(
+            cur_id = ddm.write_request_dss(
                 self.sock,
                 ddm.packEXCSQLSTT(self.pkgid, self.pkgcnstkn, self.pkgsn, self.database),
                 cur_id, True, False
             )
-            cur_id = ddm.write_request_dds(
+            cur_id = ddm.write_request_dss(
                 self.sock,
                 ddm.packSQLDTA(params_description, args, self.endian),
                 cur_id, False, False
             )
-            cur_id = ddm.write_request_dds(
+            cur_id = ddm.write_request_dss(
                 self.sock,
                 ddm.packRDBCMM(),
                 cur_id, False, True
@@ -309,7 +309,7 @@ class Connection:
             self._parse_response()
         else:
             cur_id = 1
-            cur_id = ddm.write_request_dds(
+            cur_id = ddm.write_request_dss(
                 self.sock,
                 ddm.packEXCSQLIMM(
                     self.pkgid,
@@ -319,12 +319,12 @@ class Connection:
                 ),
                 cur_id, True, False
             )
-            cur_id = ddm.write_request_dds(
+            cur_id = ddm.write_request_dss(
                 self.sock,
                 ddm.packSQLSTT(query),
                 cur_id, False, False
             )
-            cur_id = ddm.write_request_dds(
+            cur_id = ddm.write_request_dss(
                 self.sock,
                 ddm.packRDBCMM(),
                 cur_id, False, True
@@ -334,17 +334,17 @@ class Connection:
     def _query(self, query, args):
         if args:
             cur_id = 1
-            cur_id = ddm.write_request_dds(
+            cur_id = ddm.write_request_dss(
                 self.sock,
                 ddm.packPRPSQLSTT(self.pkgid, self.pkgcnstkn, self.pkgsn, self.database),
                 cur_id, True, False
             )
-            cur_id = ddm.write_request_dds(
+            cur_id = ddm.write_request_dss(
                 self.sock,
                 ddm.packSQLSTT(query),
                 cur_id, False, False
             )
-            cur_id = ddm.write_request_dds(
+            cur_id = ddm.write_request_dss(
                 self.sock,
                 ddm.packDSCSQLSTT(self.pkgid, self.pkgcnstkn, self.pkgsn, self.database),
                 cur_id, False, True
@@ -352,14 +352,14 @@ class Connection:
             _, description, params_description = self._parse_response()
 
             cur_id = 1
-            cur_id = ddm.write_request_dds(
+            cur_id = ddm.write_request_dss(
                 self.sock,
                 ddm.packOPNQRY_with_params(
                     self.pkgid, self.pkgcnstkn, self.pkgsn, self.database
                 ),
                 cur_id, True, False
             )
-            cur_id = ddm.write_request_dds(
+            cur_id = ddm.write_request_dss(
                 self.sock,
                 ddm.packSQLDTA(params_description, args, self.endian),
                 cur_id, False, True
@@ -367,7 +367,7 @@ class Connection:
             rows, _, _ = self._parse_response()
 
             cur_id = 1
-            cur_id = ddm.write_request_dds(
+            cur_id = ddm.write_request_dss(
                 self.sock,
                 ddm.packRDBCMM(),
                 cur_id, False, True
@@ -377,17 +377,17 @@ class Connection:
             return rows, description
         else:
             cur_id = 1
-            cur_id = ddm.write_request_dds(
+            cur_id = ddm.write_request_dss(
                 self.sock,
                 ddm.packPRPSQLSTT(self.pkgid, self.pkgcnstkn, self.pkgsn, self.database),
                 cur_id, True, False
             )
-            cur_id = ddm.write_request_dds(
+            cur_id = ddm.write_request_dss(
                 self.sock,
                 ddm.packSQLSTT(query),
                 cur_id, False, False
             )
-            cur_id = ddm.write_request_dds(
+            cur_id = ddm.write_request_dss(
                 self.sock,
                 ddm.packOPNQRY(self.pkgid, self.pkgcnstkn, self.pkgsn, self.database),
                 cur_id, False, True
@@ -412,7 +412,7 @@ class Connection:
 
     def close(self):
         cur_id = 1
-        cur_id = ddm.write_request_dds(
+        cur_id = ddm.write_request_dss(
             self.sock,
             ddm.packRDBCMM(),
             cur_id, False, True

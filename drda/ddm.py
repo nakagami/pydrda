@@ -88,7 +88,7 @@ def parse_name(b):
     return s1 or s2, b
 
 
-def pack_dds_object(code_point, o):
+def pack_dss_object(code_point, o):
     "pack to DDS packet"
     return (len(o)+4).to_bytes(2, byteorder='big') + code_point.to_bytes(2, byteorder='big') + o
 
@@ -228,20 +228,20 @@ def parse_sqldard(obj, enc, endian, db_type):
     return err, description
 
 
-def read_dds(sock, db_type):
+def read_dss(sock, db_type):
     "Read one DDS packet from socket"
     b = _recv_from_sock(sock, 6)
 
     if len(b) != 6 or b[2] != 0xD0:
         raise ConnectionError(f"invalid DDS packet from socket:{binascii.hexlify(b).decode('utf-8')}")
 
-    dds_ln = int.from_bytes(b[:2], byteorder='big')
-    dds_type = b[3] & 0b1111
+    dss_ln = int.from_bytes(b[:2], byteorder='big')
+    dss_type = b[3] & 0b1111
     chained = b[3] & 0b01000000
     number = int.from_bytes(b[4:6],  byteorder='big')
     obj_ln = int.from_bytes(_recv_from_sock(sock, 2), byteorder='big')
     code_point = int.from_bytes(_recv_from_sock(sock, 2), byteorder='big')
-    if dds_ln == 0xFFFF:
+    if dss_ln == 0xFFFF:
         assert code_point == 0x241B     # QRYDTA
         if db_type == 'db2':
             assert obj_ln == 32772      # ???
@@ -258,14 +258,14 @@ def read_dds(sock, db_type):
                 obj += extra
     else:
         obj = _recv_from_sock(sock, obj_ln - 4)
-        if (len(obj) != dds_ln - 10) or (obj_ln != dds_ln - 6):
+        if (len(obj) != dss_ln - 10) or (obj_ln != dss_ln - 6):
             raise ConnectionError("invalid DDS packet from socket")
         assert len(obj) == (obj_ln - 4)
 
-    return dds_type, chained, number, code_point, obj
+    return dss_type, chained, number, code_point, obj
 
 
-def write_request_dds(sock, o, cur_id, next_dds_has_same_id, last_packet):
+def write_request_dss(sock, o, cur_id, next_dss_has_same_id, last_packet):
     "Write request DDS packets"
     code_point = int.from_bytes(o[2:4], byteorder='big')
     _send_to_sock(sock, (len(o)+6).to_bytes(2, byteorder='big'))
@@ -275,7 +275,7 @@ def write_request_dds(sock, o, cur_id, next_dds_has_same_id, last_packet):
         flag = 1    # DSS request
     if not last_packet:
         flag |= 0b01000000
-    if next_dds_has_same_id:
+    if next_dss_has_same_id:
         next_id = cur_id
         flag |= 0b00010000
     else:
@@ -292,7 +292,7 @@ def packEXCSAT(conn, mgrlvlls):
     for p in mgrlvlls:
         b += p.to_bytes(2, byteorder='big')
 
-    return pack_dds_object(cp.EXCSAT, (
+    return pack_dss_object(cp.EXCSAT, (
         _pack_str(cp.EXTNAM, 'pydrda', 'cp500') +
         _pack_str(cp.SRVNAM, platform.node(), 'cp500') +
         _pack_str(cp.SRVRLSLV, 'pydrda', 'cp500') +
@@ -307,13 +307,13 @@ def packEXCSAT_MGRLVLLS(mgrlvlls):
     for p in mgrlvlls:
         b += p.to_bytes(2, byteorder='big')
 
-    return pack_dds_object(cp.EXCSAT, (_pack_binary(cp.MGRLVLLS, b)))
+    return pack_dss_object(cp.EXCSAT, (_pack_binary(cp.MGRLVLLS, b)))
 
 
 def packSECCHK(secmec, sectkn, private_key, database, user, password, enc):
     if secmec == consts.SECMEC_EUSRIDPWD:
         des = secmec9.des(sectkn, private_key)
-        return pack_dds_object(cp.SECCHK, (
+        return pack_dss_object(cp.SECCHK, (
                 _pack_uint(cp.SECMEC, secmec, 2) +
                 _pack_str(cp.RDBNAM, database, enc) +
                 _pack_binary(cp.SECTKN, des.encrypt(user.encode(enc))) +
@@ -321,7 +321,7 @@ def packSECCHK(secmec, sectkn, private_key, database, user, password, enc):
             )
         )
     else:
-        return pack_dds_object(cp.SECCHK, (
+        return pack_dss_object(cp.SECCHK, (
                 _pack_uint(cp.SECMEC, secmec, 2) +
                 _pack_str(cp.RDBNAM, database, enc) +
                 _pack_str(cp.USRID, user, enc) +
@@ -331,7 +331,7 @@ def packSECCHK(secmec, sectkn, private_key, database, user, password, enc):
 
 
 def packACCRDB(prdid, rdbnam, enc):
-    return pack_dds_object(cp.ACCRDB, (
+    return pack_dss_object(cp.ACCRDB, (
             _pack_str(cp.RDBNAM, rdbnam, enc) +
             _pack_uint(cp.RDBACCCL, cp.SQLAM, 2) +
             _pack_str(cp.PRDID, prdid, enc) +
@@ -350,11 +350,11 @@ def packACCSEC(database, secmec, sectkn):
     body = _pack_uint(cp.SECMEC, secmec, 2) + _pack_str(cp.RDBNAM, database, 'cp500')
     if sectkn:
         body += _pack_binary(cp.SECTKN, sectkn)
-    return pack_dds_object(cp.ACCSEC, body)
+    return pack_dss_object(cp.ACCSEC, body)
 
 
 def packRDBCMM():
-    return pack_dds_object(cp.RDBCMM, bytes())
+    return pack_dss_object(cp.RDBCMM, bytes())
 
 
 def _packPKGNAMCSN(database, pkgid, pkgcnstkn, pkgsn):
@@ -370,7 +370,7 @@ def _packPKGNAMCSN(database, pkgid, pkgcnstkn, pkgsn):
 
 
 def packEXCSQLSTT(pkgid, pkgcnstkn, pkgsn, database):
-    return pack_dds_object(
+    return pack_dss_object(
         cp.EXCSQLSTT,
         _packPKGNAMCSN(database, pkgid, pkgcnstkn, pkgsn) +
         _pack_binary(cp.RDBCMTOK, bytes([241]))
@@ -378,7 +378,7 @@ def packEXCSQLSTT(pkgid, pkgcnstkn, pkgsn, database):
 
 
 def packEXCSQLIMM(pkgid, pkgcnstkn, pkgsn, database):
-    return pack_dds_object(
+    return pack_dss_object(
         cp.EXCSQLIMM,
         _packPKGNAMCSN(database, pkgid, pkgcnstkn, pkgsn) +
         _pack_binary(cp.RDBCMTOK, bytes([241]))
@@ -386,7 +386,7 @@ def packEXCSQLIMM(pkgid, pkgcnstkn, pkgsn, database):
 
 
 def packPRPSQLSTT(pkgid, pkgcnstkn, pkgsn, database):
-    return pack_dds_object(
+    return pack_dss_object(
         cp.PRPSQLSTT,
         _packPKGNAMCSN(database, pkgid, pkgcnstkn, pkgsn) +
         _pack_binary(cp.RTNSQLDA, bytes([241]))
@@ -394,14 +394,14 @@ def packPRPSQLSTT(pkgid, pkgcnstkn, pkgsn, database):
 
 
 def packDSCSQLSTT(pkgid, pkgcnstkn, pkgsn, database):
-    return pack_dds_object(
+    return pack_dss_object(
         cp.DSCSQLSTT,
         _packPKGNAMCSN(database, pkgid, pkgcnstkn, pkgsn) + _pack_binary(cp.TYPSQLDA, bytes([1]))
     )
 
 
 def packEXCSQLSET(pkgid, pkgcnstkn, pkgsn, database):
-    return pack_dds_object(
+    return pack_dss_object(
         cp.EXCSQLSET,
         _packPKGNAMCSN(database, pkgid, pkgcnstkn, pkgsn)
     )
@@ -494,15 +494,15 @@ def packSQLDTA(params_desc, params, endian):
 
     fdodsc += binascii.unhexlify(b'0671e4d00001')
 
-    return pack_dds_object(
+    return pack_dss_object(
         cp.SQLDTA,
-        pack_dds_object(cp.FDODSC, fdodsc) +
-        pack_dds_object(cp.FDODTA, fdodta)
+        pack_dss_object(cp.FDODSC, fdodsc) +
+        pack_dss_object(cp.FDODTA, fdodta)
     )
 
 
 def packOPNQRY_with_params(pkgid, pkgcnstkn, pkgsn, database):
-    return pack_dds_object(
+    return pack_dss_object(
         cp.OPNQRY,
         _packPKGNAMCSN(database, pkgid, pkgcnstkn, pkgsn) +
         _pack_uint(cp.QRYBLKSZ, 65535, 4) +
@@ -513,7 +513,7 @@ def packOPNQRY_with_params(pkgid, pkgcnstkn, pkgsn, database):
 
 
 def packOPNQRY(pkgid, pkgcnstkn, pkgsn, database):
-    return pack_dds_object(
+    return pack_dss_object(
         cp.OPNQRY,
         _packPKGNAMCSN(database, pkgid, pkgcnstkn, pkgsn) +
         _pack_uint(cp.QRYBLKSZ, 65535, 4) +
@@ -523,7 +523,7 @@ def packOPNQRY(pkgid, pkgcnstkn, pkgsn, database):
 
 
 def packCNTQRY(pkgid, pkgcnstkn, pkgsn, database):
-    return pack_dds_object(
+    return pack_dss_object(
         cp.CNTQRY,
         _packPKGNAMCSN(database, pkgid, pkgcnstkn, pkgsn) +
         _pack_uint(cp.QRYBLKSZ, 65535, 4) +
@@ -534,14 +534,14 @@ def packCNTQRY(pkgid, pkgcnstkn, pkgsn, database):
 
 
 def packSQLSTT(sql):
-    return pack_dds_object(
+    return pack_dss_object(
         cp.SQLSTT,
         _pack_null_string(sql, 'utf-8') + _pack_null_string(None, 'utf-8')
     )
 
 
 def packSQLATTR(attr):
-    return pack_dds_object(
+    return pack_dss_object(
         cp.SQLATTR,
         _pack_null_string(attr, 'utf-8') + _pack_null_string(None, 'utf-8')
     )
