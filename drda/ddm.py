@@ -238,7 +238,7 @@ def read_dss(sock, db_type):
     dss_ln = int.from_bytes(b[:2], byteorder='big')
     dss_type = b[3] & 0b1111
     chained = b[3] & 0b01000000
-    number = int.from_bytes(b[4:6],  byteorder='big')
+    correlation_id = int.from_bytes(b[4:6],  byteorder='big')
     obj_ln = int.from_bytes(_recv_from_sock(sock, 2), byteorder='big')
     code_point = int.from_bytes(_recv_from_sock(sock, 2), byteorder='big')
     if dss_ln == 0xFFFF:
@@ -262,7 +262,7 @@ def read_dss(sock, db_type):
             raise ConnectionError("invalid DSS packet from socket")
         assert len(obj) == (obj_ln - 4)
 
-    return dss_type, chained, number, code_point, obj
+    return dss_type, chained, correlation_id, code_point, obj
 
 
 def write_request_dss(sock, o, cur_id, next_dss_has_same_id, last_packet):
