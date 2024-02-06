@@ -141,7 +141,6 @@ class TestBasic(unittest.TestCase):
         with self.assertRaises(drda.OperationalError):
             cur.execute("invalid query"),
 
-    @unittest.skip
     def test_issue18(self):
         cur = self.connection.cursor()
         try:
