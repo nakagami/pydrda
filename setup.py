@@ -26,6 +26,5 @@ setup(
     long_description=open('README.rst').read(),
     license="MIT",
     packages=['drda'],
-    cmdclass=cmdclass,
     install_requires=['pyDes'],
 )
