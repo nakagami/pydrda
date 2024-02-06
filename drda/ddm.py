@@ -33,7 +33,7 @@ from drda import secmec9
 def _recv_from_sock(sock, nbytes, max_attempts=16):
     n = nbytes
     attempts = 0
-    received = b''
+    received = bytearray() # mutable
     while n > 0 and attempts < max_attempts:
         bs = sock.recv(n)
         if len(bs) > 0:
@@ -241,15 +241,20 @@ def read_dss(sock, db_type):
     correlation_id = int.from_bytes(b[4:6],  byteorder='big')
     obj_ln = int.from_bytes(_recv_from_sock(sock, 2), byteorder='big')
     code_point = int.from_bytes(_recv_from_sock(sock, 2), byteorder='big')
+    more_data = False
 
     if dss_ln == 0xFFFF:
         assert code_point == 0x241B     # QRYDTA
         if db_type == 'db2':
-            assert obj_ln == 32772      # ???
-            obj = _recv_from_sock(sock, 32757)   # ???
+            assert obj_ln == 32772      # 0x8004 protocol magic
+            obj = _recv_from_sock(sock, 32757)   # 0x7fff - 6 - 4
+            # !! assumes there is only 1 additional "page".. not sure what controls this
+            # !! worried it depends on QRYBLKSZ (which is 65535 below)
             next_ln = int.from_bytes(_recv_from_sock(sock, 2), byteorder='big')
             extra = _recv_from_sock(sock, next_ln-2)
             obj += extra
+            if next_ln == 0x7ffe:
+                more_data = True
         elif db_type == 'derby':
             assert obj_ln == 32776      # ???
             ln = int.from_bytes(_recv_from_sock(sock, 4), byteorder='big')
@@ -264,7 +269,7 @@ def read_dss(sock, db_type):
             raise ConnectionError("invalid DSS packet from socket")
         assert len(obj) == (obj_ln - 4)
 
-    return dss_type, chained, correlation_id, code_point, obj
+    return dss_type, chained, correlation_id, code_point, obj, more_data
 
 
 def write_request_dss(sock, o, cur_id, next_dss_has_same_id, last_packet):

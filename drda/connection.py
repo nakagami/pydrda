@@ -48,7 +48,19 @@ class Connection:
         more_data = False
         while True:
             while chained:
-                dss_type, chained, correlation_id, code_point, obj = ddm.read_dss(self.sock, self.db_type)
+                dss_type, chained, correlation_id, code_point, obj, more_data = ddm.read_dss(self.sock, self.db_type)
+                while more_data:
+                    # server is waiting for us to request more query data
+                    # may want to check code_point here
+                    ddm.write_request_dss(
+                        self.sock,
+                        ddm.packCNTQRY(
+                            self.pkgid, self.pkgcnstkn, self.pkgsn, self.database
+                        ),
+                        1, False, True
+                    )
+                    _X_dss_type, _X_chained, _X_correlation_id, _X_xcode_point, extra_obj, more_data = ddm.read_dss(self.sock,self.db_type)
+                    obj += extra_obj
                 if code_point == cp.SQLERRRM:
                     err_msg = ddm.parse_reply(obj).get(cp.SRVDGN)
                 elif code_point == cp.SQLCARD:
@@ -106,7 +118,7 @@ class Connection:
         secmec = sectkn = None
         chained = True
         while chained:
-            dss_type, chained, correlation_id, code_point, obj = ddm.read_dss(self.sock, self.db_type)
+            dss_type, chained, correlation_id, code_point, obj, more_data = ddm.read_dss(self.sock, self.db_type)
             if code_point == cp.ACCSECRD:
                 while len(obj):
                     ln = int.from_bytes(obj[:2], byteorder='big')
