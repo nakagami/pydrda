@@ -57,10 +57,11 @@ class Connection:
                         ddm.packCNTQRY(
                             self.pkgid, self.pkgcnstkn, self.pkgsn, self.database
                         ),
-                        correlation_id, True, True
+                        1, False, True
                     )
                     _X_dss_type, _X_chained, _X_correlation_id, _X_xcode_point, extra_obj, more_data = ddm.read_dss(self.sock,self.db_type)
                     obj += extra_obj
+                    print(f"YOW {len(obj)}")
                 if code_point == cp.SQLERRRM:
                     err_msg = ddm.parse_reply(obj).get(cp.SRVDGN)
                 elif code_point == cp.SQLCARD:

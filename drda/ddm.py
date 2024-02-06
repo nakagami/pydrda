@@ -33,7 +33,7 @@ from drda import secmec9
 def _recv_from_sock(sock, nbytes, max_attempts=16):
     n = nbytes
     attempts = 0
-    received = b''
+    received = bytearray() # mutable
     while n > 0 and attempts < max_attempts:
         bs = sock.recv(n)
         if len(bs) > 0:
