@@ -256,10 +256,9 @@ def read_dss(sock, db_type):
             if next_ln == 0x7ffe:
                 more_data = True
         elif db_type == 'derby':
-            assert obj_ln == 32776      # ???
-            ln = int.from_bytes(_recv_from_sock(sock, 4), byteorder='big')
-            assert ln == 61515      # ???
-            obj = _recv_from_sock(sock, 32753)   # ???
+            assert obj_ln == 32776      # 0x8008 ?
+            _recv_from_sock(sock, 4)    # length ?
+            obj = _recv_from_sock(sock, 32753)   # 0x7fff - 6 - 4 - 4
             next_ln = int.from_bytes(_recv_from_sock(sock, 2), byteorder='big')
             extra = _recv_from_sock(sock, next_ln - 2)
             obj += extra
