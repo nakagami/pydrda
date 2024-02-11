@@ -55,7 +55,7 @@ class Connection:
                     ddm.write_request_dss(
                         self.sock,
                         ddm.packCNTQRY(
-                            self.pkgid, self.pkgcnstkn, self.pkgsn, self.database
+                            self.pkgid, self.pkgcnstkn, self.pkgsn, self.database, self.qryblksz,
                         ),
                         1, False, True
                     )
@@ -98,6 +98,28 @@ class Connection:
                             v = utils.read_field(t, ps, stream, self.endian)
                             r.append(v)
                         results.append(tuple(r))
+
+                    if self.db_type == 'derby':
+                        while not stream.read():
+                            # server is waiting for us to request more query data
+                            # may want to check code_point here
+                            ddm.write_request_dss(
+                                self.sock,
+                                ddm.packCNTQRY(
+                                    self.pkgid, self.pkgcnstkn, self.pkgsn, self.database, self.qryblksz
+                                ),
+                                1, False, True
+                            )
+                            _X_dss_type, _X_chained, _X_correlation_id, _X_xcode_point, extra_obj, _more_data = ddm.read_dss(self.sock,self.db_type)
+                            stream = io.BytesIO(extra_obj)
+                            while b := utils.read_from_stream(stream, 2):
+                                if (b[0], b[1]) != (0xff, 0x00):
+                                    break
+                                r = []
+                                for t, ps in qrydsc:
+                                    v = utils.read_field(t, ps, stream, self.endian)
+                                    r.append(v)
+                                results.append(tuple(r))
 
             if more_data:
                 ddm.write_request_dss(
@@ -156,6 +178,7 @@ class Connection:
             self.pkgid = 'SQLC2026'
             self.pkgcnstkn = 'AAAAAfAd'
             self.pkgsn = 201
+            self.qryblksz = 32767
             self.user = 'APP'
             self.password = ''
             self.secmec = consts.SECMEC_USRIDONL
@@ -167,6 +190,7 @@ class Connection:
             self.pkgid = 'SYSSH200'
             self.pkgcnstkn = 'SYSLVL01'
             self.pkgsn = 65
+            self.qryblksz = 65535
             self.user = self.user
             self.password = self.password
             self.private_key = secmec9.get_private()
@@ -367,7 +391,7 @@ class Connection:
             cur_id = ddm.write_request_dss(
                 self.sock,
                 ddm.packOPNQRY_with_params(
-                    self.pkgid, self.pkgcnstkn, self.pkgsn, self.database
+                    self.pkgid, self.pkgcnstkn, self.pkgsn, self.database, self.qryblksz,
                 ),
                 cur_id, True, False
             )
@@ -401,7 +425,7 @@ class Connection:
             )
             cur_id = ddm.write_request_dss(
                 self.sock,
-                ddm.packOPNQRY(self.pkgid, self.pkgcnstkn, self.pkgsn, self.database),
+                ddm.packOPNQRY(self.pkgid, self.pkgcnstkn, self.pkgsn, self.database, self.qryblksz),
                 cur_id, False, True
             )
             rows, description, params_description = self._parse_response()

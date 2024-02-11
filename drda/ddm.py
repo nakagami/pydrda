@@ -507,32 +507,32 @@ def packSQLDTA(params_desc, params, endian):
     )
 
 
-def packOPNQRY_with_params(pkgid, pkgcnstkn, pkgsn, database):
+def packOPNQRY_with_params(pkgid, pkgcnstkn, pkgsn, database, qryblksz):
     return pack_dss_object(
         cp.OPNQRY,
         _packPKGNAMCSN(database, pkgid, pkgcnstkn, pkgsn) +
-        _pack_uint(cp.QRYBLKSZ, 65535, 4) +
-        _pack_uint(cp.MAXBLKEXT, 65535, 2) +
+        _pack_uint(cp.QRYBLKSZ, qryblksz, 4) +
+        _pack_uint(cp.MAXBLKEXT, qryblksz, 2) +
         _pack_binary(cp.QRYCLSIMP, bytes([0x01])) +
         _pack_binary(cp.DYNDTAFMT, bytes([0xf1]))
     )
 
 
-def packOPNQRY(pkgid, pkgcnstkn, pkgsn, database):
+def packOPNQRY(pkgid, pkgcnstkn, pkgsn, database, qryblksz):
     return pack_dss_object(
         cp.OPNQRY,
         _packPKGNAMCSN(database, pkgid, pkgcnstkn, pkgsn) +
-        _pack_uint(cp.QRYBLKSZ, 65535, 4) +
-        _pack_uint(cp.MAXBLKEXT, 65535, 2) +
+        _pack_uint(cp.QRYBLKSZ, qryblksz, 4) +
+        _pack_uint(cp.MAXBLKEXT, qryblksz, 2) +
         _pack_binary(cp.QRYCLSIMP, bytes([0x01]))
     )
 
 
-def packCNTQRY(pkgid, pkgcnstkn, pkgsn, database):
+def packCNTQRY(pkgid, pkgcnstkn, pkgsn, database, qryblksz):
     return pack_dss_object(
         cp.CNTQRY,
         _packPKGNAMCSN(database, pkgid, pkgcnstkn, pkgsn) +
-        _pack_uint(cp.QRYBLKSZ, 65535, 4) +
+        _pack_uint(cp.QRYBLKSZ, qryblksz, 4) +
         _pack_uint(cp.QRYINSID, 0, 8) +
         _pack_binary(cp.RTNEXTDTA, bytes([0x02]))
         # Parameters that may be valid in Db2 but invalid in Derby
