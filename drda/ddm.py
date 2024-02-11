@@ -534,8 +534,9 @@ def packCNTQRY(pkgid, pkgcnstkn, pkgsn, database):
         _packPKGNAMCSN(database, pkgid, pkgcnstkn, pkgsn) +
         _pack_uint(cp.QRYBLKSZ, 65535, 4) +
         _pack_uint(cp.QRYINSID, 0, 8) +
-        _pack_binary(cp.RTNEXTDTA, bytes([0x02])) +
-        _pack_binary(cp.FREPRVREF, bytes([0xf0]))
+        _pack_binary(cp.RTNEXTDTA, bytes([0x02]))
+        # Parameters that may be valid in Db2 but invalid in Derby
+        # _pack_binary(cp.FREPRVREF, bytes([0xf0]))
     )
 
 
