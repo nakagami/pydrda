@@ -71,7 +71,7 @@ With SSL and client certificate
 
    import drda
 
-   conn = drda.connect(host='serverhost', database='dbname', use_ssl=True, ssl_ca_certs='/some/what/path/cert.crt', user='user', password='password', port=xxxxx)
+   conn = drda.connect(host='serverhost', database='dbname', use_ssl=True, ssl_client_cert_path='/some/what/path/cert.crt', user='user', password='password', port=xxxxx)
 
 
 
