@@ -157,7 +157,7 @@ class Connection:
 
         return secmec, sectkn
 
-    def __init__(self, host, database, port, user, password, use_ssl, ssl_ca_certs, db_type, timeout):
+    def __init__(self, host, database, port, user, password, use_ssl, ssl_client_cert_path, db_type, timeout):
         self.host = host
         self.database = (database + ' ' * 18)[:18]
         self.port = port
@@ -201,7 +201,10 @@ class Connection:
         if timeout is not None:
             self.sock.settimeout(timeout)
         if use_ssl:
-            self.sock = ssl.wrap_socket(self.sock, ca_certs=ssl_ca_certs)
+            context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+            if ssl_client_cert_path:
+                context.load_verify_locations(ssl_client_cert_path)
+            self.sock = context.wrap_socket(self.sock)
         self.sock.connect((self.host, self.port))
 
         cur_id = 1

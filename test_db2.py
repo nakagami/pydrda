@@ -35,7 +35,7 @@ DATABASE = os.environ.get("DB2_DATABASE", "testdb")
 USER = os.environ.get("DB2_USER", "db2inst1")
 PASSWORD = os.environ.get("DB2_PASSWORD", "password")
 PORT = int(os.environ.get("DB2_PORT", 50000))
-SSL_CA_CERTS = os.environ.get("DB2_SSL_CA_CERTS")
+SSL_CLIENT_CERT_PATH = os.environ.get("SSL_CLIENT_CERT_PATH")
 
 class TestBasic(unittest.TestCase):
 
@@ -46,8 +46,8 @@ class TestBasic(unittest.TestCase):
             user=USER,
             password=PASSWORD,
             port=PORT,
-            use_ssl=bool(SSL_CA_CERTS),
-            ssl_ca_certs=SSL_CA_CERTS,
+            use_ssl=bool(SSL_CLIENT_CERT_PATH),
+            ssl_client_cert_path=SSL_CLIENT_CERT_PATH,
         )
         cur = self.connection.cursor()
         try:
@@ -171,8 +171,8 @@ class TestDataType(unittest.TestCase):
             user=USER,
             password=PASSWORD,
             port=PORT,
-            use_ssl=bool(SSL_CA_CERTS),
-            ssl_ca_certs=SSL_CA_CERTS,
+            use_ssl=bool(SSL_CLIENT_CERT_PATH),
+            ssl_client_cert_path=SSL_CLIENT_CERT_PATH,
         )
 
     def test_datetime(self):
