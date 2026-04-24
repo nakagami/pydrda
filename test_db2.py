@@ -370,6 +370,123 @@ class TestDataType(unittest.TestCase):
         self.connection.close()
 
 
+class TestNewTypes(unittest.TestCase):
+    def setUp(self):
+        self.connection = drda.connect(
+            host=HOST,
+            database=DATABASE,
+            user=USER,
+            password=PASSWORD,
+            port=PORT,
+            use_ssl=bool(SSL_CLIENT_CERT_PATH),
+            ssl_client_cert_path=SSL_CLIENT_CERT_PATH,
+        )
+
+    def tearDown(self):
+        self.connection.close()
+
+    def test_char(self):
+        cur = self.connection.cursor()
+        try:
+            cur.execute("DROP TABLE test_char")
+        except drda.OperationalError:
+            pass
+        cur.execute("CREATE TABLE test_char (c CHAR(10))")
+        cur.execute("INSERT INTO test_char (c) VALUES ('hello')")
+        cur.execute("SELECT c FROM test_char")
+        row = cur.fetchone()
+        self.assertEqual(row[0], 'hello')
+        cur.execute("SELECT c FROM test_char WHERE c=?", ['hello'])
+        self.assertIsNotNone(cur.fetchone())
+
+    def test_blob(self):
+        cur = self.connection.cursor()
+        try:
+            cur.execute("DROP TABLE test_blob")
+        except drda.OperationalError:
+            pass
+        cur.execute("CREATE TABLE test_blob (b BLOB(1024))")
+        cur.execute("INSERT INTO test_blob (b) VALUES (BLOB(X'0102030405'))")
+        cur.execute("SELECT b FROM test_blob")
+        row = cur.fetchone()
+        self.assertEqual(row[0], b'\x01\x02\x03\x04\x05')
+        cur.execute("SELECT b FROM test_blob WHERE b=?", [b'\x01\x02\x03\x04\x05'])
+        self.assertIsNotNone(cur.fetchone())
+
+    def test_clob(self):
+        cur = self.connection.cursor()
+        try:
+            cur.execute("DROP TABLE test_clob")
+        except drda.OperationalError:
+            pass
+        cur.execute("CREATE TABLE test_clob (c CLOB(1024))")
+        cur.execute("INSERT INTO test_clob (c) VALUES ('hello clob')")
+        cur.execute("SELECT c FROM test_clob")
+        row = cur.fetchone()
+        self.assertEqual(row[0], 'hello clob')
+        cur.execute("SELECT c FROM test_clob WHERE c=?", ['hello clob'])
+        self.assertIsNotNone(cur.fetchone())
+
+    def test_decfloat(self):
+        cur = self.connection.cursor()
+        try:
+            cur.execute("DROP TABLE test_decfloat")
+        except drda.OperationalError:
+            pass
+        cur.execute("""
+            CREATE TABLE test_decfloat (
+                d16 DECFLOAT(16),
+                d34 DECFLOAT(34)
+            )
+        """)
+        cur.execute(
+            "INSERT INTO test_decfloat (d16, d34) VALUES (1.23E+2, 9.87654321E+20)"
+        )
+        cur.execute("SELECT d16, d34 FROM test_decfloat")
+        row = cur.fetchone()
+        self.assertAlmostEqual(float(row[0]), 123.0)
+        self.assertAlmostEqual(float(row[1]), 9.87654321e+20, delta=1e10)
+        cur.execute(
+            "SELECT d16, d34 FROM test_decfloat WHERE d16=? AND d34=?",
+            [decimal.Decimal('1.23E+2'), decimal.Decimal('9.87654321E+20')]
+        )
+        self.assertIsNotNone(cur.fetchone())
+
+    def test_boolean_param(self):
+        cur = self.connection.cursor()
+        try:
+            cur.execute("DROP TABLE test_bool_param")
+        except drda.OperationalError:
+            pass
+        cur.execute("CREATE TABLE test_bool_param (b BOOLEAN)")
+        cur.execute("INSERT INTO test_bool_param (b) VALUES (TRUE)")
+        cur.execute("SELECT b FROM test_bool_param WHERE b=?", [True])
+        row = cur.fetchone()
+        self.assertEqual(row[0], True)
+
+    def test_rowid(self):
+        cur = self.connection.cursor()
+        try:
+            cur.execute("DROP TABLE test_rowid")
+        except drda.OperationalError:
+            pass
+        cur.execute("""
+            CREATE TABLE test_rowid (
+                id INT,
+                rw ROWID GENERATED ALWAYS
+            )
+        """)
+        cur.execute("INSERT INTO test_rowid (id) VALUES (1)")
+        cur.execute("SELECT rw FROM test_rowid")
+        row = cur.fetchone()
+        rowid = row[0]
+        self.assertIsInstance(rowid, bytes)
+        self.assertEqual(len(rowid), 40)
+        cur.execute("SELECT id FROM test_rowid WHERE rw=?", [rowid])
+        row = cur.fetchone()
+        self.assertEqual(row[0], 1)
+
+
 class TestSecmec(unittest.TestCase):
     def test_secmec9(self):
         from drda import secmec9

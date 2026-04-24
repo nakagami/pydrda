@@ -105,6 +105,71 @@ DRDA_TYPE_MDATALINK = 0x4E
 DRDA_TYPE_NMDATALINK = 0x4F
 DRDA_TYPE_BOOLEAN = 0xBE
 DRDA_TYPE_NBOOLEAN = 0xBF
+DRDA_TYPE_DECFLOAT = 0x9C
+DRDA_TYPE_NDECFLOAT = 0x9D
+
+
+def _decode_dfp(data):
+    """Decode IEEE 754-2008 BID decimal floating-point bytes to Python Decimal."""
+    n_bytes = len(data)
+    if n_bytes == 8:
+        bias, coeff_cont_bits, exp_cont_bits = 398, 50, 8
+    else:  # 16 bytes (DECFLOAT(34))
+        bias, coeff_cont_bits, exp_cont_bits = 6176, 110, 12
+    total_bits = n_bytes * 8
+    w = int.from_bytes(data, 'big')
+    sign = (w >> (total_bits - 1)) & 1
+    G = (w >> (total_bits - 6)) & 0x1F
+    E = (w >> coeff_cont_bits) & ((1 << exp_cont_bits) - 1)
+    T = w & ((1 << coeff_cont_bits) - 1)
+    # Special: G[4:3]="11", G[2]="1" (G >= 28)
+    if G >= 0x1C:
+        if G & 0x02:  # G[1]=1 → NaN
+            return decimal.Decimal('NaN')
+        return decimal.Decimal('-Infinity') if sign else decimal.Decimal('Infinity')
+    # Large coefficient: G[4:3]="11", G[2]="0" (G = 24-27)
+    if G >= 0x18:
+        biased_exp = ((G & 0x03) << exp_cont_bits) | E
+        coeff = (1 << (coeff_cont_bits + 3)) | T
+    else:
+        biased_exp = ((G >> 3) << exp_cont_bits) | E
+        coeff = ((G & 0x07) << coeff_cont_bits) | T
+    exp = biased_exp - bias
+    return decimal.Decimal((sign, tuple(int(d) for d in str(coeff)), exp))
+
+
+def _encode_dfp(v, n_bytes):
+    """Encode Python Decimal to IEEE 754-2008 BID decimal floating-point bytes."""
+    if n_bytes == 8:
+        bias, coeff_cont_bits, exp_cont_bits = 398, 50, 8
+    else:  # 16 bytes (DECFLOAT(34))
+        bias, coeff_cont_bits, exp_cont_bits = 6176, 110, 12
+    total_bits = n_bytes * 8
+    sign, digits, exp = v.as_tuple()
+    if v.is_infinite():
+        w = (sign << (total_bits - 1)) | (0x1C << (total_bits - 6))
+        return w.to_bytes(n_bytes, 'big')
+    if v.is_nan():
+        w = (sign << (total_bits - 1)) | (0x1E << (total_bits - 6))
+        return w.to_bytes(n_bytes, 'big')
+    coeff = int(''.join(str(d) for d in digits)) if digits else 0
+    biased_exp = exp + bias
+    implicit_bit = 1 << (coeff_cont_bits + 3)
+    if coeff >= implicit_bit:
+        # Large coefficient form (G[4:3]="11", G[2]="0")
+        T = coeff - implicit_bit
+        exp_top = biased_exp >> exp_cont_bits
+        exp_low = biased_exp & ((1 << exp_cont_bits) - 1)
+        G = 0x18 | exp_top
+    else:
+        # Normal form
+        coeff_top = coeff >> coeff_cont_bits
+        T = coeff & ((1 << coeff_cont_bits) - 1)
+        exp_top = biased_exp >> exp_cont_bits
+        exp_low = biased_exp & ((1 << exp_cont_bits) - 1)
+        G = (exp_top << 3) | coeff_top
+    w = (sign << (total_bits - 1)) | (G << (total_bits - 6)) | (exp_low << coeff_cont_bits) | T
+    return w.to_bytes(n_bytes, 'big')
 
 
 def read_from_stream(stream, nbytes):
@@ -128,7 +193,7 @@ def read_field(t, ps, stream, endian):
         DRDA_TYPE_NVARCHAR, DRDA_TYPE_NLONG, DRDA_TYPE_NGRAPHIC, DRDA_TYPE_NVARGRAPH,
         DRDA_TYPE_NLONGRAPH, DRDA_TYPE_NMIX, DRDA_TYPE_NVARMIX, DRDA_TYPE_NLONGMIX,
         DRDA_TYPE_NCSTRMIX, DRDA_TYPE_NPSCLBYTE, DRDA_TYPE_NLSTR, DRDA_TYPE_NLSTRMIX,
-        DRDA_TYPE_NSDATALINK, DRDA_TYPE_NMDATALINK, DRDA_TYPE_NBOOLEAN,
+        DRDA_TYPE_NSDATALINK, DRDA_TYPE_NMDATALINK, DRDA_TYPE_NBOOLEAN, DRDA_TYPE_NDECFLOAT,
     ):
         if read_from_stream(stream, 1) == b'\xFF':
             return None
@@ -136,10 +201,22 @@ def read_field(t, ps, stream, endian):
     if t in (DRDA_TYPE_MIX, DRDA_TYPE_NMIX):
         ln = int.from_bytes(ps, byteorder='big')
         v = read_from_stream(stream, ln).decode('utf-8')
+    elif t in (DRDA_TYPE_CHAR, DRDA_TYPE_NCHAR):
+        ln = int.from_bytes(ps, byteorder='big')
+        v = read_from_stream(stream, ln).decode('utf-8').rstrip(' ')
+    elif t in (DRDA_TYPE_ROWID, DRDA_TYPE_NROWID):
+        ln = int.from_bytes(ps, byteorder='big')
+        v = bytes(read_from_stream(stream, ln))
+    elif t in (DRDA_TYPE_VARBYTE, DRDA_TYPE_NVARBYTE):
+        ln = int.from_bytes(read_from_stream(stream, 2), byteorder='big')
+        v = bytes(read_from_stream(stream, ln))
+    elif t in (DRDA_TYPE_DECFLOAT, DRDA_TYPE_NDECFLOAT):
+        ln = int.from_bytes(ps, byteorder='big')
+        v = _decode_dfp(read_from_stream(stream, ln))
     elif t in (
         DRDA_TYPE_VARMIX, DRDA_TYPE_NVARMIX,
         DRDA_TYPE_LONGMIX, DRDA_TYPE_NLONGMIX,
-        DRDA_TYPE_VARCHAR, DRDA_TYPE_NVARCHAR, DRDA_TYPE_LONG,
+        DRDA_TYPE_VARCHAR, DRDA_TYPE_NVARCHAR, DRDA_TYPE_LONG, DRDA_TYPE_NLONG,
     ):
         ln = int.from_bytes(read_from_stream(stream, 2), byteorder='big')
         v = read_from_stream(stream, ln).decode('utf-8')

@@ -433,6 +433,18 @@ def _fdodsc(description):
         return binascii.unhexlify(b'230008')
     elif sqltype == consts.DB2_SQLTYPE_NTIMESTAMP:
         return binascii.unhexlify(b'250020')
+    elif sqltype == consts.DB2_SQLTYPE_NCHAR:
+        return binascii.unhexlify(b'393fff')
+    elif sqltype == consts.DB2_SQLTYPE_NBOOLEAN:
+        return bytes([0xBF, 0x00, 0x01])
+    elif sqltype == consts.DB2_SQLTYPE_NBLOB:
+        return bytes([0x29, 0xff, 0xff])
+    elif sqltype == consts.DB2_SQLTYPE_NCLOB:
+        return bytes([0x35, 0xff, 0xff])
+    elif sqltype == consts.DB2_SQLTYPE_NDECFLOAT:
+        return bytes([0x9D, 0x00, sqllength])
+    elif sqltype == consts.DB2_SQLTYPE_NROWID:
+        return bytes([0x1F, 0x00, sqllength])
     else:
         raise ValueError("_fdodsc():Unknown type {}".format(sqltype))
 
@@ -477,6 +489,23 @@ def _fdodta(description, v):
         return b'\x00' + v
     elif sqltype == consts.DB2_SQLTYPE_NTIMESTAMP:
         v = v.strftime("%Y-%m-%d-%H.%M.%S.%f      ").encode('utf-8')
+        return b'\x00' + v
+    elif sqltype == consts.DB2_SQLTYPE_NCHAR:
+        v = str(v)
+        return b'\x00' + len(v).to_bytes(2, byteorder='big') + v.encode('utf_16_be')
+    elif sqltype == consts.DB2_SQLTYPE_NBOOLEAN:
+        return b'\x00' + bytes([1 if v else 0])
+    elif sqltype == consts.DB2_SQLTYPE_NBLOB:
+        v = bytes(v)
+        return b'\x00' + len(v).to_bytes(2, byteorder='big') + v
+    elif sqltype == consts.DB2_SQLTYPE_NCLOB:
+        v = str(v).encode('utf-8')
+        return b'\x00' + len(v).to_bytes(2, byteorder='big') + v
+    elif sqltype == consts.DB2_SQLTYPE_NDECFLOAT:
+        from .utils import _encode_dfp
+        return b'\x00' + _encode_dfp(v, sqllength)
+    elif sqltype == consts.DB2_SQLTYPE_NROWID:
+        v = bytes(v)
         return b'\x00' + v
     else:
         raise ValueError("_fdodta():Unknown type {}".format(sqltype))
