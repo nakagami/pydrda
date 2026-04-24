@@ -448,11 +448,9 @@ def _fdodta(description, v):
         d = (b'0' * (precision + scale) + d)[-(precision + scale):]
         d += b"d" if sign else b"c"
         if len(d) % 2:
-            v = b'0' + v
+            d = b'0' + d
         v = binascii.unhexlify(d)
-        if v[0] != 0:
-            v = b'\x00' + v
-        return v
+        return b'\x00' + v
     elif sqltype == consts.DB2_SQLTYPE_NSMALL:
         v = int(v)
         return b'\x00' + v.to_bytes(2, byteorder='little', signed=True)

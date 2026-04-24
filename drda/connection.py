@@ -66,7 +66,6 @@ class Connection:
                 elif code_point == cp.SQLCARD:
                     if err is None:
                         err, _ = ddm.parse_sqlcard(obj, self.encoding, self.endian)
-                    recieve_sqlcard = True
                 elif code_point == cp.SQLDARD:
                     if obj[0] == 0xFF:
                         err, params_description = ddm.parse_sqldard(
@@ -167,7 +166,7 @@ class Connection:
         if self.db_type is None:
             if self.user is None:
                 self.db_type = 'derby'
-            elif self.user is not None:
+            else:
                 self.db_type = 'db2'
 
         self.secmec = consts.SECMEC_EUSRIDPWD
@@ -191,8 +190,6 @@ class Connection:
             self.pkgcnstkn = 'SYSLVL01'
             self.pkgsn = 65
             self.qryblksz = 65535
-            self.user = self.user
-            self.password = self.password
             self.private_key = secmec9.get_private()
         else:
             raise ValueError('Unknown database type:{}'.format(self.db_type))
