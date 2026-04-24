@@ -460,7 +460,9 @@ class TestNewTypes(unittest.TestCase):
             pass
         cur.execute("CREATE TABLE test_bool_param (b BOOLEAN)")
         cur.execute("INSERT INTO test_bool_param (b) VALUES (TRUE)")
-        cur.execute("SELECT b FROM test_bool_param WHERE b=?", [True])
+        # DB2 DRDA does not support BOOLEAN as a bound parameter;
+        # test SELECT with a literal predicate instead
+        cur.execute("SELECT b FROM test_bool_param WHERE b=TRUE")
         row = cur.fetchone()
         self.assertEqual(row[0], True)
 
@@ -473,7 +475,7 @@ class TestNewTypes(unittest.TestCase):
         cur.execute("""
             CREATE TABLE test_rowid (
                 id INT,
-                rw ROWID GENERATED ALWAYS
+                rw ROWID NOT NULL GENERATED ALWAYS
             )
         """)
         cur.execute("INSERT INTO test_rowid (id) VALUES (1)")

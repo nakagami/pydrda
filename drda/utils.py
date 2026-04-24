@@ -105,8 +105,8 @@ DRDA_TYPE_MDATALINK = 0x4E
 DRDA_TYPE_NMDATALINK = 0x4F
 DRDA_TYPE_BOOLEAN = 0xBE
 DRDA_TYPE_NBOOLEAN = 0xBF
-DRDA_TYPE_DECFLOAT = 0x9C
-DRDA_TYPE_NDECFLOAT = 0x9D
+DRDA_TYPE_DECFLOAT = 0xBA
+DRDA_TYPE_NDECFLOAT = 0xBB
 
 
 def _decode_dfp(data):
@@ -207,8 +207,12 @@ def read_field(t, ps, stream, endian):
     elif t in (DRDA_TYPE_ROWID, DRDA_TYPE_NROWID):
         ln = int.from_bytes(ps, byteorder='big')
         v = bytes(read_from_stream(stream, ln))
-    elif t in (DRDA_TYPE_VARBYTE, DRDA_TYPE_NVARBYTE):
-        ln = int.from_bytes(read_from_stream(stream, 2), byteorder='big')
+    elif t in (DRDA_TYPE_VARBYTE, DRDA_TYPE_NVARBYTE, DRDA_TYPE_LONGVARBYTE, DRDA_TYPE_NLONGVARBYTE):
+        ln = int.from_bytes(read_from_stream(stream, 4), byteorder='big')
+        v = bytes(read_from_stream(stream, ln))
+    elif t in (DRDA_TYPE_LOBLOC, DRDA_TYPE_NLOBLOC, DRDA_TYPE_CLOBLOC, DRDA_TYPE_NCLOBLOC,
+               DRDA_TYPE_DBCSCLOBLOC, DRDA_TYPE_NDBCSCLOBLOC):
+        ln = int.from_bytes(ps, byteorder='big')
         v = bytes(read_from_stream(stream, ln))
     elif t in (DRDA_TYPE_DECFLOAT, DRDA_TYPE_NDECFLOAT):
         ln = int.from_bytes(ps, byteorder='big')
@@ -254,10 +258,10 @@ def read_field(t, ps, stream, endian):
         v = datetime.time(v.hour, v.minute, v.second)
     elif t in (DRDA_TYPE_VARGRAPH, DRDA_TYPE_NVARGRAPH):
         ln = int.from_bytes(ps, byteorder='big')
-        v = read_from_stream(stream, ln).decode('utf-8')
+        v = read_from_stream(stream, ln).decode('utf-8').rstrip(' ')
     elif t in (DRDA_TYPE_GRAPHIC, DRDA_TYPE_NGRAPHIC):
         ln = int.from_bytes(ps, byteorder='big')
-        v = read_from_stream(stream, ln).decode('utf-8')
+        v = read_from_stream(stream, ln).decode('utf-8').rstrip(' ')
     elif t in (DRDA_TYPE_NFLOAT4, DRDA_TYPE_FLOAT4):
         ln = int.from_bytes(ps, byteorder='big')
         v = struct.unpack(">f" if endian == 'big' else "<f", read_from_stream(stream, ln))[0]

@@ -90,7 +90,7 @@ class Connection:
                 elif code_point == cp.QRYDTA:
                     stream = io.BytesIO(obj)
                     while b := utils.read_from_stream(stream, 2):
-                        if (b[0], b[1]) != (0xff, 0x00):
+                        if b[0] != 0xff:
                             break
                         r = []
                         for t, ps in qrydsc:
@@ -112,7 +112,7 @@ class Connection:
                             _X_dss_type, _X_chained, _X_correlation_id, _X_xcode_point, extra_obj, _more_data = ddm.read_dss(self.sock,self.db_type)
                             stream = io.BytesIO(extra_obj)
                             while b := utils.read_from_stream(stream, 2):
-                                if (b[0], b[1]) != (0xff, 0x00):
+                                if b[0] != 0xff:
                                     break
                                 r = []
                                 for t, ps in qrydsc:
