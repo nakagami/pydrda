@@ -445,7 +445,7 @@ def _fdodta(description, v):
     elif sqltype == consts.DB2_SQLTYPE_NDECIMAL:
         sign, digits, exponent = v.as_tuple()
         d = bytes([ord(b'0') + n for n in digits])
-        d = (b'0' * (precision + scale) + d)[-(precision + scale):]
+        d = (b'0' * precision + d)[-precision:]
         d += b"d" if sign else b"c"
         if len(d) % 2:
             d = b'0' + d
