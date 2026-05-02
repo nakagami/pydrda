@@ -29,7 +29,7 @@ jobs:
 
     - name: Check connect database
       run: |
-        docker exec -t db2 bash -c "sudo -i -u db2inst1 db2 'connect to testdb'"
+        docker exec -t -u db2inst1 db2 bash -c "db2 'connect to testdb'"
         sleep 20
 
     - name: Set up Python ${{ matrix.python-version }}
