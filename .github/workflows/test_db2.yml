@@ -27,8 +27,16 @@ jobs:
     - name: Wait database create
       timeout-minutes: 12
       run: |
+        OK=0
         for t in {0..140}; do
-          python3 -c "import sys; sys.path.insert(0, '.'); import drda; c = drda.connect(host='localhost', database='testdb', user='db2inst1', password='password', port=50000); c.close()" 2>/dev/null && exit 0
+          if python3 -c "import sys; sys.path.insert(0, '.'); import drda; c = drda.connect(host='localhost', database='testdb', user='db2inst1', password='password', port=50000); c.close()" 2>/dev/null; then
+            OK=$((OK+1))
+            if [ $OK -ge 3 ]; then
+              exit 0
+            fi
+          else
+            OK=0
+          fi
           sleep 5
         done
         exit 1
