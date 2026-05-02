@@ -275,7 +275,7 @@ def write_request_dss(sock, o, cur_id, next_dss_has_same_id, last_packet):
     "Write request DSS packets"
     code_point = int.from_bytes(o[2:4], byteorder='big')
     _send_to_sock(sock, (len(o)+6).to_bytes(2, byteorder='big'))
-    if code_point in (cp.SQLSTT, cp.SQLATTR, cp.SQLDTA):
+    if code_point in (cp.SQLSTT, cp.SQLATTR, cp.SQLDTA, cp.EXTDTA):
         flag = 3    # DSS object
     else:
         flag = 1    # DSS request
@@ -438,7 +438,7 @@ def _fdodsc(description):
     elif sqltype == consts.DB2_SQLTYPE_NBOOLEAN:
         return bytes([0xBF, 0x00, 0x01])
     elif sqltype == consts.DB2_SQLTYPE_NBLOB:
-        return bytes([0x29, 0xff, 0xff])
+        return bytes([0xC9, 0x00, 0x04])  # NLOBBYTES, 4-byte placeholder
     elif sqltype == consts.DB2_SQLTYPE_NCLOB:
         return binascii.unhexlify(b'393fff')
     elif sqltype == consts.DB2_SQLTYPE_NDECFLOAT:
@@ -496,8 +496,8 @@ def _fdodta(description, v):
     elif sqltype == consts.DB2_SQLTYPE_NBOOLEAN:
         return b'\x00' + bytes([1 if v else 0])
     elif sqltype == consts.DB2_SQLTYPE_NBLOB:
-        v = bytes(v)
-        return b'\x00' + len(v).to_bytes(2, byteorder='big') + v
+        # Data is sent via EXTDTA; FDODTA contains only null indicator + placeholder
+        return b'\x00\x00\x00\x00\x00'
     elif sqltype == consts.DB2_SQLTYPE_NCLOB:
         v = str(v)
         return b'\x00' + len(v).to_bytes(2, byteorder='big') + v.encode('utf_16_be')
@@ -521,7 +521,6 @@ def packSQLDTA(params_desc, params, endian):
     for i in range(ln):
         dsc_bytes = _fdodsc(params_desc[i])
         dta_bytes = _fdodta(params_desc[i], params[i])
-        print(f"DEBUG packSQLDTA param[{i}]: sqltype={params_desc[i][1]} fdodsc={binascii.hexlify(dsc_bytes)} fdodta={binascii.hexlify(dta_bytes)}")
         fdodsc += dsc_bytes
         fdodta += dta_bytes
 
@@ -535,6 +534,10 @@ def packSQLDTA(params_desc, params, endian):
         pack_dss_object(cp.FDODSC, fdodsc) +
         pack_dss_object(cp.FDODTA, fdodta)
     )
+
+
+def packEXTDTA(data):
+    return pack_dss_object(cp.EXTDTA, bytes(data))
 
 
 def packOPNQRY_with_params(pkgid, pkgcnstkn, pkgsn, database, qryblksz):

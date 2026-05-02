@@ -439,8 +439,11 @@ class Connection:
                 cur_id, False, True
             )
             _, description, params_description = self._parse_response()
-            import binascii as _bi
-            print(f"DEBUG _query params_description={params_description}")
+
+            blob_param_indices = [
+                i for i, d in enumerate(params_description)
+                if d[1] == consts.DB2_SQLTYPE_NBLOB
+            ]
 
             cur_id = 1
             cur_id = ddm.write_request_dss(
@@ -450,11 +453,25 @@ class Connection:
                 ),
                 cur_id, True, False
             )
-            cur_id = ddm.write_request_dss(
-                self.sock,
-                ddm.packSQLDTA(params_description, args, self.endian),
-                cur_id, False, True
-            )
+            if blob_param_indices:
+                cur_id = ddm.write_request_dss(
+                    self.sock,
+                    ddm.packSQLDTA(params_description, args, self.endian),
+                    cur_id, True, False
+                )
+                for idx, param_i in enumerate(blob_param_indices):
+                    is_last = (idx == len(blob_param_indices) - 1)
+                    cur_id = ddm.write_request_dss(
+                        self.sock,
+                        ddm.packEXTDTA(bytes(args[param_i])),
+                        cur_id, False, is_last
+                    )
+            else:
+                cur_id = ddm.write_request_dss(
+                    self.sock,
+                    ddm.packSQLDTA(params_description, args, self.endian),
+                    cur_id, False, True
+                )
             rows, _, _ = self._parse_response()
 
             cur_id = 1
