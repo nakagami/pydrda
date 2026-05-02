@@ -48,6 +48,7 @@ class Connection:
         more_data = False
         need_cntqry = False  # set by OPNQRYRM; survives subsequent read_dss calls
         qryinsid = 0         # query instance ID from OPNQRYRM, needed for CNTQRY on LOB queries
+        cntqry_cur_id = 1    # correlation ID to use for CNTQRY (matches the OPNQRY request)
         extdta_list = []     # accumulate EXTDTA objects for LOB columns
         while True:
             while chained:
@@ -81,6 +82,7 @@ class Connection:
                 elif code_point == cp.OPNQRYRM:
                     if self.db_type == 'db2':
                         need_cntqry = True
+                        cntqry_cur_id = correlation_id  # must match the OPNQRY request's ID
                         qryinsid_bytes = ddm.parse_reply(obj).get(cp.QRYINSID, bytes(8))
                         qryinsid = int.from_bytes(qryinsid_bytes, 'big')
                 elif code_point == cp.ENDQRYRM:
@@ -136,7 +138,7 @@ class Connection:
                         self.pkgid, self.pkgcnstkn, self.pkgsn, self.database, self.qryblksz,
                         qryinsid=qryinsid,
                     ),
-                    1, False, True
+                    cntqry_cur_id, False, True
                 )
             else:
                 break
