@@ -46,6 +46,8 @@ class Connection:
         err_msg = None
 
         more_data = False
+        need_cntqry = False  # set by OPNQRYRM; survives subsequent read_dss calls
+        extdta_list = []     # accumulate EXTDTA objects for LOB columns
         while True:
             while chained:
                 dss_type, chained, correlation_id, code_point, obj, more_data = ddm.read_dss(self.sock, self.db_type)
@@ -77,9 +79,12 @@ class Connection:
                         )
                 elif code_point == cp.OPNQRYRM:
                     if self.db_type == 'db2':
-                        more_data = True
+                        need_cntqry = True
                 elif code_point == cp.ENDQRYRM:
                     more_data = False
+                    need_cntqry = False
+                elif code_point == cp.EXTDTA:
+                    extdta_list.append(obj)
                 elif code_point == cp.QRYDSC:
                     ln = obj[0]
                     b = obj[1:ln]
@@ -120,16 +125,40 @@ class Connection:
                                     r.append(v)
                                 results.append(tuple(r))
 
-            if more_data:
+            if more_data or need_cntqry:
+                need_cntqry = False
                 ddm.write_request_dss(
                     self.sock,
                     ddm.packCNTQRY(
-                        self.pkgid, self.pkgcnstkn, self.pkgsn, self.database
+                        self.pkgid, self.pkgcnstkn, self.pkgsn, self.database, self.qryblksz
                     ),
                     1, False, True
                 )
             else:
                 break
+
+        if extdta_list and qrydsc and results:
+            _lob_types = (
+                utils.DRDA_TYPE_LOBLOC, utils.DRDA_TYPE_NLOBLOC,
+                utils.DRDA_TYPE_CLOBLOC, utils.DRDA_TYPE_NCLOBLOC,
+                utils.DRDA_TYPE_DBCSCLOBLOC, utils.DRDA_TYPE_NDBCSCLOBLOC,
+            )
+            _clob_types = (
+                utils.DRDA_TYPE_CLOBLOC, utils.DRDA_TYPE_NCLOBLOC,
+                utils.DRDA_TYPE_DBCSCLOBLOC, utils.DRDA_TYPE_NDBCSCLOBLOC,
+            )
+            lob_col_indices = [i for i, (t, _) in enumerate(qrydsc) if t in _lob_types]
+            extdta_idx = 0
+            for row_idx in range(len(results)):
+                row = list(results[row_idx])
+                for col_idx in lob_col_indices:
+                    if row[col_idx] is not None and extdta_idx < len(extdta_list):
+                        data = extdta_list[extdta_idx]
+                        if qrydsc[col_idx][0] in _clob_types:
+                            data = data.decode(self.encoding)
+                        row[col_idx] = data
+                        extdta_idx += 1
+                results[row_idx] = tuple(row)
 
         if err:
             raise err

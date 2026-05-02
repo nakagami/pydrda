@@ -475,7 +475,7 @@ class TestNewTypes(unittest.TestCase):
         cur.execute("""
             CREATE TABLE test_rowid (
                 id INT,
-                rw ROWID GENERATED ALWAYS
+                rw ROWID NOT NULL GENERATED ALWAYS
             )
         """)
         cur.execute("INSERT INTO test_rowid (id) VALUES (1)")
