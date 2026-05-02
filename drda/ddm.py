@@ -438,9 +438,9 @@ def _fdodsc(description):
     elif sqltype == consts.DB2_SQLTYPE_NBOOLEAN:
         return bytes([0xBF, 0x00, 0x01])
     elif sqltype == consts.DB2_SQLTYPE_NBLOB:
-        return bytes([0x29, 0xff, 0xff])
+        return bytes([0xC9, 0xff, 0xff])
     elif sqltype == consts.DB2_SQLTYPE_NCLOB:
-        return bytes([0x35, 0xff, 0xff])
+        return bytes([0xCF, 0xff, 0xff])
     elif sqltype == consts.DB2_SQLTYPE_NDECFLOAT:
         return bytes([0xBB, 0x00, sqllength])
     elif sqltype == consts.DB2_SQLTYPE_NROWID:
@@ -497,10 +497,10 @@ def _fdodta(description, v):
         return b'\x00' + bytes([1 if v else 0])
     elif sqltype == consts.DB2_SQLTYPE_NBLOB:
         v = bytes(v)
-        return b'\x00' + len(v).to_bytes(2, byteorder='big') + v
+        return b'\x00' + len(v).to_bytes(4, byteorder='big') + v
     elif sqltype == consts.DB2_SQLTYPE_NCLOB:
         v = str(v).encode('utf-8')
-        return b'\x00' + len(v).to_bytes(2, byteorder='big') + v
+        return b'\x00' + len(v).to_bytes(4, byteorder='big') + v
     elif sqltype == consts.DB2_SQLTYPE_NDECFLOAT:
         from .utils import _encode_dfp
         return b'\x00' + _encode_dfp(v, sqllength)
