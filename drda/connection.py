@@ -143,6 +143,7 @@ class Connection:
                 import sys
                 print(f'DEBUG CNTQRY pkt_hex={cntqry_pkt.hex()} cur_id={cntqry_cur_id}', file=sys.stderr, flush=True)
                 ddm.write_request_dss(self.sock, cntqry_pkt, cntqry_cur_id, False, True)
+                chained = True  # must read the CNTQRY response
             else:
                 break
 
