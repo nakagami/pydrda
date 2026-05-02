@@ -107,6 +107,10 @@ DRDA_TYPE_BOOLEAN = 0xBE
 DRDA_TYPE_NBOOLEAN = 0xBF
 DRDA_TYPE_DECFLOAT = 0xBA
 DRDA_TYPE_NDECFLOAT = 0xBB
+DRDA_TYPE_LOBBYTES = 0xC8    # inline BLOB (non-nullable)
+DRDA_TYPE_NLOBBYTES = 0xC9   # inline BLOB (nullable)
+DRDA_TYPE_LOBCSBCS = 0xCE   # inline CLOB single-byte char (non-nullable)
+DRDA_TYPE_NLOBCSBCS = 0xCF  # inline CLOB single-byte char (nullable)
 
 
 def _dpd_decode(dpd):
@@ -324,6 +328,20 @@ def read_field(t, ps, stream, endian):
     elif t in (DRDA_TYPE_BOOLEAN, DRDA_TYPE_NBOOLEAN):
         ln = int.from_bytes(ps, byteorder='big')
         v = True if int.from_bytes(read_from_stream(stream, ln), byteorder='big') else False
+    elif t in (DRDA_TYPE_LOBBYTES, DRDA_TYPE_NLOBBYTES):
+        # inline BLOB: 4-byte length (0xFFFFFFFF = NULL), then data bytes
+        ln_bytes = read_from_stream(stream, 4)
+        if ln_bytes == b'\xff\xff\xff\xff':
+            return None
+        ln = int.from_bytes(ln_bytes, byteorder='big')
+        v = bytes(read_from_stream(stream, ln))
+    elif t in (DRDA_TYPE_LOBCSBCS, DRDA_TYPE_NLOBCSBCS):
+        # inline CLOB: 4-byte length (0xFFFFFFFF = NULL), then character data
+        ln_bytes = read_from_stream(stream, 4)
+        if ln_bytes == b'\xff\xff\xff\xff':
+            return None
+        ln = int.from_bytes(ln_bytes, byteorder='big')
+        v = read_from_stream(stream, ln).decode('utf-8')
     else:
         raise ValueError("UnknownType(%s)" % hex(t))
     return v
