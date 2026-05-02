@@ -167,7 +167,10 @@ class Connection:
                             # EXTDTA for inline LOBs has a leading status byte (0x00 = valid)
                             data = data[1:]
                         if qrydsc[col_idx][0] in _clob_types:
-                            data = data.decode(self.encoding)
+                            if qrydsc[col_idx][0] in _inline_lob_types:
+                                data = data.decode('utf-8')
+                            else:
+                                data = data.decode(self.encoding)
                         row[col_idx] = data
                         extdta_idx += 1
                 results[row_idx] = tuple(row)

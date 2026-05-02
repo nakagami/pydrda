@@ -497,10 +497,10 @@ def _fdodta(description, v):
         return b'\x00' + bytes([1 if v else 0])
     elif sqltype == consts.DB2_SQLTYPE_NBLOB:
         v = bytes(v)
-        return b'\x00' + len(v).to_bytes(4, byteorder='big') + v
+        return b'\x00' + len(v).to_bytes(2, byteorder='big') + v
     elif sqltype == consts.DB2_SQLTYPE_NCLOB:
         v = str(v).encode('utf-8')
-        return b'\x00' + len(v).to_bytes(4, byteorder='big') + v
+        return b'\x00' + len(v).to_bytes(2, byteorder='big') + v
     elif sqltype == consts.DB2_SQLTYPE_NDECFLOAT:
         from .utils import _encode_dfp
         return b'\x00' + _encode_dfp(v, sqllength)
