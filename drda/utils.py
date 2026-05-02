@@ -109,41 +109,92 @@ DRDA_TYPE_DECFLOAT = 0xBA
 DRDA_TYPE_NDECFLOAT = 0xBB
 
 
+def _dpd_decode(dpd):
+    """Decode a 10-bit DPD (Densely Packed Decimal) value to 3 decimal digits."""
+    b9=(dpd>>9)&1; b8=(dpd>>8)&1; b7=(dpd>>7)&1; b6=(dpd>>6)&1; b5=(dpd>>5)&1
+    b4=(dpd>>4)&1; b3=(dpd>>3)&1; b2=(dpd>>2)&1; b1=(dpd>>1)&1; b0=dpd&1
+    if not b3:
+        return b9*4+b8*2+b7, b6*4+b5*2+b4, b2*4+b1*2+b0
+    if not b2 and not b1:
+        return b9*4+b8*2+b7, b6*4+b5*2+b4, 8+b0
+    if not b2 and b1:
+        return b9*4+b8*2+b7, 8+b4, b6*4+b5*2+b0
+    if b2 and not b1:
+        return 8+b7, b6*4+b5*2+b4, b9*4+b8*2+b0
+    # b3=b2=b1=1
+    if not b6 and not b5:
+        return 8+b7, 8+b4, b9*4+b8*2+b0
+    if not b6 and b5:
+        return 8+b7, b9*4+b8*2+b4, 8+b0
+    if b6 and not b5:
+        return b9*4+b8*2+b7, 8+b4, 8+b0
+    return 8+b7, 8+b4, 8+b0  # b6=b5=b3=b2=b1=1
+
+
+def _dpd_encode(d2, d1, d0):
+    """Encode 3 decimal digits (each 0-9) to a 10-bit DPD value."""
+    h2, h1, h0 = d2 >= 8, d1 >= 8, d0 >= 8
+    v2, v1, v0 = d2 & 7, d1 & 7, d0 & 7
+    if not h2 and not h1 and not h0:
+        return (v2 << 7) | (v1 << 4) | v0
+    elif not h2 and not h1 and h0:
+        return (v2 << 7) | (v1 << 4) | 8 | (v0 & 1)
+    elif not h2 and h1 and not h0:
+        return (v2 << 7) | (((v0 >> 2) & 1) << 6) | (((v0 >> 1) & 1) << 5) | ((v1 & 1) << 4) | (1 << 3) | (1 << 1) | (v0 & 1)
+    elif h2 and not h1 and not h0:
+        return (((v0 >> 2) & 1) << 9) | (((v0 >> 1) & 1) << 8) | ((v2 & 1) << 7) | (v1 << 4) | (1 << 3) | (1 << 2) | (v0 & 1)
+    elif h2 and h1 and not h0:
+        return (((v0 >> 2) & 1) << 9) | (((v0 >> 1) & 1) << 8) | ((v2 & 1) << 7) | ((v1 & 1) << 4) | (1 << 3) | (1 << 2) | (1 << 1) | (v0 & 1)
+    elif h2 and not h1 and h0:
+        return (((v1 >> 2) & 1) << 9) | (((v1 >> 1) & 1) << 8) | ((v2 & 1) << 7) | (1 << 5) | ((v1 & 1) << 4) | (1 << 3) | (1 << 2) | (1 << 1) | (v0 & 1)
+    elif not h2 and h1 and h0:
+        return (v2 << 7) | (1 << 6) | ((v1 & 1) << 4) | (1 << 3) | (1 << 2) | (1 << 1) | (v0 & 1)
+    else:  # all high
+        return ((v2 & 1) << 7) | (1 << 6) | (1 << 5) | ((v1 & 1) << 4) | (1 << 3) | (1 << 2) | (1 << 1) | (v0 & 1)
+
+
 def _decode_dfp(data):
-    """Decode IEEE 754-2008 BID decimal floating-point bytes to Python Decimal."""
+    """Decode IEEE 754-2008 DPD decimal floating-point bytes to Python Decimal."""
     n_bytes = len(data)
     if n_bytes == 8:
-        bias, coeff_cont_bits, exp_cont_bits = 398, 50, 8
+        bias, n_dpd_groups, exp_cont_bits = 398, 5, 8
     else:  # 16 bytes (DECFLOAT(34))
-        bias, coeff_cont_bits, exp_cont_bits = 6176, 110, 12
+        bias, n_dpd_groups, exp_cont_bits = 6176, 11, 12
+    coeff_cont_bits = n_dpd_groups * 10
     total_bits = n_bytes * 8
     w = int.from_bytes(data, 'big')
     sign = (w >> (total_bits - 1)) & 1
     G = (w >> (total_bits - 6)) & 0x1F
     E = (w >> coeff_cont_bits) & ((1 << exp_cont_bits) - 1)
     T = w & ((1 << coeff_cont_bits) - 1)
-    # Special: G[4:3]="11", G[2]="1" (G >= 28)
+    # Special: Infinity and NaN
     if G >= 0x1C:
         if G & 0x02:  # G[1]=1 → NaN
             return decimal.Decimal('NaN')
         return decimal.Decimal('-Infinity') if sign else decimal.Decimal('Infinity')
-    # Large coefficient: G[4:3]="11", G[2]="0" (G = 24-27)
-    if G >= 0x18:
+    # Extract leading digit and biased exponent
+    if G >= 0x18:  # G[4:3]="11", G[2]="0": large leading digit (8 or 9)
         biased_exp = ((G & 0x03) << exp_cont_bits) | E
-        coeff = (1 << (coeff_cont_bits + 3)) | T
+        leading_digit = 8 + ((G >> 2) & 1)
     else:
         biased_exp = ((G >> 3) << exp_cont_bits) | E
-        coeff = ((G & 0x07) << coeff_cont_bits) | T
+        leading_digit = G & 0x07
+    # Decode DPD groups (MSB group first) to get continuation digits
+    digits = [leading_digit]
+    for i in range(n_dpd_groups - 1, -1, -1):
+        d2, d1, d0 = _dpd_decode((T >> (i * 10)) & 0x3FF)
+        digits.extend([d2, d1, d0])
     exp = biased_exp - bias
-    return decimal.Decimal((sign, tuple(int(d) for d in str(coeff)), exp))
+    return decimal.Decimal((sign, tuple(digits), exp))
 
 
 def _encode_dfp(v, n_bytes):
-    """Encode Python Decimal to IEEE 754-2008 BID decimal floating-point bytes."""
+    """Encode Python Decimal to IEEE 754-2008 DPD decimal floating-point bytes."""
     if n_bytes == 8:
-        bias, coeff_cont_bits, exp_cont_bits = 398, 50, 8
+        bias, n_dpd_groups, exp_cont_bits, max_digits = 398, 5, 8, 16
     else:  # 16 bytes (DECFLOAT(34))
-        bias, coeff_cont_bits, exp_cont_bits = 6176, 110, 12
+        bias, n_dpd_groups, exp_cont_bits, max_digits = 6176, 11, 12, 34
+    coeff_cont_bits = n_dpd_groups * 10
     total_bits = n_bytes * 8
     sign, digits, exp = v.as_tuple()
     if v.is_infinite():
@@ -152,23 +203,25 @@ def _encode_dfp(v, n_bytes):
     if v.is_nan():
         w = (sign << (total_bits - 1)) | (0x1E << (total_bits - 6))
         return w.to_bytes(n_bytes, 'big')
-    coeff = int(''.join(str(d) for d in digits)) if digits else 0
+    # Pad digits with leading zeros to max_digits length
+    n_cont_digits = n_dpd_groups * 3
+    padded = (0,) * (max_digits - len(digits)) + tuple(digits)
+    leading_digit = padded[0]
+    cont_digits = padded[1:]
+    # Pad cont_digits to n_cont_digits (in case digits was shorter than max_digits - 1)
+    cont_digits = (0,) * (n_cont_digits - len(cont_digits)) + cont_digits
     biased_exp = exp + bias
-    implicit_bit = 1 << (coeff_cont_bits + 3)
-    if coeff >= implicit_bit:
-        # Large coefficient form (G[4:3]="11", G[2]="0")
-        T = coeff - implicit_bit
-        exp_top = biased_exp >> exp_cont_bits
-        exp_low = biased_exp & ((1 << exp_cont_bits) - 1)
-        G = 0x18 | exp_top
+    if leading_digit >= 8:
+        # Large leading digit form: G[4:3]="11", G[2]=leading_digit-8, G[1:0]=exp top bits
+        G = 0x18 | ((leading_digit - 8) << 2) | (biased_exp >> exp_cont_bits)
     else:
-        # Normal form
-        coeff_top = coeff >> coeff_cont_bits
-        T = coeff & ((1 << coeff_cont_bits) - 1)
-        exp_top = biased_exp >> exp_cont_bits
-        exp_low = biased_exp & ((1 << exp_cont_bits) - 1)
-        G = (exp_top << 3) | coeff_top
-    w = (sign << (total_bits - 1)) | (G << (total_bits - 6)) | (exp_low << coeff_cont_bits) | T
+        G = ((biased_exp >> exp_cont_bits) << 3) | leading_digit
+    E = biased_exp & ((1 << exp_cont_bits) - 1)
+    # Encode continuation digits as DPD groups (MSB group first)
+    T = 0
+    for i in range(n_dpd_groups):
+        T = (T << 10) | _dpd_encode(cont_digits[i * 3], cont_digits[i * 3 + 1], cont_digits[i * 3 + 2])
+    w = (sign << (total_bits - 1)) | (G << (total_bits - 6)) | (E << coeff_cont_bits) | T
     return w.to_bytes(n_bytes, 'big')
 
 
@@ -200,7 +253,7 @@ def read_field(t, ps, stream, endian):
 
     if t in (DRDA_TYPE_MIX, DRDA_TYPE_NMIX):
         ln = int.from_bytes(ps, byteorder='big')
-        v = read_from_stream(stream, ln).decode('utf-8')
+        v = read_from_stream(stream, ln).decode('utf-8').rstrip(' ')
     elif t in (DRDA_TYPE_CHAR, DRDA_TYPE_NCHAR):
         ln = int.from_bytes(ps, byteorder='big')
         v = read_from_stream(stream, ln).decode('utf-8').rstrip(' ')
