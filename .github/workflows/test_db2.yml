@@ -27,11 +27,11 @@ jobs:
     - name: Wait database create
       run: |
         for t in {0..60}; do
-          docker exec -t db2 bash -c "sudo -i -u db2inst1 which db2" && break
+          docker exec -t db2 bash -c "sudo -i -u db2inst1 which db2 2>/dev/null" && break
           sleep 5
         done
         for t in {0..60}; do
-          docker exec -t -u db2inst1 db2 bash -c ". ~/sqllib/db2profile && db2 'connect to testdb'" && break
+          docker exec -t -u db2inst1 db2 bash -c ". ~/sqllib/db2profile && db2 'connect to testdb' 2>/dev/null" && break
           sleep 5
         done
 
