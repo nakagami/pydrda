@@ -63,6 +63,8 @@ class Connection:
                     )
                     _X_dss_type, _X_chained, _X_correlation_id, _X_xcode_point, extra_obj, more_data = ddm.read_dss(self.sock,self.db_type)
                     obj += extra_obj
+                import sys
+                print(f'DEBUG _parse_response: cp=0x{code_point:04X} chained={bool(chained)} need_cntqry={need_cntqry} more_data_dss={more_data} obj_hex={obj[:16].hex()}', flush=True, file=sys.stderr)
                 if code_point == cp.SQLERRRM:
                     err_msg = ddm.parse_reply(obj).get(cp.SRVDGN)
                 elif code_point == cp.SQLCARD:
