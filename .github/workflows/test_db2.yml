@@ -28,7 +28,8 @@ jobs:
       timeout-minutes: 12
       run: |
         for t in {0..140}; do
-          docker exec -t -u db2inst1 db2 bash -c ". ~/sqllib/db2profile && db2 'connect to testdb' 2>/dev/null" && exit 0
+          docker exec -t -u db2inst1 db2 bash -c ". ~/sqllib/db2profile && db2 'connect to testdb' 2>/dev/null" && \
+            nc -z localhost 50000 && exit 0
           sleep 5
         done
         exit 1
