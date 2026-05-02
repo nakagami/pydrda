@@ -53,6 +53,7 @@ class Connection:
         while True:
             while chained:
                 dss_type, chained, correlation_id, code_point, obj, more_data = ddm.read_dss(self.sock, self.db_type)
+                _X_chained = False
                 while more_data:
                     # server is waiting for us to request more query data
                     # may want to check code_point here
@@ -65,6 +66,14 @@ class Connection:
                     )
                     _X_dss_type, _X_chained, _X_correlation_id, _X_xcode_point, extra_obj, more_data = ddm.read_dss(self.sock,self.db_type)
                     obj += extra_obj
+                # Drain any chained packets (e.g. ENDQRYRM, SQLCARD) after the last page
+                while _X_chained:
+                    _X_dss_type, _X_chained, _X_correlation_id, _X_code_point, _drain_obj, _ = ddm.read_dss(self.sock, self.db_type)
+                    if _X_code_point == cp.ENDQRYRM:
+                        need_cntqry = False
+                    elif _X_code_point == cp.SQLCARD:
+                        if err is None:
+                            err, _ = ddm.parse_sqlcard(_drain_obj, self.encoding, self.endian)
                 if code_point == cp.SQLERRRM:
                     err_msg = ddm.parse_reply(obj).get(cp.SRVDGN)
                 elif code_point == cp.SQLCARD:
