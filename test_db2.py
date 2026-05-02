@@ -472,12 +472,15 @@ class TestNewTypes(unittest.TestCase):
             cur.execute("DROP TABLE test_rowid")
         except drda.OperationalError:
             pass
-        cur.execute("""
-            CREATE TABLE test_rowid (
-                id INT,
-                rw ROWID NOT NULL GENERATED ALWAYS
-            )
-        """)
+        try:
+            cur.execute("""
+                CREATE TABLE test_rowid (
+                    id INT,
+                    rw ROWID NOT NULL GENERATED ALWAYS
+                )
+            """)
+        except drda.OperationalError:
+            self.skipTest("ROWID not supported by this DB2 edition")
         cur.execute("INSERT INTO test_rowid (id) VALUES (1)")
         cur.execute("SELECT rw FROM test_rowid")
         row = cur.fetchone()

@@ -47,6 +47,7 @@ class Connection:
 
         more_data = False
         need_cntqry = False  # set by OPNQRYRM; survives subsequent read_dss calls
+        qryinsid = 0         # query instance ID from OPNQRYRM, needed for CNTQRY on LOB queries
         extdta_list = []     # accumulate EXTDTA objects for LOB columns
         while True:
             while chained:
@@ -63,8 +64,6 @@ class Connection:
                     )
                     _X_dss_type, _X_chained, _X_correlation_id, _X_xcode_point, extra_obj, more_data = ddm.read_dss(self.sock,self.db_type)
                     obj += extra_obj
-                import sys
-                print(f'DEBUG _parse_response: cp=0x{code_point:04X} chained={bool(chained)} need_cntqry={need_cntqry} more_data_dss={more_data} obj_hex={obj[:16].hex()}', flush=True, file=sys.stderr)
                 if code_point == cp.SQLERRRM:
                     err_msg = ddm.parse_reply(obj).get(cp.SRVDGN)
                 elif code_point == cp.SQLCARD:
@@ -82,6 +81,8 @@ class Connection:
                 elif code_point == cp.OPNQRYRM:
                     if self.db_type == 'db2':
                         need_cntqry = True
+                        qryinsid_bytes = ddm.parse_reply(obj).get(cp.QRYINSID, bytes(8))
+                        qryinsid = int.from_bytes(qryinsid_bytes, 'big')
                 elif code_point == cp.ENDQRYRM:
                     more_data = False
                     need_cntqry = False
@@ -132,7 +133,8 @@ class Connection:
                 ddm.write_request_dss(
                     self.sock,
                     ddm.packCNTQRY(
-                        self.pkgid, self.pkgcnstkn, self.pkgsn, self.database, self.qryblksz
+                        self.pkgid, self.pkgcnstkn, self.pkgsn, self.database, self.qryblksz,
+                        qryinsid=qryinsid,
                     ),
                     1, False, True
                 )
