@@ -439,6 +439,8 @@ class Connection:
                 cur_id, False, True
             )
             _, description, params_description = self._parse_response()
+            import binascii as _bi
+            print(f"DEBUG _query params_description={params_description}")
 
             cur_id = 1
             cur_id = ddm.write_request_dss(
