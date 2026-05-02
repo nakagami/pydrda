@@ -28,9 +28,10 @@ jobs:
       timeout-minutes: 12
       run: |
         for t in {0..140}; do
-          docker exec -u db2inst1 db2 bash -c ". ~/sqllib/db2profile && db2 'connect to testdb' 2>/dev/null" && break
+          docker exec -t -u db2inst1 db2 bash -c ". ~/sqllib/db2profile && db2 'connect to testdb' 2>/dev/null" && exit 0
           sleep 5
         done
+        exit 1
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v3
