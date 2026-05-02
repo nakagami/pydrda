@@ -53,8 +53,6 @@ class Connection:
         while True:
             while chained:
                 dss_type, chained, correlation_id, code_point, obj, more_data = ddm.read_dss(self.sock, self.db_type)
-                import sys
-                print(f'DEBUG read_dss: cp=0x{code_point:04X} chained={bool(chained)} corr={correlation_id} more_data={more_data} obj={obj[:20].hex()}', file=sys.stderr, flush=True)
                 while more_data:
                     # server is waiting for us to request more query data
                     # may want to check code_point here
@@ -99,8 +97,6 @@ class Connection:
                     b = b[2:]
                     # [(DRDA_TYPE_xxxx, size_binary), ...]
                     qrydsc = [(c[0], c[1:]) for c in [b[i:i+3] for i in range(0, len(b), 3)]]
-                    import sys
-                    print(f'DEBUG QRYDSC obj_full={obj.hex()} qrydsc={[(hex(t), ps.hex()) for t,ps in qrydsc]} need_cntqry={need_cntqry} cntqry_cur_id={cntqry_cur_id} qryinsid=0x{qryinsid:016x}', file=sys.stderr, flush=True)
                 elif code_point == cp.QRYDTA:
                     stream = io.BytesIO(obj)
                     while b := utils.read_from_stream(stream, 2):
@@ -140,22 +136,25 @@ class Connection:
                     self.pkgid, self.pkgcnstkn, self.pkgsn, self.database, self.qryblksz,
                     qryinsid=qryinsid,
                 )
-                import sys
-                print(f'DEBUG CNTQRY pkt_hex={cntqry_pkt.hex()} cur_id={cntqry_cur_id}', file=sys.stderr, flush=True)
                 ddm.write_request_dss(self.sock, cntqry_pkt, cntqry_cur_id, False, True)
                 chained = True  # must read the CNTQRY response
             else:
                 break
 
         if extdta_list and qrydsc and results:
+            _inline_lob_types = (
+                utils.DRDA_TYPE_LOBBYTES, utils.DRDA_TYPE_NLOBBYTES,
+                utils.DRDA_TYPE_LOBCSBCS, utils.DRDA_TYPE_NLOBCSBCS,
+            )
             _lob_types = (
                 utils.DRDA_TYPE_LOBLOC, utils.DRDA_TYPE_NLOBLOC,
                 utils.DRDA_TYPE_CLOBLOC, utils.DRDA_TYPE_NCLOBLOC,
                 utils.DRDA_TYPE_DBCSCLOBLOC, utils.DRDA_TYPE_NDBCSCLOBLOC,
-            )
+            ) + _inline_lob_types
             _clob_types = (
                 utils.DRDA_TYPE_CLOBLOC, utils.DRDA_TYPE_NCLOBLOC,
                 utils.DRDA_TYPE_DBCSCLOBLOC, utils.DRDA_TYPE_NDBCSCLOBLOC,
+                utils.DRDA_TYPE_LOBCSBCS, utils.DRDA_TYPE_NLOBCSBCS,
             )
             lob_col_indices = [i for i, (t, _) in enumerate(qrydsc) if t in _lob_types]
             extdta_idx = 0
@@ -164,6 +163,9 @@ class Connection:
                 for col_idx in lob_col_indices:
                     if row[col_idx] is not None and extdta_idx < len(extdta_list):
                         data = extdta_list[extdta_idx]
+                        if qrydsc[col_idx][0] in _inline_lob_types:
+                            # EXTDTA for inline LOBs has a leading status byte (0x00 = valid)
+                            data = data[1:]
                         if qrydsc[col_idx][0] in _clob_types:
                             data = data.decode(self.encoding)
                         row[col_idx] = data

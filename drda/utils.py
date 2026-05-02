@@ -251,6 +251,7 @@ def read_field(t, ps, stream, endian):
         DRDA_TYPE_NLONGRAPH, DRDA_TYPE_NMIX, DRDA_TYPE_NVARMIX, DRDA_TYPE_NLONGMIX,
         DRDA_TYPE_NCSTRMIX, DRDA_TYPE_NPSCLBYTE, DRDA_TYPE_NLSTR, DRDA_TYPE_NLSTRMIX,
         DRDA_TYPE_NSDATALINK, DRDA_TYPE_NMDATALINK, DRDA_TYPE_NBOOLEAN, DRDA_TYPE_NDECFLOAT,
+        DRDA_TYPE_NLOBBYTES, DRDA_TYPE_NLOBCSBCS,
     ):
         if read_from_stream(stream, 1) == b'\xFF':
             return None
@@ -329,19 +330,16 @@ def read_field(t, ps, stream, endian):
         ln = int.from_bytes(ps, byteorder='big')
         v = True if int.from_bytes(read_from_stream(stream, ln), byteorder='big') else False
     elif t in (DRDA_TYPE_LOBBYTES, DRDA_TYPE_NLOBBYTES):
-        # inline BLOB: 4-byte length (0xFFFFFFFF = NULL), then data bytes
-        ln_bytes = read_from_stream(stream, 4)
-        if ln_bytes == b'\xff\xff\xff\xff':
-            return None
-        ln = int.from_bytes(ln_bytes, byteorder='big')
-        v = bytes(read_from_stream(stream, ln))
+        # LOB data is delivered via EXTDTA; QRYDTA contains a placeholder.
+        # ps encodes the placeholder size (high bit = nullable, already handled above).
+        ln = int.from_bytes(ps, byteorder='big') & 0x7FFF
+        read_from_stream(stream, ln)  # consume placeholder bytes
+        return b''  # sentinel; replaced by EXTDTA data in connection._parse_response
     elif t in (DRDA_TYPE_LOBCSBCS, DRDA_TYPE_NLOBCSBCS):
-        # inline CLOB: 4-byte length (0xFFFFFFFF = NULL), then character data
-        ln_bytes = read_from_stream(stream, 4)
-        if ln_bytes == b'\xff\xff\xff\xff':
-            return None
-        ln = int.from_bytes(ln_bytes, byteorder='big')
-        v = read_from_stream(stream, ln).decode('utf-8')
+        # Same as above but for character LOBs (CLOB).
+        ln = int.from_bytes(ps, byteorder='big') & 0x7FFF
+        read_from_stream(stream, ln)  # consume placeholder bytes
+        return ''   # sentinel; replaced by EXTDTA data in connection._parse_response
     else:
         raise ValueError("UnknownType(%s)" % hex(t))
     return v
