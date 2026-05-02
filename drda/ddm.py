@@ -519,8 +519,11 @@ def packSQLDTA(params_desc, params, endian):
     fdodta = b''
 
     for i in range(ln):
-        fdodsc += _fdodsc(params_desc[i])
-        fdodta += _fdodta(params_desc[i], params[i])
+        dsc_bytes = _fdodsc(params_desc[i])
+        dta_bytes = _fdodta(params_desc[i], params[i])
+        print(f"DEBUG packSQLDTA param[{i}]: sqltype={params_desc[i][1]} fdodsc={binascii.hexlify(dsc_bytes)} fdodta={binascii.hexlify(dta_bytes)}")
+        fdodsc += dsc_bytes
+        fdodta += dta_bytes
 
     if (len(fdodsc) + len(fdodta)) % 2:
         fdodta = b'\x00' + fdodta
