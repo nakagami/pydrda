@@ -496,8 +496,8 @@ def _fdodta(description, v):
     elif sqltype == consts.DB2_SQLTYPE_NBOOLEAN:
         return b'\x00' + bytes([1 if v else 0])
     elif sqltype == consts.DB2_SQLTYPE_NBLOB:
-        # Data is sent via EXTDTA; FDODTA contains only null indicator + placeholder
-        return b'\x00\x00\x00\x00\x00'
+        # Data is sent via EXTDTA; FDODTA contains null indicator + 4-byte data length
+        return b'\x00' + len(bytes(v)).to_bytes(4, byteorder='big')
     elif sqltype == consts.DB2_SQLTYPE_NCLOB:
         v = str(v)
         return b'\x00' + len(v).to_bytes(2, byteorder='big') + v.encode('utf_16_be')
