@@ -275,7 +275,7 @@ def write_request_dss(sock, o, cur_id, next_dss_has_same_id, last_packet):
     "Write request DSS packets"
     code_point = int.from_bytes(o[2:4], byteorder='big')
     _send_to_sock(sock, (len(o)+6).to_bytes(2, byteorder='big'))
-    if code_point in (cp.SQLSTT, cp.SQLATTR, cp.SQLDTA):
+    if code_point in (cp.SQLSTT, cp.SQLATTR, cp.SQLDTA, cp.EXTDTA):
         flag = 3    # DSS object
     else:
         flag = 1    # DSS request
@@ -438,9 +438,9 @@ def _fdodsc(description):
     elif sqltype == consts.DB2_SQLTYPE_NBOOLEAN:
         return bytes([0xBF, 0x00, 0x01])
     elif sqltype == consts.DB2_SQLTYPE_NBLOB:
-        return bytes([0x29, 0xff, 0xff])
+        return bytes([0xC9, 0x80, 0x02])
     elif sqltype == consts.DB2_SQLTYPE_NCLOB:
-        return bytes([0x35, 0xff, 0xff])
+        return binascii.unhexlify(b'393fff')
     elif sqltype == consts.DB2_SQLTYPE_NDECFLOAT:
         return bytes([0xBB, 0x00, sqllength])
     elif sqltype == consts.DB2_SQLTYPE_NROWID:
@@ -452,6 +452,10 @@ def _fdodsc(description):
 def _fdodta(description, v):
     _, sqltype, sqllength, _, precision, scale, _ = description
     if sqltype == consts.DB2_SQLTYPE_NVARCHAR:
+        if isinstance(v, (bytes, bytearray)):
+            # Binary data (e.g., BLOB column INSERT where DB2 requests NVARCHAR type)
+            v = bytes(v)
+            return b'\x00' + len(v).to_bytes(2, byteorder='big') + v
         v = str(v)
         return b'\x00' + len(v).to_bytes(2, byteorder='big') + v.encode('utf_16_be')
     elif sqltype == consts.DB2_SQLTYPE_NDECIMAL:
@@ -491,16 +495,19 @@ def _fdodta(description, v):
         v = v.strftime("%Y-%m-%d-%H.%M.%S.%f      ").encode('utf-8')
         return b'\x00' + v
     elif sqltype == consts.DB2_SQLTYPE_NCHAR:
+        if isinstance(v, (bytes, bytearray)):
+            v = bytes(v)
+            return b'\x00' + len(v).to_bytes(2, byteorder='big') + v
         v = str(v)
         return b'\x00' + len(v).to_bytes(2, byteorder='big') + v.encode('utf_16_be')
     elif sqltype == consts.DB2_SQLTYPE_NBOOLEAN:
         return b'\x00' + bytes([1 if v else 0])
     elif sqltype == consts.DB2_SQLTYPE_NBLOB:
         v = bytes(v)
-        return b'\x00' + len(v).to_bytes(4, byteorder='big') + v
+        return b'\x00' + len(v).to_bytes(2, byteorder='big')
     elif sqltype == consts.DB2_SQLTYPE_NCLOB:
-        v = str(v).encode('utf-8')
-        return b'\x00' + len(v).to_bytes(4, byteorder='big') + v
+        v = str(v)
+        return b'\x00' + len(v).to_bytes(2, byteorder='big') + v.encode('utf_16_be')
     elif sqltype == consts.DB2_SQLTYPE_NDECFLOAT:
         from .utils import _encode_dfp
         return b'\x00' + _encode_dfp(v, sqllength)
@@ -519,11 +526,13 @@ def packSQLDTA(params_desc, params, endian):
     fdodta = b''
 
     for i in range(ln):
-        fdodsc += _fdodsc(params_desc[i])
-        fdodta += _fdodta(params_desc[i], params[i])
+        dsc_bytes = _fdodsc(params_desc[i])
+        dta_bytes = _fdodta(params_desc[i], params[i])
+        fdodsc += dsc_bytes
+        fdodta += dta_bytes
 
     if (len(fdodsc) + len(fdodta)) % 2:
-        fdodta = b'\x00' + fdodta
+        fdodta = b'\x00' + fdodta   # prepend: existing behavior for variable-length types
 
     fdodsc += binascii.unhexlify(b'0671e4d00001')
 
@@ -532,6 +541,10 @@ def packSQLDTA(params_desc, params, endian):
         pack_dss_object(cp.FDODSC, fdodsc) +
         pack_dss_object(cp.FDODTA, fdodta)
     )
+
+
+def packEXTDTA(data):
+    return pack_dss_object(cp.EXTDTA, bytes(data))
 
 
 def packOPNQRY_with_params(pkgid, pkgcnstkn, pkgsn, database, qryblksz):
@@ -555,12 +568,12 @@ def packOPNQRY(pkgid, pkgcnstkn, pkgsn, database, qryblksz):
     )
 
 
-def packCNTQRY(pkgid, pkgcnstkn, pkgsn, database, qryblksz):
+def packCNTQRY(pkgid, pkgcnstkn, pkgsn, database, qryblksz, qryinsid=0):
     return pack_dss_object(
         cp.CNTQRY,
         _packPKGNAMCSN(database, pkgid, pkgcnstkn, pkgsn) +
         _pack_uint(cp.QRYBLKSZ, qryblksz, 4) +
-        _pack_uint(cp.QRYINSID, 0, 8) +
+        _pack_uint(cp.QRYINSID, qryinsid, 8) +
         _pack_binary(cp.RTNEXTDTA, bytes([0x02]))
         # Parameters that may be valid in Db2 but invalid in Derby
         # _pack_binary(cp.FREPRVREF, bytes([0xf0]))

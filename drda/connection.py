@@ -36,6 +36,46 @@ from drda import utils
 from drda.cursor import Cursor
 
 
+def _replace_binary_params(query, args, params_description):
+    binary_param_indices = {
+        i for i, d in enumerate(params_description)
+        if d[1] == consts.DB2_SQLTYPE_NBLOB and isinstance(args[i], (bytes, bytearray))
+    }
+    if not binary_param_indices:
+        return None
+
+    rewritten_query = []
+    rewritten_args = []
+    param_index = 0
+    in_string = False
+    i = 0
+    while i < len(query):
+        c = query[i]
+        if c == "'":
+            rewritten_query.append(c)
+            if in_string and i + 1 < len(query) and query[i + 1] == "'":
+                rewritten_query.append(query[i + 1])
+                i += 2
+                continue
+            in_string = not in_string
+        elif c == '?' and not in_string:
+            if param_index >= len(args):
+                return None
+            if param_index in binary_param_indices:
+                rewritten_query.append("BLOB(X'{}')".format(bytes(args[param_index]).hex()))
+            else:
+                rewritten_query.append(c)
+                rewritten_args.append(args[param_index])
+            param_index += 1
+        else:
+            rewritten_query.append(c)
+        i += 1
+
+    if param_index != len(args):
+        return None
+    return ''.join(rewritten_query), rewritten_args
+
+
 class Connection:
     def _parse_response(self):
         results = collections.deque()
@@ -46,9 +86,14 @@ class Connection:
         err_msg = None
 
         more_data = False
+        need_cntqry = False  # set by OPNQRYRM; survives subsequent read_dss calls
+        qryinsid = 0         # query instance ID from OPNQRYRM, needed for CNTQRY on LOB queries
+        cntqry_cur_id = 1    # correlation ID to use for CNTQRY (matches the OPNQRY request)
+        extdta_list = []     # accumulate EXTDTA objects for LOB columns
         while True:
             while chained:
                 dss_type, chained, correlation_id, code_point, obj, more_data = ddm.read_dss(self.sock, self.db_type)
+                _X_chained = False
                 while more_data:
                     # server is waiting for us to request more query data
                     # may want to check code_point here
@@ -61,6 +106,14 @@ class Connection:
                     )
                     _X_dss_type, _X_chained, _X_correlation_id, _X_xcode_point, extra_obj, more_data = ddm.read_dss(self.sock,self.db_type)
                     obj += extra_obj
+                # Drain any chained packets (e.g. ENDQRYRM, SQLCARD) after the last page
+                while _X_chained:
+                    _X_dss_type, _X_chained, _X_correlation_id, _X_code_point, _drain_obj, _ = ddm.read_dss(self.sock, self.db_type)
+                    if _X_code_point == cp.ENDQRYRM:
+                        need_cntqry = False
+                    elif _X_code_point == cp.SQLCARD:
+                        if err is None:
+                            err, _ = ddm.parse_sqlcard(_drain_obj, self.encoding, self.endian)
                 if code_point == cp.SQLERRRM:
                     err_msg = ddm.parse_reply(obj).get(cp.SRVDGN)
                 elif code_point == cp.SQLCARD:
@@ -77,9 +130,15 @@ class Connection:
                         )
                 elif code_point == cp.OPNQRYRM:
                     if self.db_type == 'db2':
-                        more_data = True
+                        need_cntqry = True
+                        cntqry_cur_id = correlation_id  # must match the OPNQRY request's ID
+                        qryinsid_bytes = ddm.parse_reply(obj).get(cp.QRYINSID, bytes(8))
+                        qryinsid = int.from_bytes(qryinsid_bytes, 'big')
                 elif code_point == cp.ENDQRYRM:
                     more_data = False
+                    need_cntqry = False
+                elif code_point == cp.EXTDTA:
+                    extdta_list.append(obj)
                 elif code_point == cp.QRYDSC:
                     ln = obj[0]
                     b = obj[1:ln]
@@ -120,16 +179,50 @@ class Connection:
                                     r.append(v)
                                 results.append(tuple(r))
 
-            if more_data:
-                ddm.write_request_dss(
-                    self.sock,
-                    ddm.packCNTQRY(
-                        self.pkgid, self.pkgcnstkn, self.pkgsn, self.database
-                    ),
-                    1, False, True
+            if more_data or need_cntqry:
+                need_cntqry = False
+                cntqry_pkt = ddm.packCNTQRY(
+                    self.pkgid, self.pkgcnstkn, self.pkgsn, self.database, self.qryblksz,
+                    qryinsid=qryinsid,
                 )
+                ddm.write_request_dss(self.sock, cntqry_pkt, cntqry_cur_id, False, True)
+                chained = True  # must read the CNTQRY response
             else:
                 break
+
+        if extdta_list and qrydsc and results:
+            _inline_lob_types = (
+                utils.DRDA_TYPE_LOBBYTES, utils.DRDA_TYPE_NLOBBYTES,
+                utils.DRDA_TYPE_LOBCSBCS, utils.DRDA_TYPE_NLOBCSBCS,
+            )
+            _lob_types = (
+                utils.DRDA_TYPE_LOBLOC, utils.DRDA_TYPE_NLOBLOC,
+                utils.DRDA_TYPE_CLOBLOC, utils.DRDA_TYPE_NCLOBLOC,
+                utils.DRDA_TYPE_DBCSCLOBLOC, utils.DRDA_TYPE_NDBCSCLOBLOC,
+            ) + _inline_lob_types
+            _clob_types = (
+                utils.DRDA_TYPE_CLOBLOC, utils.DRDA_TYPE_NCLOBLOC,
+                utils.DRDA_TYPE_DBCSCLOBLOC, utils.DRDA_TYPE_NDBCSCLOBLOC,
+                utils.DRDA_TYPE_LOBCSBCS, utils.DRDA_TYPE_NLOBCSBCS,
+            )
+            lob_col_indices = [i for i, (t, _) in enumerate(qrydsc) if t in _lob_types]
+            extdta_idx = 0
+            for row_idx in range(len(results)):
+                row = list(results[row_idx])
+                for col_idx in lob_col_indices:
+                    if row[col_idx] is not None and extdta_idx < len(extdta_list):
+                        data = extdta_list[extdta_idx]
+                        if qrydsc[col_idx][0] in _inline_lob_types:
+                            # EXTDTA for inline LOBs has a leading status byte (0x00 = valid)
+                            data = data[1:]
+                        if qrydsc[col_idx][0] in _clob_types:
+                            if qrydsc[col_idx][0] in _inline_lob_types:
+                                data = data.decode('utf-8')
+                            else:
+                                data = data.decode(self.encoding)
+                        row[col_idx] = data
+                        extdta_idx += 1
+                results[row_idx] = tuple(row)
 
         if err:
             raise err
@@ -326,6 +419,10 @@ class Connection:
             )
             _, _, params_description = self._parse_response()
 
+            replaced = _replace_binary_params(query, args, params_description)
+            if replaced:
+                return self._execute(*replaced)
+
             cur_id = 1
             cur_id = ddm.write_request_dss(
                 self.sock,
@@ -337,6 +434,8 @@ class Connection:
                 ddm.packSQLDTA(params_description, args, self.endian),
                 cur_id, False, False
             )
+
+            cur_id = 1
             cur_id = ddm.write_request_dss(
                 self.sock,
                 ddm.packRDBCMM(),
@@ -387,6 +486,12 @@ class Connection:
             )
             _, description, params_description = self._parse_response()
 
+            replaced = _replace_binary_params(query, args, params_description)
+            if replaced:
+                return self._query(*replaced)
+
+            sqldta = ddm.packSQLDTA(params_description, args, self.endian)
+
             cur_id = 1
             cur_id = ddm.write_request_dss(
                 self.sock,
@@ -397,7 +502,7 @@ class Connection:
             )
             cur_id = ddm.write_request_dss(
                 self.sock,
-                ddm.packSQLDTA(params_description, args, self.endian),
+                sqldta,
                 cur_id, False, True
             )
             rows, _, _ = self._parse_response()
