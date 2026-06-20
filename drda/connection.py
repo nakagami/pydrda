@@ -36,6 +36,46 @@ from drda import utils
 from drda.cursor import Cursor
 
 
+def _infer_params_description(args):
+    """Infer DRDA parameter descriptions from Python value types.
+
+    Used as a fallback when the server (e.g. Derby) does not return
+    a parameter SQLDARD in response to DSCSQLSTT.
+    """
+    import datetime
+    import decimal as _decimal
+    description = []
+    for v in args:
+        if v is None or isinstance(v, str):
+            d = ('?', consts.DB2_SQLTYPE_NVARCHAR, 32672, 32672, 32672, 0, None)
+        elif isinstance(v, bool):
+            d = ('?', consts.DB2_SQLTYPE_NBOOLEAN, 1, 1, 1, 0, None)
+        elif isinstance(v, int):
+            if abs(v) > 2147483647:
+                d = ('?', consts.DB2_SQLTYPE_NBIGINT, 8, 8, 19, 0, None)
+            else:
+                d = ('?', consts.DB2_SQLTYPE_NINTEGER, 4, 4, 10, 0, None)
+        elif isinstance(v, float):
+            d = ('?', consts.DB2_SQLTYPE_NFLOAT, 8, 8, 15, 0, None)
+        elif isinstance(v, _decimal.Decimal):
+            sign, digits, exponent = v.as_tuple()
+            precision = max(len(digits), 1)
+            scale = max(0, -exponent)
+            d = ('?', consts.DB2_SQLTYPE_NDECIMAL, precision * 256 + scale, precision * 256 + scale, precision, scale, None)
+        elif isinstance(v, datetime.datetime):
+            d = ('?', consts.DB2_SQLTYPE_NTIMESTAMP, 32, 32, 0, 0, None)
+        elif isinstance(v, datetime.date):
+            d = ('?', consts.DB2_SQLTYPE_NDATE, 10, 10, 0, 0, None)
+        elif isinstance(v, datetime.time):
+            d = ('?', consts.DB2_SQLTYPE_NTIME, 8, 8, 0, 0, None)
+        elif isinstance(v, (bytes, bytearray)):
+            d = ('?', consts.DB2_SQLTYPE_NVARBINARY, len(v), len(v), len(v), 0, None)
+        else:
+            d = ('?', consts.DB2_SQLTYPE_NVARCHAR, 32672, 32672, 32672, 0, None)
+        description.append(d)
+    return description
+
+
 def _replace_binary_params(query, args, params_description):
     binary_param_indices = {
         i for i, d in enumerate(params_description)
@@ -77,7 +117,7 @@ def _replace_binary_params(query, args, params_description):
 
 
 class Connection:
-    def _parse_response(self):
+    def _parse_response(self, continue_on_sqldard_only=False):
         results = collections.deque()
         params_description = None
         description = None
@@ -124,17 +164,24 @@ class Connection:
                         err, params_description = ddm.parse_sqldard(
                             obj, 'utf-8', self.endian, self.db_type
                         )
-                    else:
+                    elif description is None:
+                        # First SQLDARD (obj[0]=0x00): result column descriptions
                         err, description = ddm.parse_sqldard(
                             obj, 'utf-8', self.endian, self.db_type
                         )
+                    else:
+                        # Second SQLDARD (obj[0]=0x00): parameter descriptions.
+                        # Derby sends both SQDARDs with obj[0]=0x00 (unlike Db2 which uses
+                        # obj[0]=0xFF for the params SQLDARD).
+                        err, params_description = ddm.parse_sqldard(
+                            obj, 'utf-8', self.endian, self.db_type
+                        )
                 elif code_point == cp.OPNQRYRM:
-                    if self.db_type == 'db2':
-                        need_cntqry = True
-                        cntqry_cur_id = correlation_id  # must match the OPNQRY request's ID
-                        qryinsid_bytes = ddm.parse_reply(obj).get(cp.QRYINSID, bytes(8))
-                        qryinsid = int.from_bytes(qryinsid_bytes, 'big')
-                elif code_point == cp.ENDQRYRM:
+                    need_cntqry = True
+                    cntqry_cur_id = correlation_id  # must match the OPNQRY request's ID
+                    qryinsid_bytes = ddm.parse_reply(obj).get(cp.QRYINSID, bytes(8))
+                    qryinsid = int.from_bytes(qryinsid_bytes, 'big')
+                elif code_point in (cp.ENDQRYRM, cp.ENDUOWRM):
                     more_data = False
                     need_cntqry = False
                 elif code_point == cp.EXTDTA:
@@ -147,46 +194,36 @@ class Connection:
                     # [(DRDA_TYPE_xxxx, size_binary), ...]
                     qrydsc = [(c[0], c[1:]) for c in [b[i:i+3] for i in range(0, len(b), 3)]]
                 elif code_point == cp.QRYDTA:
+                    rows_before = len(results)
                     stream = io.BytesIO(obj)
-                    while b := utils.read_from_stream(stream, 2):
-                        if b[0] != 0xff:
-                            break
-                        r = []
-                        for t, ps in qrydsc:
-                            v = utils.read_field(t, ps, stream, self.endian)
-                            r.append(v)
-                        results.append(tuple(r))
+                    try:
+                        while b := utils.read_from_stream(stream, 2):
+                            if b[0] != 0xff:
+                                break
+                            r = []
+                            for t, ps in qrydsc:
+                                v = utils.read_field(t, ps, stream, self.endian)
+                                r.append(v)
+                            results.append(tuple(r))
+                    except Exception:
+                        pass
+                    rows_added = len(results) - rows_before
+                    if rows_added == 0:
+                        # Empty QRYDTA = Derby's end-of-data signal
+                        need_cntqry = False
 
-                    if self.db_type == 'derby':
-                        while not stream.read():
-                            # server is waiting for us to request more query data
-                            # may want to check code_point here
-                            ddm.write_request_dss(
-                                self.sock,
-                                ddm.packCNTQRY(
-                                    self.pkgid, self.pkgcnstkn, self.pkgsn, self.database, self.qryblksz
-                                ),
-                                1, False, True
-                            )
-                            _X_dss_type, _X_chained, _X_correlation_id, _X_xcode_point, extra_obj, _more_data = ddm.read_dss(self.sock,self.db_type)
-                            stream = io.BytesIO(extra_obj)
-                            while b := utils.read_from_stream(stream, 2):
-                                if b[0] != 0xff:
-                                    break
-                                r = []
-                                for t, ps in qrydsc:
-                                    v = utils.read_field(t, ps, stream, self.endian)
-                                    r.append(v)
-                                results.append(tuple(r))
-
-            if more_data or need_cntqry:
-                need_cntqry = False
+            if need_cntqry:
                 cntqry_pkt = ddm.packCNTQRY(
                     self.pkgid, self.pkgcnstkn, self.pkgsn, self.database, self.qryblksz,
                     qryinsid=qryinsid,
                 )
                 ddm.write_request_dss(self.sock, cntqry_pkt, cntqry_cur_id, False, True)
                 chained = True  # must read the CNTQRY response
+            elif continue_on_sqldard_only and description is not None and qrydsc is None:
+                # Derby CLOB: server sent SQLDARD(s) in chain 1 as the prepare response,
+                # and is already sending chain 2 (OPNQRYRM+QRYDSC) for the OPNQRY we
+                # included in the same request.  Keep reading without sending anything.
+                chained = True
             else:
                 break
 
@@ -288,13 +325,19 @@ class Connection:
             raise ValueError('Unknown database type:{}'.format(self.db_type))
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         if timeout is not None:
             self.sock.settimeout(timeout)
         if use_ssl:
             context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
             if ssl_client_cert_path:
+                # Load the server's CA certificate to verify the server's identity.
+                # For self-signed servers (e.g. IBM Db2 on Cloud), pass the
+                # certificate_base64-decoded PEM file here.
                 context.load_verify_locations(ssl_client_cert_path)
-            self.sock = context.wrap_socket(self.sock)
+            # server_hostname enables SNI and hostname verification.
+            # Required by ssl.PROTOCOL_TLS_CLIENT (check_hostname=True).
+            self.sock = context.wrap_socket(self.sock, server_hostname=self.host)
         self.sock.connect((self.host, self.port))
 
         cur_id = 1
@@ -517,23 +560,53 @@ class Connection:
 
             return rows, description
         else:
-            cur_id = 1
-            cur_id = ddm.write_request_dss(
-                self.sock,
-                ddm.packPRPSQLSTT(self.pkgid, self.pkgcnstkn, self.pkgsn, self.database),
-                cur_id, True, False
-            )
-            cur_id = ddm.write_request_dss(
-                self.sock,
-                ddm.packSQLSTT(query),
-                cur_id, False, False
-            )
-            cur_id = ddm.write_request_dss(
-                self.sock,
-                ddm.packOPNQRY(self.pkgid, self.pkgcnstkn, self.pkgsn, self.database, self.qryblksz),
-                cur_id, False, True
-            )
-            rows, description, params_description = self._parse_response()
+            if self.db_type == 'derby':
+                # Derby LOB/CLOB: when PRPSQLSTT+SQLSTT+OPNQRY are sent together,
+                # Derby sends SQLDARD(s) first and then waits before responding to OPNQRY.
+                # Sending OPNQRY as a separate round-trip avoids this stall.
+                cur_id = 1
+                cur_id = ddm.write_request_dss(
+                    self.sock,
+                    ddm.packPRPSQLSTT(self.pkgid, self.pkgcnstkn, self.pkgsn, self.database),
+                    cur_id, True, False
+                )
+                cur_id = ddm.write_request_dss(
+                    self.sock,
+                    ddm.packSQLSTT(query),
+                    cur_id, False, True
+                )
+                _, description, _ = self._parse_response()
+
+                cur_id = 1
+                cur_id = ddm.write_request_dss(
+                    self.sock,
+                    ddm.packOPNQRY(self.pkgid, self.pkgcnstkn, self.pkgsn, self.database, self.qryblksz),
+                    cur_id, False, True
+                )
+                rows, _, _ = self._parse_response()
+            else:
+                # Db2: send all three together so Db2 includes EXTDTA (LOB data) in the
+                # same response chain.  Sending OPNQRY separately causes Db2 to omit
+                # EXTDTA, resulting in empty BLOB/CLOB/XML values.
+                # continue_on_sqldard_only=True handles the rare case where Db2 sends
+                # SQLDARD(s) in a separate chain before OPNQRYRM+QRYDSC.
+                cur_id = 1
+                cur_id = ddm.write_request_dss(
+                    self.sock,
+                    ddm.packPRPSQLSTT(self.pkgid, self.pkgcnstkn, self.pkgsn, self.database),
+                    cur_id, True, False
+                )
+                cur_id = ddm.write_request_dss(
+                    self.sock,
+                    ddm.packSQLSTT(query),
+                    cur_id, False, False
+                )
+                cur_id = ddm.write_request_dss(
+                    self.sock,
+                    ddm.packOPNQRY(self.pkgid, self.pkgcnstkn, self.pkgsn, self.database, self.qryblksz),
+                    cur_id, False, True
+                )
+                rows, description, _ = self._parse_response(continue_on_sqldard_only=True)
             return rows, description
 
     def is_connect(self):

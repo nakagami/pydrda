@@ -477,8 +477,10 @@ def _fdodsc(description):
         raise ValueError("_fdodsc():Unknown type {}".format(sqltype))
 
 
-def _fdodta(description, v):
+def _fdodta(description, v, endian='little'):
     _, sqltype, sqllength, _, precision, scale, _ = description
+    if v is None:
+        return b'\xff'  # null indicator for nullable column types
     if sqltype == consts.DB2_SQLTYPE_NVARCHAR:
         if isinstance(v, (bytes, bytearray)):
             # Binary data (e.g., BLOB column INSERT where DB2 requests NVARCHAR type)
@@ -497,19 +499,20 @@ def _fdodta(description, v):
         return b'\x00' + v
     elif sqltype == consts.DB2_SQLTYPE_NSMALL:
         v = int(v)
-        return b'\x00' + v.to_bytes(2, byteorder='little', signed=True)
+        return b'\x00' + v.to_bytes(2, byteorder=endian, signed=True)
     elif sqltype == consts.DB2_SQLTYPE_NINTEGER:
         v = int(v)
-        return b'\x00' + v.to_bytes(4, byteorder='little', signed=True)
+        return b'\x00' + v.to_bytes(4, byteorder=endian, signed=True)
     elif sqltype == consts.DB2_SQLTYPE_NBIGINT:
         v = int(v)
-        return b'\x00' + v.to_bytes(8, byteorder='little', signed=True)
+        return b'\x00' + v.to_bytes(8, byteorder=endian, signed=True)
     elif sqltype == consts.DB2_SQLTYPE_NFLOAT:
         v = float(v)
+        fmt = '>' if endian == 'big' else '<'
         if sqllength == 4:
-            v = struct.pack("<f", v)
+            v = struct.pack(fmt + 'f', v)
         elif sqllength == 8:
-            v = struct.pack("<d", v)
+            v = struct.pack(fmt + 'd', v)
         else:
             raise ValueError("Can't convert to FDODTA", v)
         return b'\x00' + v
@@ -606,15 +609,13 @@ def packOPNQRY(pkgid, pkgcnstkn, pkgsn, database, qryblksz):
     )
 
 
-def packCNTQRY(pkgid, pkgcnstkn, pkgsn, database, qryblksz, qryinsid=0):
+def packCNTQRY(pkgid, pkgcnstkn, pkgsn, database, qryblksz, qryinsid=0, rtnextdta=0x02):
     return pack_dss_object(
         cp.CNTQRY,
         _packPKGNAMCSN(database, pkgid, pkgcnstkn, pkgsn) +
         _pack_uint(cp.QRYBLKSZ, qryblksz, 4) +
         _pack_uint(cp.QRYINSID, qryinsid, 8) +
-        _pack_binary(cp.RTNEXTDTA, bytes([0x02]))
-        # Parameters that may be valid in Db2 but invalid in Derby
-        # _pack_binary(cp.FREPRVREF, bytes([0xf0]))
+        _pack_binary(cp.RTNEXTDTA, bytes([rtnextdta]))
     )
 
 
