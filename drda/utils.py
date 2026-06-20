@@ -109,6 +109,8 @@ DRDA_TYPE_DECFLOAT = 0xBA
 DRDA_TYPE_NDECFLOAT = 0xBB
 DRDA_TYPE_LOBBYTES = 0xC8    # inline BLOB (non-nullable)
 DRDA_TYPE_NLOBBYTES = 0xC9   # inline BLOB (nullable)
+DRDA_TYPE_VARBINARY = 0xC2   # inline VARBINARY (non-nullable)
+DRDA_TYPE_NVARBINARY = 0xC3  # inline VARBINARY (nullable)
 DRDA_TYPE_LOBCSBCS = 0xCE   # inline CLOB single-byte char (non-nullable)
 DRDA_TYPE_NLOBCSBCS = 0xCF  # inline CLOB single-byte char (nullable)
 
@@ -251,7 +253,7 @@ def read_field(t, ps, stream, endian):
         DRDA_TYPE_NLONGRAPH, DRDA_TYPE_NMIX, DRDA_TYPE_NVARMIX, DRDA_TYPE_NLONGMIX,
         DRDA_TYPE_NCSTRMIX, DRDA_TYPE_NPSCLBYTE, DRDA_TYPE_NLSTR, DRDA_TYPE_NLSTRMIX,
         DRDA_TYPE_NSDATALINK, DRDA_TYPE_NMDATALINK, DRDA_TYPE_NBOOLEAN, DRDA_TYPE_NDECFLOAT,
-        DRDA_TYPE_NLOBBYTES, DRDA_TYPE_NLOBCSBCS,
+        DRDA_TYPE_NLOBBYTES, DRDA_TYPE_NLOBCSBCS, DRDA_TYPE_NVARBINARY,
     ):
         if read_from_stream(stream, 1) == b'\xFF':
             return None
@@ -267,6 +269,9 @@ def read_field(t, ps, stream, endian):
         v = bytes(read_from_stream(stream, ln))
     elif t in (DRDA_TYPE_FIXBYTE, DRDA_TYPE_NFIXBYTE):
         ln = int.from_bytes(ps, byteorder='big')
+        v = bytes(read_from_stream(stream, ln))
+    elif t in (DRDA_TYPE_VARBINARY, DRDA_TYPE_NVARBINARY):
+        ln = int.from_bytes(read_from_stream(stream, 2), byteorder='big')
         v = bytes(read_from_stream(stream, ln))
     elif t in (DRDA_TYPE_VARBYTE, DRDA_TYPE_NVARBYTE):
         ln = int.from_bytes(read_from_stream(stream, 2), byteorder='big')

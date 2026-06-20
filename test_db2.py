@@ -529,7 +529,7 @@ class TestDb212(unittest.TestCase):
         except drda.OperationalError:
             pass
         cur.execute("CREATE TABLE test_binary (b BINARY(10))")
-        cur.execute("INSERT INTO test_binary (b) VALUES (X'0102030405060708090a')")
+        cur.execute("INSERT INTO test_binary (b) VALUES (?)", [b'\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a'])
         cur.execute("SELECT b FROM test_binary")
         row = cur.fetchone()
         self.assertEqual(row[0], b'\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a')
@@ -603,7 +603,7 @@ class TestDb212(unittest.TestCase):
         except drda.OperationalError:
             self.skipTest("XML type not supported by this Db2 edition")
         xml_val = '<root><item>hello</item></root>'
-        cur.execute("INSERT INTO test_xml (x) VALUES (XMLPARSE(DOCUMENT ? PRESERVE WHITESPACE))", [xml_val])
+        cur.execute("INSERT INTO test_xml (x) VALUES (XMLPARSE(DOCUMENT CAST(? AS CLOB(1M)) PRESERVE WHITESPACE))", [xml_val])
         cur.execute("SELECT XMLSERIALIZE(x AS CLOB) FROM test_xml")
         row = cur.fetchone()
         self.assertIn('hello', row[0])
