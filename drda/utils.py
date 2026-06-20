@@ -107,10 +107,12 @@ DRDA_TYPE_BOOLEAN = 0xBE
 DRDA_TYPE_NBOOLEAN = 0xBF
 DRDA_TYPE_DECFLOAT = 0xBA
 DRDA_TYPE_NDECFLOAT = 0xBB
-DRDA_TYPE_LOBBYTES = 0xC8    # inline BLOB (non-nullable)
-DRDA_TYPE_NLOBBYTES = 0xC9   # inline BLOB (nullable)
+DRDA_TYPE_FIXBYTES = 0xC0    # Db2 inline fixed-length binary (non-nullable)
+DRDA_TYPE_NFIXBYTES = 0xC1   # Db2 inline fixed-length binary (nullable)
 DRDA_TYPE_VARBINARY = 0xC2   # inline VARBINARY (non-nullable)
 DRDA_TYPE_NVARBINARY = 0xC3  # inline VARBINARY (nullable)
+DRDA_TYPE_LOBBYTES = 0xC8    # inline BLOB (non-nullable)
+DRDA_TYPE_NLOBBYTES = 0xC9   # inline BLOB (nullable)
 DRDA_TYPE_LOBCSBCS = 0xCE   # inline CLOB single-byte char (non-nullable)
 DRDA_TYPE_NLOBCSBCS = 0xCF  # inline CLOB single-byte char (nullable)
 
@@ -253,7 +255,7 @@ def read_field(t, ps, stream, endian):
         DRDA_TYPE_NLONGRAPH, DRDA_TYPE_NMIX, DRDA_TYPE_NVARMIX, DRDA_TYPE_NLONGMIX,
         DRDA_TYPE_NCSTRMIX, DRDA_TYPE_NPSCLBYTE, DRDA_TYPE_NLSTR, DRDA_TYPE_NLSTRMIX,
         DRDA_TYPE_NSDATALINK, DRDA_TYPE_NMDATALINK, DRDA_TYPE_NBOOLEAN, DRDA_TYPE_NDECFLOAT,
-        DRDA_TYPE_NLOBBYTES, DRDA_TYPE_NLOBCSBCS, DRDA_TYPE_NVARBINARY,
+        DRDA_TYPE_NLOBBYTES, DRDA_TYPE_NLOBCSBCS, DRDA_TYPE_NVARBINARY, DRDA_TYPE_NFIXBYTES,
     ):
         if read_from_stream(stream, 1) == b'\xFF':
             return None
@@ -267,8 +269,8 @@ def read_field(t, ps, stream, endian):
     elif t in (DRDA_TYPE_ROWID, DRDA_TYPE_NROWID):
         ln = int.from_bytes(ps, byteorder='big')
         v = bytes(read_from_stream(stream, ln))
-    elif t in (DRDA_TYPE_FIXBYTE, DRDA_TYPE_NFIXBYTE):
-        ln = int.from_bytes(ps, byteorder='big')
+    elif t in (DRDA_TYPE_FIXBYTE, DRDA_TYPE_NFIXBYTE, DRDA_TYPE_FIXBYTES, DRDA_TYPE_NFIXBYTES):
+        ln = int.from_bytes(ps, byteorder='big') & 0x7FFF
         v = bytes(read_from_stream(stream, ln))
     elif t in (DRDA_TYPE_VARBINARY, DRDA_TYPE_NVARBINARY):
         ln = int.from_bytes(read_from_stream(stream, 2), byteorder='big')

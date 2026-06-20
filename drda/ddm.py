@@ -70,10 +70,18 @@ def _pack_str(code_point, v, enc):
 
 
 def parse_string(b):
-    "parse VCM"
+    "parse VCM or VCS"
     ln = int.from_bytes(b[:2], byteorder='big')
     if ln:
-        s = b[2:2+ln].decode('utf-8')
+        data = b[2:2+ln]
+        try:
+            s = data.decode('utf-8')
+        except UnicodeDecodeError:
+            # VCS (single-byte) in Db2 is cp500 (EBCDIC); fall back accordingly
+            try:
+                s = data.decode('cp500')
+            except UnicodeDecodeError:
+                s = data.decode('latin-1')
     else:
         s = ''
     b = b[2+ln:]
