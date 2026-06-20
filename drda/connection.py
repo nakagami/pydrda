@@ -177,10 +177,15 @@ class Connection:
                             obj, 'utf-8', self.endian, self.db_type
                         )
                 elif code_point == cp.OPNQRYRM:
-                    need_cntqry = True
                     cntqry_cur_id = correlation_id  # must match the OPNQRY request's ID
                     qryinsid_bytes = ddm.parse_reply(obj).get(cp.QRYINSID, bytes(8))
                     qryinsid = int.from_bytes(qryinsid_bytes, 'big')
+                    if self.db_type == 'db2':
+                        # Db2 always requires CNTQRY after OPNQRYRM.
+                        # Derby does NOT: for CLOB columns, Derby sends OPNQRYRM+QRYDSC
+                        # (no QRYDTA) and hangs if CNTQRY is sent unexpectedly.
+                        # Derby pagination is handled in the QRYDTA handler below.
+                        need_cntqry = True
                 elif code_point in (cp.ENDQRYRM, cp.ENDUOWRM):
                     more_data = False
                     need_cntqry = False
@@ -211,6 +216,9 @@ class Connection:
                     if rows_added == 0:
                         # Empty QRYDTA = Derby's end-of-data signal
                         need_cntqry = False
+                    elif self.db_type == 'derby':
+                        # Derby multi-page: received rows, request next page via CNTQRY
+                        need_cntqry = True
 
             if need_cntqry:
                 cntqry_pkt = ddm.packCNTQRY(
