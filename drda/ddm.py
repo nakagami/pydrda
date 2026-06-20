@@ -131,7 +131,21 @@ def parse_sqlcard(obj, enc, endian):
     sqlerrmsg_s = rest[2:2+ln]
     rest = rest[2+ln:]
 
-    message = sqlerrmsg_m or sqlerrmsg_s
+    raw_message = sqlerrmsg_m or sqlerrmsg_s
+    try:
+        sqlstate = obj[5:10].decode('ascii')
+    except (UnicodeDecodeError, AttributeError):
+        sqlstate = str(obj[5:10])
+
+    if raw_message:
+        try:
+            message = raw_message.decode('utf-8')
+        except UnicodeDecodeError:
+            message = raw_message.decode('latin-1')
+        # Db2 separates message tokens with 0xFF
+        message = message.replace('\xff', ', ')
+    else:
+        message = ''
 
     assert rest[0] == 0xFF  # SQLDIAGGRP
     rest = rest[1:]

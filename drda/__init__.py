@@ -70,10 +70,10 @@ class Error(Exception):
         self.sqlcode = sqlcode
         self.sqlstate = sqlstate
         self.message = message
-        super(Error, self).__init__()
+        super(Error, self).__init__(str(self))
 
     def __str__(self):
-        return "%d:%s:%s" % (self.sqlcode, self.sqlstate, self.message)
+        return "SQLCODE=%d SQLSTATE=%s %s" % (self.sqlcode, self.sqlstate, self.message)
 
 
 class Warning(Exception):
