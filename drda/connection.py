@@ -278,7 +278,7 @@ class Connection:
         elif self.db_type == 'db2':
             self.encoding = 'cp500'
             self.endian = 'little'
-            self.prdid = 'SQL11014'
+            self.prdid = 'SQL12010'
             self.pkgid = 'SYSSH200'
             self.pkgcnstkn = 'SYSLVL01'
             self.pkgsn = 65

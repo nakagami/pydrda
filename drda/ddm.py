@@ -439,6 +439,12 @@ def _fdodsc(description):
         return bytes([0xBF, 0x00, 0x01])
     elif sqltype == consts.DB2_SQLTYPE_NBLOB:
         return bytes([0xC9, 0x80, 0x02])
+    elif sqltype in (consts.DB2_SQLTYPE_BINARY, consts.DB2_SQLTYPE_NBINARY):
+        return bytes([0x27, (sqllength >> 8) & 0xff, sqllength & 0xff])
+    elif sqltype in (consts.DB2_SQLTYPE_VARBINARY, consts.DB2_SQLTYPE_NVARBINARY):
+        return bytes([0x29, (sqllength >> 8) & 0xff, sqllength & 0xff])
+    elif sqltype in (consts.DB2_SQLTYPE_XML, consts.DB2_SQLTYPE_NXML):
+        return binascii.unhexlify(b'393fff')
     elif sqltype == consts.DB2_SQLTYPE_NCLOB:
         return binascii.unhexlify(b'393fff')
     elif sqltype == consts.DB2_SQLTYPE_NDECFLOAT:
@@ -505,6 +511,16 @@ def _fdodta(description, v):
     elif sqltype == consts.DB2_SQLTYPE_NBLOB:
         v = bytes(v)
         return b'\x00' + len(v).to_bytes(2, byteorder='big')
+    elif sqltype in (consts.DB2_SQLTYPE_BINARY, consts.DB2_SQLTYPE_NBINARY):
+        v = bytes(v)
+        v = (v + b'\x00' * sqllength)[:sqllength]
+        return b'\x00' + v
+    elif sqltype in (consts.DB2_SQLTYPE_VARBINARY, consts.DB2_SQLTYPE_NVARBINARY):
+        v = bytes(v)
+        return b'\x00' + len(v).to_bytes(2, byteorder='big') + v
+    elif sqltype in (consts.DB2_SQLTYPE_XML, consts.DB2_SQLTYPE_NXML):
+        v = str(v)
+        return b'\x00' + len(v).to_bytes(2, byteorder='big') + v.encode('utf_16_be')
     elif sqltype == consts.DB2_SQLTYPE_NCLOB:
         v = str(v)
         return b'\x00' + len(v).to_bytes(2, byteorder='big') + v.encode('utf_16_be')

@@ -265,7 +265,13 @@ def read_field(t, ps, stream, endian):
     elif t in (DRDA_TYPE_ROWID, DRDA_TYPE_NROWID):
         ln = int.from_bytes(ps, byteorder='big')
         v = bytes(read_from_stream(stream, ln))
-    elif t in (DRDA_TYPE_VARBYTE, DRDA_TYPE_NVARBYTE, DRDA_TYPE_LONGVARBYTE, DRDA_TYPE_NLONGVARBYTE):
+    elif t in (DRDA_TYPE_FIXBYTE, DRDA_TYPE_NFIXBYTE):
+        ln = int.from_bytes(ps, byteorder='big')
+        v = bytes(read_from_stream(stream, ln))
+    elif t in (DRDA_TYPE_VARBYTE, DRDA_TYPE_NVARBYTE):
+        ln = int.from_bytes(read_from_stream(stream, 2), byteorder='big')
+        v = bytes(read_from_stream(stream, ln))
+    elif t in (DRDA_TYPE_LONGVARBYTE, DRDA_TYPE_NLONGVARBYTE):
         ln = int.from_bytes(read_from_stream(stream, 4), byteorder='big')
         v = bytes(read_from_stream(stream, ln))
     elif t in (DRDA_TYPE_LOBLOC, DRDA_TYPE_NLOBLOC, DRDA_TYPE_CLOBLOC, DRDA_TYPE_NCLOBLOC,
@@ -299,8 +305,17 @@ def read_field(t, ps, stream, endian):
         v = decimal.Decimal((sign, v.as_tuple()[1], -s))
     elif t in (DRDA_TYPE_TIMESTAMP, DRDA_TYPE_NTIMESTAMP):
         ln = int.from_bytes(ps, byteorder='big')
-        v = read_from_stream(stream, ln).decode('utf-8')
-        v = datetime.datetime.strptime(v[:26], "%Y-%m-%d-%H.%M.%S.%f")
+        v = read_from_stream(stream, ln).decode('utf-8').rstrip()
+        # Format: YYYY-MM-DD-HH.MM.SS[.FFFFFFFFFFFF] (19 chars base + optional fractional)
+        if len(v) > 19:
+            date_part = v[:19]
+            frac = v[20:]  # skip the '.' separator at index 19
+            # Truncate or pad fractional seconds to 6 digits (microseconds)
+            frac6 = frac[:6].ljust(6, '0')
+            dt = datetime.datetime.strptime(date_part, "%Y-%m-%d-%H.%M.%S")
+            v = dt.replace(microsecond=int(frac6))
+        else:
+            v = datetime.datetime.strptime(v, "%Y-%m-%d-%H.%M.%S")
     elif t in (DRDA_TYPE_DATE, DRDA_TYPE_NDATE):
         ln = int.from_bytes(ps, byteorder='big')
         v = read_from_stream(stream, ln).decode('utf-8')

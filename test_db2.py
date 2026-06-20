@@ -505,6 +505,110 @@ class TestSecmec(unittest.TestCase):
         )
 
 
+class TestDb212(unittest.TestCase):
+    """Tests for Db2 12.1 new data type features."""
+
+    def setUp(self):
+        self.connection = drda.connect(
+            host=HOST,
+            database=DATABASE,
+            user=USER,
+            password=PASSWORD,
+            port=PORT,
+            use_ssl=bool(SSL_CLIENT_CERT_PATH),
+            ssl_client_cert_path=SSL_CLIENT_CERT_PATH,
+        )
+
+    def tearDown(self):
+        self.connection.close()
+
+    def test_binary(self):
+        cur = self.connection.cursor()
+        try:
+            cur.execute("DROP TABLE test_binary")
+        except drda.OperationalError:
+            pass
+        cur.execute("CREATE TABLE test_binary (b BINARY(10))")
+        cur.execute("INSERT INTO test_binary (b) VALUES (X'0102030405060708090a')")
+        cur.execute("SELECT b FROM test_binary")
+        row = cur.fetchone()
+        self.assertEqual(row[0], b'\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a')
+
+        cur.execute("SELECT b FROM test_binary WHERE b=?", [b'\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a'])
+        self.assertIsNotNone(cur.fetchone())
+
+    def test_varbinary(self):
+        cur = self.connection.cursor()
+        try:
+            cur.execute("DROP TABLE test_varbinary")
+        except drda.OperationalError:
+            pass
+        cur.execute("CREATE TABLE test_varbinary (b VARBINARY(100))")
+        data = bytes(range(16))
+        cur.execute("INSERT INTO test_varbinary (b) VALUES (?)", [data])
+        cur.execute("SELECT b FROM test_varbinary")
+        row = cur.fetchone()
+        self.assertEqual(row[0], data)
+
+        cur.execute("SELECT b FROM test_varbinary WHERE b=?", [data])
+        self.assertIsNotNone(cur.fetchone())
+
+    def test_timestamp_precision(self):
+        cur = self.connection.cursor()
+
+        # TIMESTAMP(0) - no fractional seconds
+        try:
+            cur.execute("DROP TABLE test_ts0")
+        except drda.OperationalError:
+            pass
+        cur.execute("CREATE TABLE test_ts0 (ts TIMESTAMP(0))")
+        cur.execute("INSERT INTO test_ts0 (ts) VALUES (?)", [datetime.datetime(2024, 6, 1, 12, 0, 0)])
+        cur.execute("SELECT ts FROM test_ts0")
+        row = cur.fetchone()
+        self.assertEqual(row[0], datetime.datetime(2024, 6, 1, 12, 0, 0))
+
+        # TIMESTAMP(9) - nanosecond precision (truncated to microseconds on read)
+        try:
+            cur.execute("DROP TABLE test_ts9")
+        except drda.OperationalError:
+            pass
+        cur.execute("CREATE TABLE test_ts9 (ts TIMESTAMP(9))")
+        cur.execute("INSERT INTO test_ts9 (ts) VALUES (?)", [datetime.datetime(2024, 6, 1, 12, 34, 56, 123456)])
+        cur.execute("SELECT ts FROM test_ts9")
+        row = cur.fetchone()
+        # Fractional part is truncated to microseconds (6 digits)
+        self.assertEqual(row[0].year, 2024)
+        self.assertEqual(row[0].second, 56)
+        self.assertEqual(row[0].microsecond, 123456)
+
+        # TIMESTAMP(12) - picosecond precision (truncated to microseconds on read)
+        try:
+            cur.execute("DROP TABLE test_ts12")
+        except drda.OperationalError:
+            pass
+        cur.execute("CREATE TABLE test_ts12 (ts TIMESTAMP(12))")
+        cur.execute("INSERT INTO test_ts12 (ts) VALUES (?)", [datetime.datetime(2024, 1, 15, 9, 30, 0, 999999)])
+        cur.execute("SELECT ts FROM test_ts12")
+        row = cur.fetchone()
+        self.assertEqual(row[0].microsecond, 999999)
+
+    def test_xml(self):
+        cur = self.connection.cursor()
+        try:
+            cur.execute("DROP TABLE test_xml")
+        except drda.OperationalError:
+            pass
+        try:
+            cur.execute("CREATE TABLE test_xml (x XML)")
+        except drda.OperationalError:
+            self.skipTest("XML type not supported by this Db2 edition")
+        xml_val = '<root><item>hello</item></root>'
+        cur.execute("INSERT INTO test_xml (x) VALUES (XMLPARSE(DOCUMENT ? PRESERVE WHITESPACE))", [xml_val])
+        cur.execute("SELECT XMLSERIALIZE(x AS CLOB) FROM test_xml")
+        row = cur.fetchone()
+        self.assertIn('hello', row[0])
+
+
 if __name__ == "__main__":
     import unittest
     unittest.main()
