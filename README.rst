@@ -20,11 +20,7 @@ Installation
 
     $ pip install pydrda
 
-If you want to connect to Db2, you may need to install pyDes.
-
-::
-
-    $ pip install pyDes
+pyDes is required for Db2 connections and is installed automatically as a dependency.
 
 
 Supported Databases
@@ -45,7 +41,7 @@ No SSL
 
    import drda
 
-   conn = drda.connect(host='serverhost', database='dbname', user='user', password='password', port=xxxxx)
+   conn = drda.connect(host='serverhost', database='dbname', user='user', password='password', port=xxxxx, timeout=30)
    cur = conn.cursor()
    cur.execute('select * from foo where name=?', ['alice'])
    for r in cur.fetchall():
@@ -121,10 +117,10 @@ Apache Derby
 Install Apatch Derby https://db.apache.org/derby/ and start as a server
 ::
 
-   $ curl -O https://downloads.apache.org//db/derby/db-derby-10.15.2.0/db-derby-10.15.2.0-bin.tar.gz
-   $ tar zxf db-derby-10.15.2.0-bin.tar.gz
+   $ curl -O https://downloads.apache.org//db/derby/db-derby-10.17.1.0/db-derby-10.17.1.0-bin.tar.gz
+   $ tar zxf db-derby-10.17.1.0-bin.tar.gz
    $ echo 'grant {permission java.lang.RuntimePermission "getenv.SOURCE_DATE_EPOCH", "read";};' > ${HOME}/.java.policy
-   $ db-derby-10.15.2.0-bin/bin/startNetworkServer &
+   $ db-derby-10.17.1.0-bin/bin/startNetworkServer &
 
 Execute test
 ::
