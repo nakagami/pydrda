@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "pydrda"
+version = "0.5.2"
+description = "DRDA protocol database driver"
+readme = "README.rst"
+license = "MIT"
+authors = [
+    { name = "Hajime Nakagami", email = "nakagami@gmail.com" },
+]
+keywords = ["Db2", "Apache Derby"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Topic :: Database",
+]
+requires-python = ">=3.8"
+dependencies = ["pyDes"]
+
+[project.urls]
+Homepage = "https://github.com/nakagami/pydrda/"
