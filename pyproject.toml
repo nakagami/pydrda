@@ -4,7 +4,7 @@ build-backend = "setuptools.backends.legacy:build"
 
 [project]
 name = "pydrda"
-version = "0.5.2"
+version = "0.5.3"
 description = "DRDA protocol database driver"
 readme = "README.rst"
 license = "MIT"
@@ -20,7 +20,7 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Topic :: Database",
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.11"
 dependencies = ["pyDes"]
 
 [project.urls]
