@@ -11,7 +11,7 @@ license = "MIT"
 authors = [
     { name = "Hajime Nakagami", email = "nakagami@gmail.com" },
 ]
-keywords = ["Db2", "Apache Derby"]
+keywords = ["Db2"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Operating System :: OS Independent",

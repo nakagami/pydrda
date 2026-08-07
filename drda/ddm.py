@@ -190,44 +190,7 @@ def _parse_column_db2(b, endian, has_name):
     return (sqllabel, sqltype, sqllength, sqllength, precision, scale, None), b
 
 
-def _parse_column_derby(b, endian, has_name):
-    precision = int.from_bytes(b[:2], byteorder=endian)
-    scale = int.from_bytes(b[2:4], byteorder=endian)
-    sqllength = int.from_bytes(b[4:12], byteorder=endian)
-    sqltype = int.from_bytes(b[12:14], byteorder=endian)
-    sqlccsid = int.from_bytes(b[14:16], byteorder='big')
-
-    b = b[16:]
-
-    # SQLDOPTGRP
-    assert b[0] == 0x00  # not null
-    b = b[3:]
-    sqlname, b = parse_name(b)
-    sqllabel, b = parse_name(b)
-    sqlcomments, b = parse_name(b)
-
-    # SQLUDTGRP
-    if b[0] == 0x00:  # not null
-        b = b[5:]
-        sqludtrdb, b = parse_string(b)
-        sqlschema, b = parse_name(b)
-        sqludtname, b = parse_name(b)
-    else:
-        b = b[1:]
-
-    # SQLDXGRP
-    assert b[0] == 0x00  # not null
-    b = b[9:]
-    sqlxrdbnam, b = parse_string(b)
-    sqlxcolname, b = parse_name(b)
-    sqlxbasename, b = parse_name(b)
-    sqlxschema, b = parse_name(b)
-    sqlxname, b = parse_name(b)
-
-    return (sqlname, sqltype, sqllength, sqllength, precision, scale, None), b
-
-
-def parse_sqldard(obj, enc, endian, db_type):
+def parse_sqldard(obj, enc, endian):
     description = []
     has_name = obj[0] == 0x00
     err, rest = parse_sqlcard(obj, enc, endian)
@@ -241,16 +204,13 @@ def parse_sqldard(obj, enc, endian, db_type):
         ln = int.from_bytes(rest[0:2], byteorder=endian)
         rest = rest[2:]
         for i in range(ln):
-            if db_type == 'db2':
-                d, rest = _parse_column_db2(rest, endian, has_name)
-            elif db_type == 'derby':
-                d, rest = _parse_column_derby(rest, endian, has_name)
+            d, rest = _parse_column_db2(rest, endian, has_name)
             description.append(d)
 
     return err, description
 
 
-def read_dss(sock, db_type):
+def read_dss(sock):
     "Read one DSS packet from socket"
     b = _recv_from_sock(sock, 6)
 
@@ -267,23 +227,15 @@ def read_dss(sock, db_type):
 
     if dss_ln == 0xFFFF:
         assert code_point == 0x241B     # QRYDTA
-        if db_type == 'db2':
-            assert obj_ln == 32772      # 0x8004 protocol magic
-            obj = _recv_from_sock(sock, 32757)   # 0x7fff - 6 - 4
-            # !! assumes there is only 1 additional "page".. not sure what controls this
-            # !! worried it depends on QRYBLKSZ (which is 65535 below)
-            next_ln = int.from_bytes(_recv_from_sock(sock, 2), byteorder='big')
-            extra = _recv_from_sock(sock, next_ln-2)
-            obj += extra
-            if next_ln == 0x7ffe:
-                more_data = True
-        elif db_type == 'derby':
-            assert obj_ln == 32776      # 0x8008 ?
-            _recv_from_sock(sock, 4)    # length ?
-            obj = _recv_from_sock(sock, 32753)   # 0x7fff - 6 - 4 - 4
-            next_ln = int.from_bytes(_recv_from_sock(sock, 2), byteorder='big')
-            extra = _recv_from_sock(sock, next_ln - 2)
-            obj += extra
+        assert obj_ln == 32772      # 0x8004 protocol magic
+        obj = _recv_from_sock(sock, 32757)   # 0x7fff - 6 - 4
+        # !! assumes there is only 1 additional "page".. not sure what controls this
+        # !! worried it depends on QRYBLKSZ (which is 65535 below)
+        next_ln = int.from_bytes(_recv_from_sock(sock, 2), byteorder='big')
+        extra = _recv_from_sock(sock, next_ln-2)
+        obj += extra
+        if next_ln == 0x7ffe:
+            more_data = True
     else:
         obj = _recv_from_sock(sock, obj_ln - 4)
         if (len(obj) != dss_ln - 10) or (obj_ln != dss_ln - 6):

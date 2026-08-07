@@ -20,7 +20,7 @@ Installation
 
     $ pip install pydrda
 
-pyDes is required for Db2 connections and is installed automatically as a dependency.
+pyDes is required and is installed automatically as a dependency.
 
 
 Supported Databases
@@ -69,30 +69,6 @@ With SSL and client certificate
 
    conn = drda.connect(host='serverhost', database='dbname', use_ssl=True, ssl_client_cert_path='/some/what/path/cert.crt', user='user', password='password', port=xxxxx)
 
-
-
-Apache Derby
-==============
-
-https://db.apache.org/derby/
-
-You need to start derby as a network server.
-http://db.apache.org/derby/papers/DerbyTut/ns_intro.html#start_ns
-
-Example
-
-::
-
-   import drda
-
-   conn = drda.connect(host='serverhost', database='dbname', port=1527)
-   cur = conn.cursor()
-   cur.execute('select * from foo')
-   for r in cur.fetchall():
-       print(r[0], r[1])
-
-This driver can't execute with parameters against Apache Derby.
-
 Unit Tests
 ================
 
@@ -110,19 +86,3 @@ Execute test
 ::
 
    $ python test_db2.py
-
-Apache Derby
----------------
-
-Install Apatch Derby https://db.apache.org/derby/ and start as a server
-::
-
-   $ curl -O https://downloads.apache.org//db/derby/db-derby-10.17.1.0/db-derby-10.17.1.0-bin.tar.gz
-   $ tar zxf db-derby-10.17.1.0-bin.tar.gz
-   $ echo 'grant {permission java.lang.RuntimePermission "getenv.SOURCE_DATE_EPOCH", "read";};' > ${HOME}/.java.policy
-   $ db-derby-10.17.1.0-bin/bin/startNetworkServer &
-
-Execute test
-::
-
-   $ python test_derby.py
