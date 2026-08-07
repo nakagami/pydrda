@@ -48,3 +48,7 @@ jobs:
     - name: Test
       run: |
         python test_db2.py
+
+    - name: Test (asyncio)
+      run: |
+        python test_async_db2.py

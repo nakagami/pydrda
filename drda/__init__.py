@@ -120,3 +120,6 @@ class NotSupportedError(DatabaseError):
 
 def connect(host, database, port, user=None, password=None, use_ssl=False, ssl_client_cert_path=None, timeout=None):
     return Connection(host, database, port, user, password, use_ssl, ssl_client_cert_path, timeout)
+
+
+from drda import aio  # noqa: E402

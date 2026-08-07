@@ -69,6 +69,24 @@ With SSL and client certificate
 
    conn = drda.connect(host='serverhost', database='dbname', use_ssl=True, ssl_client_cert_path='/some/what/path/cert.crt', user='user', password='password', port=xxxxx)
 
+AsyncIO
++++++++++++++++++++++++++++++++++++++++++
+
+::
+
+   import asyncio
+   import drda.aio
+
+   async def main():
+       conn = await drda.aio.connect(host='serverhost', database='dbname', user='user', password='password', port=xxxxx, timeout=30)
+       cur = conn.cursor()
+       await cur.execute('select * from foo where name=?', ['alice'])
+       for r in await cur.fetchall():
+           print(r[0], r[1])
+       await conn.close()
+
+   asyncio.run(main())
+
 Unit Tests
 ================
 
@@ -86,3 +104,4 @@ Execute test
 ::
 
    $ python test_db2.py
+   $ python test_async_db2.py
