@@ -82,10 +82,12 @@ class TestAsyncDSS(unittest.TestCase):
             ddm.write_request_dss(expected, packet, 1, False, True)
 
             received = []
+            done = asyncio.Event()
 
             async def handle(reader, writer):
                 received.append(await reader.read(4096))
                 writer.close()
+                done.set()
 
             server = await asyncio.start_server(handle, '127.0.0.1', 0)
             port = server.sockets[0].getsockname()[1]
@@ -95,6 +97,7 @@ class TestAsyncDSS(unittest.TestCase):
                 next_id = await _write_request_dss(stream, packet, 1, False, True)
                 self.assertEqual(next_id, 2)
                 await stream.close()
+                await asyncio.wait_for(done.wait(), timeout=5)
             self.assertEqual(bytes(received[0]), bytes(expected.sent))
 
         asyncio.run(run())
