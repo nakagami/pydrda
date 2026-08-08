@@ -338,6 +338,10 @@ def packRDBCMM():
     return pack_dss_object(cp.RDBCMM, bytes())
 
 
+def packRDBRLLBCK():
+    return pack_dss_object(cp.RDBRLLBCK, bytes())
+
+
 def _packPKGNAMCSN(database, pkgid, pkgcnstkn, pkgsn):
     b = ("%-18s%-18s%-18s" % (database, "NULLID", pkgid)).encode('utf-8')
     if pkgcnstkn is None:

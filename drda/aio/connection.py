@@ -420,13 +420,6 @@ class AsyncConnection(Connection):
             cur_id = await _write_request_dss(
                 self.sock,
                 ddm.packSQLDTA(params_description, args, self.endian),
-                cur_id, False, False
-            )
-
-            cur_id = 1
-            cur_id = await _write_request_dss(
-                self.sock,
-                ddm.packRDBCMM(),
                 cur_id, False, True
             )
             await self._parse_response()
@@ -445,11 +438,6 @@ class AsyncConnection(Connection):
             cur_id = await _write_request_dss(
                 self.sock,
                 ddm.packSQLSTT(query),
-                cur_id, False, False
-            )
-            cur_id = await _write_request_dss(
-                self.sock,
-                ddm.packRDBCMM(),
                 cur_id, False, True
             )
             await self._parse_response()
@@ -495,14 +483,6 @@ class AsyncConnection(Connection):
             )
             rows, _, _ = await self._parse_response()
 
-            cur_id = 1
-            cur_id = await _write_request_dss(
-                self.sock,
-                ddm.packRDBCMM(),
-                cur_id, False, True
-            )
-            _, _, _ = await self._parse_response()
-
             return rows, description
         else:
             # Send all three together so Db2 includes EXTDTA (LOB data) in the
@@ -536,19 +516,32 @@ class AsyncConnection(Connection):
         return AsyncCursor(self)
 
     async def begin(self):
-        await self._execute("START TRANSACTION", [])
+        # DRDA starts a unit of work implicitly
+        pass
 
     async def commit(self):
-        await self._execute("COMMIT", [])
+        cur_id = 1
+        cur_id = await _write_request_dss(
+            self.sock,
+            ddm.packRDBCMM(),
+            cur_id, False, True
+        )
+        await self._parse_response()
 
     async def rollback(self):
-        await self._execute("ROLLBACK", [])
+        cur_id = 1
+        cur_id = await _write_request_dss(
+            self.sock,
+            ddm.packRDBRLLBCK(),
+            cur_id, False, True
+        )
+        await self._parse_response()
 
     async def close(self):
         cur_id = 1
         cur_id = await _write_request_dss(
             self.sock,
-            ddm.packRDBCMM(),
+            ddm.packRDBRLLBCK(),
             cur_id, False, True
         )
         await self._parse_response()
