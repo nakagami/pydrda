@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pydrda"
-version = "0.5.3"
+version = "0.6.0"
 description = "DRDA protocol database driver"
 readme = "README.rst"
 license = "MIT"

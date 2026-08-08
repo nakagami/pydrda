@@ -4,6 +4,8 @@ pydrda
 
 This is a DRDA protocol (https://en.wikipedia.org/wiki/DRDA) database driver.
 
+Currently, we support only DB2.
+
 - Pure python
 - Compliant with PEP-249 (https://www.python.org/dev/peps/pep-0249/)
 
