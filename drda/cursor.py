@@ -28,6 +28,7 @@ class Cursor:
         self.connection = connection
         self.description = []
         self._rows = []
+        self._rowcount = -1
         self.arraysize = 1
         self.query = None
 

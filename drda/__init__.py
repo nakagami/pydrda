@@ -30,7 +30,7 @@ VERSION = (0, 5, 3)
 __version__ = '%s.%s.%s' % VERSION
 apilevel = '2.0'
 threadsafety = 1
-paramstyle = 'format'
+paramstyle = 'qmark'
 
 
 Date = datetime.date
