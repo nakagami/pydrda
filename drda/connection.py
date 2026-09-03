@@ -235,7 +235,7 @@ class Connection:
 
         return secmec, sectkn
 
-    def __init__(self, host, database, port, user, password, use_ssl, ssl_client_cert_path, timeout):
+    def __init__(self, host, database, port=50000, user=None, password=None, use_ssl=False, ssl_client_cert_path=None, timeout=None):
         self.host = host
         self.database = (database + ' ' * 18)[:18]
         self.port = port

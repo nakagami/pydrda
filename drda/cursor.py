@@ -23,6 +23,27 @@
 ##############################################################################
 
 
+def _is_query(query):
+    s = query.strip()
+    while True:
+        if s.startswith('/*'):
+            end = s.find('*/')
+            if end != -1:
+                s = s[end + 2:].strip()
+                continue
+        elif s.startswith('--'):
+            end = s.find('\n')
+            if end != -1:
+                s = s[end + 1:].strip()
+                continue
+            else:
+                s = ''
+        break
+    s = s.lstrip('(').strip()
+    first_word = s.split()[0].upper() if s.split() else ''
+    return first_word in ('SELECT', 'WITH', 'VALUES')
+
+
 class Cursor:
     def __init__(self, connection):
         self.connection = connection
@@ -54,7 +75,7 @@ class Cursor:
 
     def execute(self, query, args=[]):
         self.query = query
-        if query.strip().split()[0].upper() == 'SELECT':
+        if _is_query(query):
             self._rows, self.description = self.connection._query(self.query, args)
         else:
             self.connection._execute(self.query, args)

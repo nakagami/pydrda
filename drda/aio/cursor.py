@@ -21,7 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 ##############################################################################
-from drda.cursor import Cursor
+from drda.cursor import Cursor, _is_query
 
 
 class AsyncCursor(Cursor):
@@ -33,7 +33,7 @@ class AsyncCursor(Cursor):
 
     async def execute(self, query, args=[]):
         self.query = query
-        if query.strip().split()[0].upper() == 'SELECT':
+        if _is_query(query):
             self._rows, self.description = await self.connection._query(self.query, args)
         else:
             await self.connection._execute(self.query, args)

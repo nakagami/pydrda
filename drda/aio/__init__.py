@@ -25,7 +25,7 @@ from drda.aio.connection import AsyncConnection
 from drda.aio.cursor import AsyncCursor
 
 
-async def connect(host, database, port, user=None, password=None, use_ssl=False, ssl_client_cert_path=None, timeout=None):
+async def connect(host, database, port=50000, user=None, password=None, use_ssl=False, ssl_client_cert_path=None, timeout=None):
     conn = AsyncConnection(host, database, port, user, password, use_ssl, ssl_client_cert_path, timeout)
     await conn._initialize()
     return conn
