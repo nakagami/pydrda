@@ -52,3 +52,7 @@ jobs:
     - name: Test (asyncio)
       run: |
         python test_async_db2.py
+
+    - name: Test (exceptions)
+      run: |
+        python test_exceptions.py

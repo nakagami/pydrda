@@ -66,14 +66,35 @@ ROWID = DBAPITypeObject()
 
 
 class Error(Exception):
-    def __init__(self, sqlcode, sqlstate, message):
-        self.sqlcode = sqlcode
-        self.sqlstate = sqlstate
-        self.message = message
+    def __init__(self, *args, **kwargs):
+        if len(args) == 3:
+            self.sqlcode, self.sqlstate, self.message = args
+        elif len(args) == 2:
+            self.sqlcode, self.message = args
+            self.sqlstate = kwargs.get('sqlstate')
+        elif len(args) == 1:
+            self.sqlcode = kwargs.get('sqlcode')
+            self.sqlstate = kwargs.get('sqlstate')
+            self.message = args[0]
+        elif len(args) == 0:
+            self.sqlcode = kwargs.get('sqlcode')
+            self.sqlstate = kwargs.get('sqlstate')
+            self.message = kwargs.get('message', '')
+        else:
+            self.sqlcode = kwargs.get('sqlcode')
+            self.sqlstate = kwargs.get('sqlstate')
+            self.message = ' '.join(str(a) for a in args)
         super(Error, self).__init__(str(self))
 
     def __str__(self):
-        return "SQLCODE=%d SQLSTATE=%s %s" % (self.sqlcode, self.sqlstate, self.message)
+        parts = []
+        if self.sqlcode is not None:
+            parts.append("SQLCODE=%s" % self.sqlcode)
+        if self.sqlstate is not None:
+            parts.append("SQLSTATE=%s" % self.sqlstate)
+        if self.message:
+            parts.append(str(self.message))
+        return " ".join(parts) if parts else str(self.message or '')
 
 
 class Warning(Exception):
@@ -93,8 +114,10 @@ class DisconnectByPeer(Warning):
 
 
 class InternalError(DatabaseError):
-    def __init__(self):
-        DatabaseError.__init__(self, -1, 'InternalError')
+    def __init__(self, *args, **kwargs):
+        if not args and not kwargs:
+            args = (-1, 'InternalError')
+        super(InternalError, self).__init__(*args, **kwargs)
 
 
 class OperationalError(DatabaseError):
@@ -114,8 +137,10 @@ class DataError(DatabaseError):
 
 
 class NotSupportedError(DatabaseError):
-    def __init__(self):
-        DatabaseError.__init__(self, 'NotSupportedError')
+    def __init__(self, *args, **kwargs):
+        if not args and not kwargs:
+            args = ('NotSupportedError',)
+        super(NotSupportedError, self).__init__(*args, **kwargs)
 
 
 def connect(host, database, port=50000, user=None, password=None, use_ssl=False, ssl_client_cert_path=None, timeout=None):
