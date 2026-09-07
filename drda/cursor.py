@@ -95,7 +95,9 @@ class Cursor:
             return self._rows.popleft()
         return None
 
-    def fetchmany(self, size=1):
+    def fetchmany(self, size=None):
+        if size is None:
+            size = self.arraysize
         rs = []
         for i in range(size):
             r = self.fetchone()
