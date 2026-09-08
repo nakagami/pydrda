@@ -24,6 +24,7 @@
 
 import datetime
 import decimal
+from . import utils
 from .connection import Connection
 
 VERSION = (0, 6, 2)
@@ -47,22 +48,81 @@ class DBAPITypeObject:
     def __init__(self, *values):
         self.values = values
 
-    def __cmp__(self, other):
-        if other in self.values:
-            return 0
-        if other < self.values:
-            return 1
-        else:
-            return -1
+    def __eq__(self, other):
+        if isinstance(other, DBAPITypeObject):
+            return self.values == other.values
+        return other in self.values
+
+    def __ne__(self, other):
+        return not (self == other)
+
+    def __hash__(self):
+        return hash(self.values)
+
+    def __repr__(self):
+        return f"<DBAPITypeObject {self.values}>"
 
 
-STRING = DBAPITypeObject(str)
-BINARY = DBAPITypeObject(bytes)
-NUMBER = DBAPITypeObject(int, decimal.Decimal)
-DATETIME = DBAPITypeObject(datetime.datetime, datetime.date, datetime.time)
-DATE = DBAPITypeObject(datetime.date)
-TIME = DBAPITypeObject(datetime.time)
-ROWID = DBAPITypeObject()
+STRING = DBAPITypeObject(
+    str,
+    utils.DRDA_TYPE_CHAR, utils.DRDA_TYPE_NCHAR,
+    utils.DRDA_TYPE_VARCHAR, utils.DRDA_TYPE_NVARCHAR,
+    utils.DRDA_TYPE_LONG, utils.DRDA_TYPE_NLONG,
+    utils.DRDA_TYPE_CSTR, utils.DRDA_TYPE_NCSTR,
+    utils.DRDA_TYPE_CLOBLOC, utils.DRDA_TYPE_NCLOBLOC,
+    utils.DRDA_TYPE_DBCSCLOBLOC, utils.DRDA_TYPE_NDBCSCLOBLOC,
+    utils.DRDA_TYPE_GRAPHIC, utils.DRDA_TYPE_NGRAPHIC,
+    utils.DRDA_TYPE_VARGRAPH, utils.DRDA_TYPE_NVARGRAPH,
+    utils.DRDA_TYPE_LONGRAPH, utils.DRDA_TYPE_NLONGRAPH,
+    utils.DRDA_TYPE_MIX, utils.DRDA_TYPE_NMIX,
+    utils.DRDA_TYPE_VARMIX, utils.DRDA_TYPE_NVARMIX,
+    utils.DRDA_TYPE_LONGMIX, utils.DRDA_TYPE_NLONGMIX,
+    utils.DRDA_TYPE_CSTRMIX, utils.DRDA_TYPE_NCSTRMIX,
+    utils.DRDA_TYPE_LSTR, utils.DRDA_TYPE_NLSTR,
+    utils.DRDA_TYPE_LSTRMIX, utils.DRDA_TYPE_NLSTRMIX,
+    utils.DRDA_TYPE_LOBCSBCS, utils.DRDA_TYPE_NLOBCSBCS,
+)
+BINARY = DBAPITypeObject(
+    bytes, bytearray, memoryview,
+    utils.DRDA_TYPE_FIXBYTE, utils.DRDA_TYPE_NFIXBYTE,
+    utils.DRDA_TYPE_VARBYTE, utils.DRDA_TYPE_NVARBYTE,
+    utils.DRDA_TYPE_LONGVARBYTE, utils.DRDA_TYPE_NLONGVARBYTE,
+    utils.DRDA_TYPE_LOBLOC, utils.DRDA_TYPE_NLOBLOC,
+    utils.DRDA_TYPE_FIXBYTES, utils.DRDA_TYPE_NFIXBYTES,
+    utils.DRDA_TYPE_VARBINARY, utils.DRDA_TYPE_NVARBINARY,
+    utils.DRDA_TYPE_LOBBYTES, utils.DRDA_TYPE_NLOBBYTES,
+)
+NUMBER = DBAPITypeObject(
+    int, float, decimal.Decimal,
+    utils.DRDA_TYPE_INTEGER, utils.DRDA_TYPE_NINTEGER,
+    utils.DRDA_TYPE_SMALL, utils.DRDA_TYPE_NSMALL,
+    utils.DRDA_TYPE_1BYTE_INT, utils.DRDA_TYPE_N1BYTE_INT,
+    utils.DRDA_TYPE_INTEGER8, utils.DRDA_TYPE_NINTEGER8,
+    utils.DRDA_TYPE_FLOAT4, utils.DRDA_TYPE_NFLOAT4,
+    utils.DRDA_TYPE_FLOAT8, utils.DRDA_TYPE_NFLOAT8,
+    utils.DRDA_TYPE_FLOAT16, utils.DRDA_TYPE_NFLOAT16,
+    utils.DRDA_TYPE_DECIMAL, utils.DRDA_TYPE_NDECIMAL,
+    utils.DRDA_TYPE_ZDECIMAL, utils.DRDA_TYPE_NZDECIMAL,
+    utils.DRDA_TYPE_NUMERIC_CHAR, utils.DRDA_TYPE_NNUMERIC_CHAR,
+    utils.DRDA_TYPE_DECFLOAT, utils.DRDA_TYPE_NDECFLOAT,
+)
+DATETIME = DBAPITypeObject(
+    datetime.datetime, datetime.date, datetime.time,
+    utils.DRDA_TYPE_DATE, utils.DRDA_TYPE_NDATE,
+    utils.DRDA_TYPE_TIME, utils.DRDA_TYPE_NTIME,
+    utils.DRDA_TYPE_TIMESTAMP, utils.DRDA_TYPE_NTIMESTAMP,
+)
+DATE = DBAPITypeObject(
+    datetime.date,
+    utils.DRDA_TYPE_DATE, utils.DRDA_TYPE_NDATE,
+)
+TIME = DBAPITypeObject(
+    datetime.time,
+    utils.DRDA_TYPE_TIME, utils.DRDA_TYPE_NTIME,
+)
+ROWID = DBAPITypeObject(
+    utils.DRDA_TYPE_ROWID, utils.DRDA_TYPE_NROWID,
+)
 
 
 class Error(Exception):

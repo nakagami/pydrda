@@ -25,10 +25,13 @@
 """Tests for PEP 249 exceptions"""
 import asyncio
 import collections
+import datetime
+import decimal
 import unittest
 import drda
 import drda.cursor
 import drda.aio.cursor
+from drda import utils
 
 
 class TestExceptions(unittest.TestCase):
@@ -191,6 +194,95 @@ class TestExceptions(unittest.TestCase):
             self.assertEqual(await cur.fetchmany(), [])
 
         asyncio.run(run())
+
+    def test_dbapi_type_objects_python_types(self):
+        # Bidirectional equality for Python types
+        self.assertEqual(drda.STRING, str)
+        self.assertEqual(str, drda.STRING)
+        self.assertNotEqual(drda.STRING, int)
+        self.assertNotEqual(int, drda.STRING)
+
+        self.assertEqual(drda.NUMBER, int)
+        self.assertEqual(int, drda.NUMBER)
+        self.assertEqual(drda.NUMBER, float)
+        self.assertEqual(float, drda.NUMBER)
+        self.assertEqual(drda.NUMBER, decimal.Decimal)
+        self.assertEqual(decimal.Decimal, drda.NUMBER)
+        self.assertNotEqual(drda.NUMBER, str)
+
+        self.assertEqual(drda.DATETIME, datetime.datetime)
+        self.assertEqual(datetime.datetime, drda.DATETIME)
+        self.assertEqual(drda.DATETIME, datetime.date)
+        self.assertEqual(drda.DATETIME, datetime.time)
+
+        self.assertEqual(drda.DATE, datetime.date)
+        self.assertEqual(datetime.date, drda.DATE)
+
+        self.assertEqual(drda.TIME, datetime.time)
+        self.assertEqual(datetime.time, drda.TIME)
+
+        self.assertEqual(drda.BINARY, bytes)
+        self.assertEqual(bytes, drda.BINARY)
+        self.assertEqual(drda.BINARY, bytearray)
+        self.assertEqual(drda.BINARY, memoryview)
+
+    def test_dbapi_type_objects_drda_constants(self):
+        # Bidirectional equality for DRDA internal types
+        self.assertEqual(drda.STRING, utils.DRDA_TYPE_CHAR)
+        self.assertEqual(utils.DRDA_TYPE_VARCHAR, drda.STRING)
+        self.assertEqual(drda.STRING, utils.DRDA_TYPE_CLOBLOC)
+        self.assertEqual(drda.STRING, utils.DRDA_TYPE_LOBCSBCS)
+
+        self.assertEqual(drda.NUMBER, utils.DRDA_TYPE_INTEGER)
+        self.assertEqual(utils.DRDA_TYPE_SMALL, drda.NUMBER)
+        self.assertEqual(drda.NUMBER, utils.DRDA_TYPE_FLOAT8)
+        self.assertEqual(drda.NUMBER, utils.DRDA_TYPE_DECIMAL)
+        self.assertEqual(drda.NUMBER, utils.DRDA_TYPE_DECFLOAT)
+
+        self.assertEqual(drda.DATETIME, utils.DRDA_TYPE_DATE)
+        self.assertEqual(drda.DATETIME, utils.DRDA_TYPE_TIME)
+        self.assertEqual(drda.DATETIME, utils.DRDA_TYPE_TIMESTAMP)
+
+        self.assertEqual(drda.DATE, utils.DRDA_TYPE_DATE)
+        self.assertEqual(drda.TIME, utils.DRDA_TYPE_TIME)
+
+        self.assertEqual(drda.BINARY, utils.DRDA_TYPE_FIXBYTE)
+        self.assertEqual(drda.BINARY, utils.DRDA_TYPE_VARBYTE)
+        self.assertEqual(drda.BINARY, utils.DRDA_TYPE_LOBLOC)
+        self.assertEqual(drda.BINARY, utils.DRDA_TYPE_LOBBYTES)
+
+        self.assertEqual(drda.ROWID, utils.DRDA_TYPE_ROWID)
+        self.assertEqual(drda.ROWID, utils.DRDA_TYPE_NROWID)
+
+    def test_dbapi_type_objects_hashable(self):
+        # Type objects can be used as dict keys (common in ORMs)
+        type_mapping = {
+            drda.STRING: "string",
+            drda.NUMBER: "number",
+            drda.DATETIME: "datetime",
+            drda.BINARY: "binary",
+            drda.ROWID: "rowid",
+        }
+        self.assertEqual(type_mapping[drda.STRING], "string")
+        self.assertEqual(type_mapping[drda.NUMBER], "number")
+        self.assertEqual(type_mapping[drda.DATETIME], "datetime")
+        self.assertEqual(type_mapping[drda.BINARY], "binary")
+        self.assertEqual(type_mapping[drda.ROWID], "rowid")
+
+    def test_dbapi_type_objects_cursor_description(self):
+        # Simulates checking cursor.description[i][1] == TYPE_OBJECT
+        simulated_description = [
+            ("ID", utils.DRDA_TYPE_INTEGER, None, None, None, None, None),
+            ("NAME", utils.DRDA_TYPE_VARCHAR, None, None, None, None, None),
+            ("CREATED_AT", utils.DRDA_TYPE_TIMESTAMP, None, None, None, None, None),
+            ("DATA", utils.DRDA_TYPE_LOBBYTES, None, None, None, None, None),
+            ("ROW_ID", utils.DRDA_TYPE_ROWID, None, None, None, None, None),
+        ]
+        self.assertEqual(simulated_description[0][1], drda.NUMBER)
+        self.assertEqual(simulated_description[1][1], drda.STRING)
+        self.assertEqual(simulated_description[2][1], drda.DATETIME)
+        self.assertEqual(simulated_description[3][1], drda.BINARY)
+        self.assertEqual(simulated_description[4][1], drda.ROWID)
 
 
 if __name__ == "__main__":
