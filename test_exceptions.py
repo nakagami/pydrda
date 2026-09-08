@@ -24,6 +24,7 @@
 ##############################################################################
 """Tests for PEP 249 exceptions"""
 import asyncio
+import collections
 import unittest
 import drda
 import drda.cursor
@@ -143,6 +144,53 @@ class TestExceptions(unittest.TestCase):
         self.assertIn("08003:Lost connection", str(ctx.exception))
         self.assertIsNone(ctx.exception.sqlcode)
         self.assertIsNone(ctx.exception.sqlstate)
+
+    def test_fetchmany_respects_arraysize(self):
+        class FakeConn:
+            def is_connect(self):
+                return True
+
+        cur = drda.cursor.Cursor(FakeConn())
+        cur._rows = collections.deque([(i,) for i in range(10)])
+        self.assertEqual(cur.arraysize, 1)
+
+        # Default size=None uses arraysize (1)
+        self.assertEqual(cur.fetchmany(), [(0,)])
+
+        # Setting arraysize changes default fetch quantity
+        cur.arraysize = 3
+        self.assertEqual(cur.fetchmany(), [(1,), (2,), (3,)])
+
+        # Explicit size overrides arraysize
+        self.assertEqual(cur.fetchmany(2), [(4,), (5,)])
+        self.assertEqual(cur.fetchmany(), [(6,), (7,), (8,)])
+        self.assertEqual(cur.fetchmany(), [(9,)])
+        self.assertEqual(cur.fetchmany(), [])
+
+    def test_async_fetchmany_respects_arraysize(self):
+        class FakeConn:
+            def is_connect(self):
+                return True
+
+        async def run():
+            cur = drda.aio.cursor.AsyncCursor(FakeConn())
+            cur._rows = collections.deque([(i,) for i in range(10)])
+            self.assertEqual(cur.arraysize, 1)
+
+            # Default size=None uses arraysize (1)
+            self.assertEqual(await cur.fetchmany(), [(0,)])
+
+            # Setting arraysize changes default fetch quantity
+            cur.arraysize = 3
+            self.assertEqual(await cur.fetchmany(), [(1,), (2,), (3,)])
+
+            # Explicit size overrides arraysize
+            self.assertEqual(await cur.fetchmany(2), [(4,), (5,)])
+            self.assertEqual(await cur.fetchmany(), [(6,), (7,), (8,)])
+            self.assertEqual(await cur.fetchmany(), [(9,)])
+            self.assertEqual(await cur.fetchmany(), [])
+
+        asyncio.run(run())
 
 
 if __name__ == "__main__":

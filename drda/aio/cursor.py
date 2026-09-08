@@ -50,7 +50,9 @@ class AsyncCursor(Cursor):
             return self._rows.popleft()
         return None
 
-    async def fetchmany(self, size=1):
+    async def fetchmany(self, size=None):
+        if size is None:
+            size = self.arraysize
         rs = []
         for i in range(size):
             r = await self.fetchone()
