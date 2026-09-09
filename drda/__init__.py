@@ -27,7 +27,7 @@ import decimal
 from . import utils
 from .connection import Connection
 
-VERSION = (0, 6, 2)
+VERSION = (0, 6, 3)
 __version__ = '%s.%s.%s' % VERSION
 apilevel = '2.0'
 threadsafety = 1
