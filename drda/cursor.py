@@ -63,14 +63,14 @@ class Cursor:
         from drda import NotSupportedError
         raise NotSupportedError()
 
-    def nextset(self, procname, args=()):
+    def nextset(self, *args, **kwargs):
         from drda import NotSupportedError
         raise NotSupportedError()
 
-    def setinputsizes(sizes):
+    def setinputsizes(self, sizes):
         pass
 
-    def setoutputsize(size, column=None):
+    def setoutputsize(self, size, column=None):
         pass
 
     def execute(self, query, args=[]):
