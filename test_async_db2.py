@@ -249,6 +249,15 @@ class TestAsyncBasic(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(await cur.fetchall(), [])
         self.assertTrue(cur.closed)
 
+    async def test_dict_cursor(self):
+        cur = self.connection.cursor(drda.aio.AsyncDictCursor)
+        await cur.execute("INSERT INTO test_basic (s, i) VALUES ('test', 42)")
+        await cur.execute("SELECT s, i FROM test_basic")
+        row = await cur.fetchone()
+        self.assertIsInstance(row, dict)
+        self.assertEqual(row['S'], 'test')
+        self.assertEqual(row['I'], 42)
+
 
 class TestAsyncDataType(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):

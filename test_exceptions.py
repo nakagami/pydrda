@@ -285,5 +285,165 @@ class TestExceptions(unittest.TestCase):
         self.assertEqual(simulated_description[4][1], drda.ROWID)
 
 
+class TestDictCursor(unittest.TestCase):
+    """Tests for DictCursor and AsyncDictCursor (offline, no server needed)."""
+
+    def test_exports(self):
+        self.assertTrue(hasattr(drda, "Cursor"))
+        self.assertTrue(hasattr(drda, "DictCursor"))
+        self.assertTrue(issubclass(drda.DictCursor, drda.Cursor))
+        self.assertTrue(hasattr(drda.aio, "AsyncCursor"))
+        self.assertTrue(hasattr(drda.aio, "AsyncDictCursor"))
+        self.assertTrue(issubclass(drda.aio.AsyncDictCursor, drda.aio.AsyncCursor))
+
+    def test_connection_cursor_factory(self):
+        class FakeConn(drda.Connection):
+            def __init__(self):
+                self.sock = None
+
+        conn = FakeConn()
+        # Default is Cursor
+        c1 = conn.cursor()
+        self.assertIsInstance(c1, drda.Cursor)
+        self.assertNotIsInstance(c1, drda.DictCursor)
+
+        # Positional factory
+        c2 = conn.cursor(drda.DictCursor)
+        self.assertIsInstance(c2, drda.DictCursor)
+
+        # Named cursor_factory
+        c3 = conn.cursor(cursor_factory=drda.DictCursor)
+        self.assertIsInstance(c3, drda.DictCursor)
+
+        # Named factory
+        c4 = conn.cursor(factory=drda.DictCursor)
+        self.assertIsInstance(c4, drda.DictCursor)
+
+    def test_async_connection_cursor_factory(self):
+        class FakeAsyncConn(drda.aio.AsyncConnection):
+            def __init__(self):
+                self.sock = None
+
+        conn = FakeAsyncConn()
+        c1 = conn.cursor()
+        self.assertIsInstance(c1, drda.aio.AsyncCursor)
+        self.assertNotIsInstance(c1, drda.aio.AsyncDictCursor)
+
+        c2 = conn.cursor(drda.aio.AsyncDictCursor)
+        self.assertIsInstance(c2, drda.aio.AsyncDictCursor)
+
+        c3 = conn.cursor(cursor_factory=drda.aio.AsyncDictCursor)
+        self.assertIsInstance(c3, drda.aio.AsyncDictCursor)
+
+        c4 = conn.cursor(factory=drda.aio.AsyncDictCursor)
+        self.assertIsInstance(c4, drda.aio.AsyncDictCursor)
+
+    def test_dict_cursor_fetch_methods(self):
+        class FakeConn:
+            def is_connect(self):
+                return True
+
+        cur = drda.DictCursor(FakeConn())
+        cur.description = [
+            ("ID", utils.DRDA_TYPE_INTEGER, None, None, None, None, None),
+            ("NAME", utils.DRDA_TYPE_VARCHAR, None, None, None, None, None),
+        ]
+        cur._rows = collections.deque([
+            (1, "Alice"),
+            (2, "Bob"),
+            (3, "Charlie"),
+            (4, "Dave"),
+            (5, "Eve"),
+        ])
+
+        # fetchone
+        r1 = cur.fetchone()
+        self.assertEqual(r1, {"ID": 1, "NAME": "Alice"})
+
+        # fetchmany with explicit size
+        r2 = cur.fetchmany(2)
+        self.assertEqual(r2, [
+            {"ID": 2, "NAME": "Bob"},
+            {"ID": 3, "NAME": "Charlie"},
+        ])
+
+        # fetchall
+        r3 = cur.fetchall()
+        self.assertEqual(r3, [
+            {"ID": 4, "NAME": "Dave"},
+            {"ID": 5, "NAME": "Eve"},
+        ])
+
+        # Empty fetches
+        self.assertIsNone(cur.fetchone())
+        self.assertEqual(cur.fetchmany(), [])
+        self.assertEqual(cur.fetchall(), [])
+
+    def test_dict_cursor_iteration(self):
+        class FakeConn:
+            def is_connect(self):
+                return True
+
+        cur = drda.DictCursor(FakeConn())
+        cur.description = [("VAL", utils.DRDA_TYPE_INTEGER, None, None, None, None, None)]
+        cur._rows = collections.deque([(10,), (20,)])
+
+        collected = list(cur)
+        self.assertEqual(collected, [{"VAL": 10}, {"VAL": 20}])
+
+    def test_async_dict_cursor_fetch_methods(self):
+        class FakeConn:
+            def is_connect(self):
+                return True
+
+        async def run():
+            cur = drda.aio.AsyncDictCursor(FakeConn())
+            cur.description = [
+                ("A", utils.DRDA_TYPE_INTEGER, None, None, None, None, None),
+                ("B", utils.DRDA_TYPE_VARCHAR, None, None, None, None, None),
+            ]
+            cur._rows = collections.deque([
+                (100, "X"),
+                (200, "Y"),
+                (300, "Z"),
+            ])
+
+            # fetchone
+            r1 = await cur.fetchone()
+            self.assertEqual(r1, {"A": 100, "B": "X"})
+
+            # fetchmany
+            r2 = await cur.fetchmany(1)
+            self.assertEqual(r2, [{"A": 200, "B": "Y"}])
+
+            # fetchall
+            r3 = await cur.fetchall()
+            self.assertEqual(r3, [{"A": 300, "B": "Z"}])
+
+            # Empty fetches
+            self.assertIsNone(await cur.fetchone())
+            self.assertEqual(await cur.fetchmany(), [])
+            self.assertEqual(await cur.fetchall(), [])
+
+        asyncio.run(run())
+
+    def test_async_dict_cursor_iteration(self):
+        class FakeConn:
+            def is_connect(self):
+                return True
+
+        async def run():
+            cur = drda.aio.AsyncDictCursor(FakeConn())
+            cur.description = [("V", utils.DRDA_TYPE_VARCHAR, None, None, None, None, None)]
+            cur._rows = collections.deque([("first",), ("second",)])
+
+            collected = []
+            async for row in cur:
+                collected.append(row)
+            self.assertEqual(collected, [{"V": "first"}, {"V": "second"}])
+
+        asyncio.run(run())
+
+
 if __name__ == "__main__":
     unittest.main()
