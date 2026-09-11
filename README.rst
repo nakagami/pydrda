@@ -126,6 +126,37 @@ AsyncIO
 
    asyncio.run(main())
 
+Dictionary Cursor
++++++++++++++++++++++++++++++++++++++++++
+
+To fetch query results as Python dictionaries instead of tuples:
+
+::
+
+   import drda
+
+   with drda.connect(host='serverhost', database='dbname', user='user', password='password', port=xxxxx) as conn:
+       with conn.cursor(drda.DictCursor) as cur:
+           cur.execute('select * from foo where name=?', ['alice'])
+           for r in cur:
+               print(r['ID'], r['NAME'])
+
+For asyncio, use ``drda.aio.AsyncDictCursor``:
+
+::
+
+   import asyncio
+   import drda.aio
+
+   async def main():
+       async with await drda.aio.connect(host='serverhost', database='dbname', user='user', password='password', port=xxxxx) as conn:
+           async with conn.cursor(drda.aio.AsyncDictCursor) as cur:
+               await cur.execute('select * from foo where name=?', ['alice'])
+               async for r in cur:
+                   print(r['ID'], r['NAME'])
+
+   asyncio.run(main())
+
 Unit Tests
 ================
 

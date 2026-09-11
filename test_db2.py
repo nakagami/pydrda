@@ -608,6 +608,15 @@ class TestDb212(unittest.TestCase):
         row = cur.fetchone()
         self.assertIn('hello', row[0])
 
+    def test_dict_cursor(self):
+        cur = self.connection.cursor(drda.DictCursor)
+        cur.execute("INSERT INTO test_basic (s, i) VALUES ('test', 42)")
+        cur.execute("SELECT s, i FROM test_basic")
+        row = cur.fetchone()
+        self.assertIsInstance(row, dict)
+        self.assertEqual(row['S'], 'test')
+        self.assertEqual(row['I'], 42)
+
 
 if __name__ == "__main__":
     import unittest

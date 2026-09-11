@@ -22,7 +22,7 @@
 # SOFTWARE.
 ##############################################################################
 from drda.aio.connection import AsyncConnection
-from drda.aio.cursor import AsyncCursor
+from drda.aio.cursor import AsyncCursor, AsyncDictCursor
 
 
 async def connect(host, database, port=50000, user=None, password=None, use_ssl=False, ssl_client_cert_path=None, timeout=None):

@@ -310,6 +310,14 @@ class TestAsyncDataType(unittest.IsolatedAsyncioTestCase):
         await cur.execute("SELECT * FROM test_bool")
         self.assertEqual(await cur.fetchall(), [(True, False, None)])
 
+    async def test_dict_cursor(self):
+        cur = self.connection.cursor(drda.aio.AsyncDictCursor)
+        await cur.execute("SELECT * FROM test_bool")
+        rows = await cur.fetchall()
+        self.assertEqual(len(rows), 1)
+        self.assertIsInstance(rows[0], dict)
+        self.assertEqual(rows[0], {"B1": True, "B2": False, "B3": None})
+
 
 if __name__ == "__main__":
     unittest.main()
