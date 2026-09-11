@@ -162,6 +162,15 @@ class TestBasic(unittest.TestCase):
             self.assertEqual(r, (s,))
         self.assertEqual(len(results), count)
 
+    def test_dict_cursor(self):
+        cur = self.connection.cursor(drda.DictCursor)
+        cur.execute("INSERT INTO test_basic (s, i) VALUES ('test', 42)")
+        cur.execute("SELECT s, i FROM test_basic")
+        row = cur.fetchone()
+        self.assertIsInstance(row, dict)
+        self.assertEqual(row['S'], 'test')
+        self.assertEqual(row['I'], 42)
+
 
 class TestDataType(unittest.TestCase):
     def setUp(self):
@@ -607,15 +616,6 @@ class TestDb212(unittest.TestCase):
         cur.execute("SELECT XMLSERIALIZE(x AS CLOB) FROM test_xml")
         row = cur.fetchone()
         self.assertIn('hello', row[0])
-
-    def test_dict_cursor(self):
-        cur = self.connection.cursor(drda.DictCursor)
-        cur.execute("INSERT INTO test_basic (s, i) VALUES ('test', 42)")
-        cur.execute("SELECT s, i FROM test_basic")
-        row = cur.fetchone()
-        self.assertIsInstance(row, dict)
-        self.assertEqual(row['S'], 'test')
-        self.assertEqual(row['I'], 42)
 
 
 if __name__ == "__main__":
