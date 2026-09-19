@@ -26,6 +26,7 @@ import datetime
 import decimal
 from . import utils
 from .connection import Connection
+from .cursor import Cursor, DictCursor
 
 VERSION = (0, 6, 2)
 __version__ = '%s.%s.%s' % VERSION

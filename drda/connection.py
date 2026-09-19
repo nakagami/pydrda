@@ -495,8 +495,9 @@ class Connection:
     def is_connect(self):
         return bool(self.sock)
 
-    def cursor(self):
-        return Cursor(self)
+    def cursor(self, factory=None, cursor_factory=None):
+        cur_factory = factory or cursor_factory or Cursor
+        return cur_factory(self)
 
     def begin(self):
         # DRDA starts a unit of work implicitly
