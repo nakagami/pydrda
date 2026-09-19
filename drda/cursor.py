@@ -63,14 +63,14 @@ class Cursor:
         from drda import NotSupportedError
         raise NotSupportedError()
 
-    def nextset(self, procname, args=()):
+    def nextset(self, *args, **kwargs):
         from drda import NotSupportedError
         raise NotSupportedError()
 
-    def setinputsizes(sizes):
+    def setinputsizes(self, sizes):
         pass
 
-    def setoutputsize(size, column=None):
+    def setoutputsize(self, size, column=None):
         pass
 
     def execute(self, query, args=[]):
@@ -130,3 +130,18 @@ class Cursor:
         if not r:
             raise StopIteration()
         return r
+
+
+class DictCursor(Cursor):
+    def _row_to_dict(self, row):
+        if row is None:
+            return None
+        return {d[0]: val for d, val in zip(self.description, row)}
+
+    def fetchone(self):
+        row = super().fetchone()
+        return self._row_to_dict(row)
+
+    def fetchall(self):
+        rows = super().fetchall()
+        return [self._row_to_dict(r) for r in rows]

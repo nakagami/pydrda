@@ -77,3 +77,18 @@ class AsyncCursor(Cursor):
         if not r:
             raise StopAsyncIteration()
         return r
+
+
+class AsyncDictCursor(AsyncCursor):
+    def _row_to_dict(self, row):
+        if row is None:
+            return None
+        return {d[0]: val for d, val in zip(self.description, row)}
+
+    async def fetchone(self):
+        row = await super().fetchone()
+        return self._row_to_dict(row)
+
+    async def fetchall(self):
+        rows = await super().fetchall()
+        return [self._row_to_dict(r) for r in rows]
