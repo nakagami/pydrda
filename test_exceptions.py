@@ -22,7 +22,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 ##############################################################################
-"""Tests for PEP 249 exceptions"""
+"""Tests for PEP 249 compliance (offline, no database server required)"""
 import asyncio
 import collections
 import datetime
@@ -35,7 +35,7 @@ from drda import utils
 
 
 class TestExceptions(unittest.TestCase):
-    """PEP 249 exception hierarchy and instantiation tests (offline, no server needed)."""
+    """PEP 249 compliance tests (exceptions, types, cursor methods; offline)."""
 
     def test_pep249_inheritance(self):
         self.assertTrue(issubclass(drda.Error, Exception))
@@ -129,8 +129,28 @@ class TestExceptions(unittest.TestCase):
         cur = drda.cursor.Cursor(None)
         with self.assertRaises(drda.NotSupportedError):
             cur.callproc("test_proc")
+        # Standard PEP 249: nextset() without arguments
+        with self.assertRaises(drda.NotSupportedError):
+            cur.nextset()
+        # With optional arguments
         with self.assertRaises(drda.NotSupportedError):
             cur.nextset("test_proc")
+
+    def test_cursor_setinputsizes_and_setoutputsize(self):
+        cur = drda.cursor.Cursor(None)
+        cur.setinputsizes([10, 20])
+        cur.setoutputsize(100)
+        cur.setoutputsize(100, 1)
+
+    def test_async_cursor_methods(self):
+        cur = drda.aio.cursor.AsyncCursor(None)
+        with self.assertRaises(drda.NotSupportedError):
+            cur.callproc("test_proc")
+        with self.assertRaises(drda.NotSupportedError):
+            cur.nextset()
+        cur.setinputsizes([10, 20])
+        cur.setoutputsize(100)
+        cur.setoutputsize(100, 1)
 
     def test_cursor_lost_connection_operational_error(self):
         cur = drda.cursor.Cursor(None)
