@@ -23,7 +23,14 @@
 ##############################################################################
 
 
-def _is_query(query):
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from drda.connection import Connection
+
+
+def _is_query(query: str) -> bool:
     s = query.strip()
     while True:
         if s.startswith('/*'):
@@ -45,49 +52,49 @@ def _is_query(query):
 
 
 class Cursor:
-    def __init__(self, connection):
-        self.connection = connection
-        self.description = []
-        self._rows = []
-        self._rowcount = -1
-        self.arraysize = 1
-        self.query = None
+    def __init__(self, connection: 'Connection | None') -> None:
+        self.connection: 'Connection | None' = connection
+        self.description: list[tuple] = []
+        self._rows: Any = []
+        self._rowcount: int = -1
+        self.arraysize: int = 1
+        self.query: str | None = None
 
-    def __enter__(self):
+    def __enter__(self) -> 'Cursor':
         return self
 
-    def __exit__(self, exc, value, traceback):
+    def __exit__(self, exc: Any, value: Any, traceback: Any) -> None:
         self.close()
 
-    def callproc(self, procname, args=()):
+    def callproc(self, procname: str, args: Sequence[Any] = ()) -> Any:
         from drda import NotSupportedError
         raise NotSupportedError()
 
-    def nextset(self, *args, **kwargs):
+    def nextset(self, *args: Any, **kwargs: Any) -> None:
         from drda import NotSupportedError
         raise NotSupportedError()
 
-    def setinputsizes(self, sizes):
+    def setinputsizes(self, sizes: Any) -> None:
         pass
 
-    def setoutputsize(self, size, column=None):
+    def setoutputsize(self, size: Any, column: Any | None = None) -> None:
         pass
 
-    def execute(self, query, args=[]):
+    def execute(self, query: str, args: Sequence[Any] | None = None) -> None:
         self.query = query
         if _is_query(query):
             self._rows, self.description = self.connection._query(self.query, args)
         else:
             self.connection._execute(self.query, args)
 
-    def executemany(self, query, seq_of_params):
+    def executemany(self, query: str, seq_of_params: Sequence[Sequence[Any]]) -> None:
         rowcount = 0
         for params in seq_of_params:
             self.execute(query, params)
             rowcount += self._rowcount
         self._rowcount = rowcount
 
-    def fetchone(self):
+    def fetchone(self) -> tuple[Any, ...] | None:
         from drda import OperationalError
         if not self.connection or not self.connection.is_connect():
             raise OperationalError(u"08003:Lost connection")
@@ -95,7 +102,7 @@ class Cursor:
             return self._rows.popleft()
         return None
 
-    def fetchmany(self, size=None):
+    def fetchmany(self, size: int | None = None) -> list[tuple[Any, ...]]:
         if size is None:
             size = self.arraysize
         rs = []
@@ -106,26 +113,26 @@ class Cursor:
             rs.append(r)
         return rs
 
-    def fetchall(self):
+    def fetchall(self) -> list[tuple[Any, ...]]:
         r = list(self._rows)
         self._rows.clear()
         return r
 
-    def close(self):
+    def close(self) -> None:
         self.connection = None
 
     @property
-    def rowcount(self):
+    def rowcount(self) -> int:
         return self._rowcount
 
     @property
-    def closed(self):
+    def closed(self) -> bool:
         return self.connection is None or not self.connection.is_connect()
 
-    def __iter__(self):
+    def __iter__(self) -> 'Cursor':
         return self
 
-    def __next__(self):
+    def __next__(self) -> tuple[Any, ...]:
         r = self.fetchone()
         if not r:
             raise StopIteration()
@@ -133,15 +140,15 @@ class Cursor:
 
 
 class DictCursor(Cursor):
-    def _row_to_dict(self, row):
+    def _row_to_dict(self, row: tuple[Any, ...] | None) -> dict[str, Any] | None:
         if row is None:
             return None
         return {d[0]: val for d, val in zip(self.description, row)}
 
-    def fetchone(self):
+    def fetchone(self) -> dict[str, Any] | None:
         row = super().fetchone()
         return self._row_to_dict(row)
 
-    def fetchall(self):
+    def fetchall(self) -> list[dict[str, Any]]:
         rows = super().fetchall()
         return [self._row_to_dict(r) for r in rows]

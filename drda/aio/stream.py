@@ -28,16 +28,23 @@ import asyncio
 
 class AsyncSocketStream:
     "asyncio based asynchronous socket stream"
-    def __init__(self, host, port, timeout=None, use_ssl=False, ssl_client_cert_path=None):
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        timeout: float | None = None,
+        use_ssl: bool = False,
+        ssl_client_cert_path: str | None = None
+    ) -> None:
         self.host = host
         self.port = port
         self.timeout = timeout
         self.use_ssl = use_ssl
         self.ssl_client_cert_path = ssl_client_cert_path
-        self._reader = None
-        self._writer = None
+        self._reader: asyncio.StreamReader | None = None
+        self._writer: asyncio.StreamWriter | None = None
 
-    async def connect(self):
+    async def connect(self) -> None:
         ssl_context = None
         server_hostname = None
         if self.use_ssl:
@@ -60,21 +67,23 @@ class AsyncSocketStream:
         if sock is not None:
             sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
-    async def recv(self, nbytes):
+    async def recv(self, nbytes: int) -> bytes:
         "Receive up to nbytes (may return less if the peer closed the connection)"
         received = bytearray()
         while len(received) < nbytes:
+            assert self._reader is not None
             chunk = await self._reader.read(nbytes - len(received))
             if not chunk:
                 break
             received += chunk
         return bytes(received)
 
-    async def send(self, b):
+    async def send(self, b: bytes) -> None:
+        assert self._writer is not None
         self._writer.write(b)
         await self._writer.drain()
 
-    async def close(self):
+    async def close(self) -> None:
         if self._writer is not None:
             self._writer.close()
             try:
@@ -84,5 +93,5 @@ class AsyncSocketStream:
             self._reader = None
             self._writer = None
 
-    def __bool__(self):
+    def __bool__(self) -> bool:
         return self._writer is not None and not self._writer.is_closing()

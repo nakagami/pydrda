@@ -27,6 +27,8 @@ import ssl
 import platform
 import locale
 import collections
+from collections.abc import Sequence
+from typing import Any
 
 from drda import codepoint as cp
 from drda import consts
@@ -235,7 +237,17 @@ class Connection:
 
         return secmec, sectkn
 
-    def __init__(self, host, database, port=50000, user=None, password=None, use_ssl=False, ssl_client_cert_path=None, timeout=None):
+    def __init__(
+        self,
+        host: str,
+        database: str,
+        port: int = 50000,
+        user: str | None = None,
+        password: str | None = None,
+        use_ssl: bool = False,
+        ssl_client_cert_path: str | None = None,
+        timeout: float | None = None
+    ) -> None:
         self.host = host
         self.database = (database + ' ' * 18)[:18]
         self.port = port
@@ -332,10 +344,10 @@ class Connection:
 
         self._set_variables()
 
-    def __enter__(self):
+    def __enter__(self) -> 'Connection':
         return self
 
-    def __exit__(self, exc, value, traceback):
+    def __exit__(self, exc: Any, value: Any, traceback: Any) -> None:
         self.close()
 
     def _set_variables(self):
@@ -492,18 +504,18 @@ class Connection:
             rows, description, _ = self._parse_response(continue_on_sqldard_only=True)
             return rows, description
 
-    def is_connect(self):
+    def is_connect(self) -> bool:
         return bool(self.sock)
 
-    def cursor(self, factory=None, cursor_factory=None):
+    def cursor(self, factory: type[Cursor] | None = None, cursor_factory: type[Cursor] | None = None) -> Cursor:
         cur_factory = factory or cursor_factory or Cursor
         return cur_factory(self)
 
-    def begin(self):
+    def begin(self) -> None:
         # DRDA starts a unit of work implicitly
         pass
 
-    def commit(self):
+    def commit(self) -> None:
         cur_id = 1
         cur_id = ddm.write_request_dss(
             self.sock,
@@ -512,7 +524,7 @@ class Connection:
         )
         self._parse_response()
 
-    def rollback(self):
+    def rollback(self) -> None:
         cur_id = 1
         cur_id = ddm.write_request_dss(
             self.sock,
@@ -521,7 +533,7 @@ class Connection:
         )
         self._parse_response()
 
-    def close(self):
+    def close(self) -> None:
         cur_id = 1
         cur_id = ddm.write_request_dss(
             self.sock,

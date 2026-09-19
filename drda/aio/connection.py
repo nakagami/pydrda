@@ -26,6 +26,7 @@ import binascii
 import platform
 import locale
 import collections
+from typing import Any
 
 from drda import codepoint as cp
 from drda import consts
@@ -253,7 +254,17 @@ class AsyncConnection(Connection):
 
         return secmec, sectkn
 
-    def __init__(self, host, database, port=50000, user=None, password=None, use_ssl=False, ssl_client_cert_path=None, timeout=None):
+    def __init__(
+        self,
+        host: str,
+        database: str,
+        port: int = 50000,
+        user: str | None = None,
+        password: str | None = None,
+        use_ssl: bool = False,
+        ssl_client_cert_path: str | None = None,
+        timeout: float | None = None
+    ) -> None:
         self.host = host
         self.database = (database + ' ' * 18)[:18]
         self.port = port
@@ -349,10 +360,10 @@ class AsyncConnection(Connection):
 
         await self._set_variables()
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> 'AsyncConnection':
         return self
 
-    async def __aexit__(self, exc, value, traceback):
+    async def __aexit__(self, exc: Any, value: Any, traceback: Any) -> None:
         await self.close()
 
     async def _set_variables(self):
@@ -509,18 +520,18 @@ class AsyncConnection(Connection):
             rows, description, _ = await self._parse_response(continue_on_sqldard_only=True)
             return rows, description
 
-    def is_connect(self):
+    def is_connect(self) -> bool:
         return bool(self.sock)
 
-    def cursor(self, factory=None, cursor_factory=None):
+    def cursor(self, factory: type[AsyncCursor] | None = None, cursor_factory: type[AsyncCursor] | None = None) -> AsyncCursor:
         cur_factory = factory or cursor_factory or AsyncCursor
         return cur_factory(self)
 
-    async def begin(self):
+    async def begin(self) -> None:
         # DRDA starts a unit of work implicitly
         pass
 
-    async def commit(self):
+    async def commit(self) -> None:
         cur_id = 1
         cur_id = await _write_request_dss(
             self.sock,
@@ -529,7 +540,7 @@ class AsyncConnection(Connection):
         )
         await self._parse_response()
 
-    async def rollback(self):
+    async def rollback(self) -> None:
         cur_id = 1
         cur_id = await _write_request_dss(
             self.sock,
@@ -538,7 +549,7 @@ class AsyncConnection(Connection):
         )
         await self._parse_response()
 
-    async def close(self):
+    async def close(self) -> None:
         cur_id = 1
         cur_id = await _write_request_dss(
             self.sock,

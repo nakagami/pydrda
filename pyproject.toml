@@ -25,5 +25,8 @@ dependencies = ["pyDes"]
 [tool.setuptools.packages.find]
 include = ["drda*"]
 
+[tool.setuptools.package-data]
+drda = ["py.typed"]
+
 [project.urls]
 Homepage = "https://github.com/nakagami/pydrda/"

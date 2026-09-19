@@ -24,6 +24,7 @@
 
 import datetime
 import decimal
+from typing import Any
 from . import utils
 from .connection import Connection
 from .cursor import Cursor, DictCursor
@@ -41,26 +42,26 @@ TimeDelta = datetime.timedelta
 Timestamp = datetime.datetime
 
 
-def Binary(b):
+def Binary(b: Any) -> bytearray:
     return bytearray(b)
 
 
 class DBAPITypeObject:
-    def __init__(self, *values):
+    def __init__(self, *values: Any) -> None:
         self.values = values
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         if isinstance(other, DBAPITypeObject):
             return self.values == other.values
         return other in self.values
 
-    def __ne__(self, other):
+    def __ne__(self, other: Any) -> bool:
         return not (self == other)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.values)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<DBAPITypeObject {self.values}>"
 
 
@@ -127,7 +128,7 @@ ROWID = DBAPITypeObject(
 
 
 class Error(Exception):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         if len(args) == 3:
             self.sqlcode, self.sqlstate, self.message = args
         elif len(args) == 2:
@@ -147,7 +148,7 @@ class Error(Exception):
             self.message = ' '.join(str(a) for a in args)
         super(Error, self).__init__(str(self))
 
-    def __str__(self):
+    def __str__(self) -> str:
         parts = []
         if self.sqlcode is not None:
             parts.append("SQLCODE=%s" % self.sqlcode)
@@ -175,7 +176,7 @@ class DisconnectByPeer(Warning):
 
 
 class InternalError(DatabaseError):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         if not args and not kwargs:
             args = (-1, 'InternalError')
         super(InternalError, self).__init__(*args, **kwargs)
@@ -198,13 +199,22 @@ class DataError(DatabaseError):
 
 
 class NotSupportedError(DatabaseError):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         if not args and not kwargs:
             args = ('NotSupportedError',)
         super(NotSupportedError, self).__init__(*args, **kwargs)
 
 
-def connect(host, database, port=50000, user=None, password=None, use_ssl=False, ssl_client_cert_path=None, timeout=None):
+def connect(
+    host: str,
+    database: str,
+    port: int = 50000,
+    user: str | None = None,
+    password: str | None = None,
+    use_ssl: bool = False,
+    ssl_client_cert_path: str | None = None,
+    timeout: float | None = None
+) -> Connection:
     return Connection(host, database, port, user, password, use_ssl, ssl_client_cert_path, timeout)
 
 
