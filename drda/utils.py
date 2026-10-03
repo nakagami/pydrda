@@ -233,6 +233,28 @@ def _encode_dfp(v, n_bytes):
     return w.to_bytes(n_bytes, 'big')
 
 
+# ------------------------------------------------------------------------------
+# DRDA Stream Parsing Optimization Strategy & Maintenance Guide
+#
+# When executing queries, row data is received inside QRYDTA response packets.
+# Both Connection._parse_response and AsyncConnection._parse_response iterate
+# across all rows by invoking `read_field()` for each column.
+#
+# Performance Invariants for Future Maintenance:
+# 1. O(1) Nullable Membership: `_NULLABLE_TYPES` is an immutable `frozenset`.
+#    Never replace it with a list or tuple, as doing so introduces an O(N) linear
+#    scan across 44+ type codes on every single column evaluation.
+# 2. Direct Stream I/O: In hot decoding loops, cache `read = stream.read` locally
+#    to invoke Python C-level stream buffer reading directly without auxiliary
+#    function call frame overhead.
+# 3. Frequency-ordered Branch Ladder: High-frequency relational types (integers,
+#    strings) must remain at the top of the if/elif ladder in `read_field()` to
+#    minimize branch misses and failed equality checks on the hot path.
+# 4. Precompiled Structs: Repetitive packing/unpacking (e.g. floats, headers)
+#    must use precompiled `struct.Struct` instances instead of ad-hoc calls to
+#    `struct.unpack()`, avoiding repeated format string re-parsing.
+# ------------------------------------------------------------------------------
+
 _NULLABLE_TYPES = frozenset((
     DRDA_TYPE_NINTEGER, DRDA_TYPE_NSMALL, DRDA_TYPE_N1BYTE_INT, DRDA_TYPE_NFLOAT16,
     DRDA_TYPE_NFLOAT8, DRDA_TYPE_NFLOAT4, DRDA_TYPE_NDECIMAL, DRDA_TYPE_NNUMERIC_CHAR,
@@ -251,6 +273,14 @@ _STRUCT_FLOAT4_BE = struct.Struct('>f')
 _STRUCT_FLOAT4_LE = struct.Struct('<f')
 _STRUCT_FLOAT8_BE = struct.Struct('>d')
 _STRUCT_FLOAT8_LE = struct.Struct('<d')
+
+
+def _extract_length(ps: bytes) -> int:
+    """
+    Extract byte length from a DRDA descriptor field, masking out the high
+    flag bit (0x8000) that indicates nullable or inline column attributes.
+    """
+    return int.from_bytes(ps, byteorder='big') & 0x7FFF
 
 
 def read_from_stream(stream, nbytes):
@@ -311,7 +341,7 @@ def read_field(t, ps, stream, endian):
         ln = int.from_bytes(ps, byteorder='big')
         return bytes(read(ln))
     elif t in (DRDA_TYPE_FIXBYTE, DRDA_TYPE_NFIXBYTE, DRDA_TYPE_FIXBYTES, DRDA_TYPE_NFIXBYTES):
-        ln = int.from_bytes(ps, byteorder='big') & 0x7FFF
+        ln = _extract_length(ps)
         return bytes(read(ln))
     elif t in (DRDA_TYPE_VARBINARY, DRDA_TYPE_NVARBINARY, DRDA_TYPE_VARBYTE, DRDA_TYPE_NVARBYTE):
         ln = int.from_bytes(read(2), byteorder='big')
@@ -371,12 +401,12 @@ def read_field(t, ps, stream, endian):
     elif t in (DRDA_TYPE_LOBBYTES, DRDA_TYPE_NLOBBYTES):
         # LOB data is delivered via EXTDTA; QRYDTA contains a placeholder.
         # ps encodes the placeholder size (high bit = nullable, already handled above).
-        ln = int.from_bytes(ps, byteorder='big') & 0x7FFF
+        ln = _extract_length(ps)
         read(ln)  # consume placeholder bytes
         return b''  # sentinel; replaced by EXTDTA data in connection._parse_response
     elif t in (DRDA_TYPE_LOBCSBCS, DRDA_TYPE_NLOBCSBCS):
         # Same as above but for character LOBs (CLOB).
-        ln = int.from_bytes(ps, byteorder='big') & 0x7FFF
+        ln = _extract_length(ps)
         read(ln)  # consume placeholder bytes
         return ''   # sentinel; replaced by EXTDTA data in connection._parse_response
     else:

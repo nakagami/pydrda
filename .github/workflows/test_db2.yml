@@ -56,3 +56,7 @@ jobs:
     - name: Test (exceptions)
       run: |
         python test_exceptions.py
+
+    - name: Test (types)
+      run: |
+        python test_types.py
