@@ -233,86 +233,142 @@ def _encode_dfp(v, n_bytes):
     return w.to_bytes(n_bytes, 'big')
 
 
+# ------------------------------------------------------------------------------
+# DRDA Stream Parsing Optimization Strategy & Maintenance Guide
+#
+# When executing queries, row data is received inside QRYDTA response packets.
+# Both Connection._parse_response and AsyncConnection._parse_response iterate
+# across all rows by invoking `read_field()` for each column.
+#
+# Performance Invariants for Future Maintenance:
+# 1. O(1) Nullable Membership: `_NULLABLE_TYPES` is an immutable `frozenset`.
+#    Never replace it with a list or tuple, as doing so introduces an O(N) linear
+#    scan across 44+ type codes on every single column evaluation.
+# 2. Direct Stream I/O: In hot decoding loops, cache `read = stream.read` locally
+#    to invoke Python C-level stream buffer reading directly without auxiliary
+#    function call frame overhead.
+# 3. Frequency-ordered Branch Ladder: High-frequency relational types (integers,
+#    strings) must remain at the top of the if/elif ladder in `read_field()` to
+#    minimize branch misses and failed equality checks on the hot path.
+# 4. Precompiled Structs: Repetitive packing/unpacking (e.g. floats, headers)
+#    must use precompiled `struct.Struct` instances instead of ad-hoc calls to
+#    `struct.unpack()`, avoiding repeated format string re-parsing.
+# ------------------------------------------------------------------------------
+
+_NULLABLE_TYPES = frozenset((
+    DRDA_TYPE_NINTEGER, DRDA_TYPE_NSMALL, DRDA_TYPE_N1BYTE_INT, DRDA_TYPE_NFLOAT16,
+    DRDA_TYPE_NFLOAT8, DRDA_TYPE_NFLOAT4, DRDA_TYPE_NDECIMAL, DRDA_TYPE_NNUMERIC_CHAR,
+    DRDA_TYPE_NRSET_LOC, DRDA_TYPE_NINTEGER8, DRDA_TYPE_NLOBLOC, DRDA_TYPE_NCLOBLOC,
+    DRDA_TYPE_NDBCSCLOBLOC, DRDA_TYPE_NROWID, DRDA_TYPE_NDATE, DRDA_TYPE_NTIME,
+    DRDA_TYPE_NTIMESTAMP, DRDA_TYPE_NFIXBYTE, DRDA_TYPE_NVARBYTE, DRDA_TYPE_NLONGVARBYTE,
+    DRDA_TYPE_NTERMBYTE, DRDA_TYPE_NNTERMBYTE, DRDA_TYPE_NCSTR, DRDA_TYPE_NCHAR,
+    DRDA_TYPE_NVARCHAR, DRDA_TYPE_NLONG, DRDA_TYPE_NGRAPHIC, DRDA_TYPE_NVARGRAPH,
+    DRDA_TYPE_NLONGRAPH, DRDA_TYPE_NMIX, DRDA_TYPE_NVARMIX, DRDA_TYPE_NLONGMIX,
+    DRDA_TYPE_NCSTRMIX, DRDA_TYPE_NPSCLBYTE, DRDA_TYPE_NLSTR, DRDA_TYPE_NLSTRMIX,
+    DRDA_TYPE_NSDATALINK, DRDA_TYPE_NMDATALINK, DRDA_TYPE_NBOOLEAN, DRDA_TYPE_NDECFLOAT,
+    DRDA_TYPE_NLOBBYTES, DRDA_TYPE_NLOBCSBCS, DRDA_TYPE_NVARBINARY, DRDA_TYPE_NFIXBYTES,
+))
+
+_STRUCT_FLOAT4_BE = struct.Struct('>f')
+_STRUCT_FLOAT4_LE = struct.Struct('<f')
+_STRUCT_FLOAT8_BE = struct.Struct('>d')
+_STRUCT_FLOAT8_LE = struct.Struct('<d')
+
+
+def _extract_length(ps: bytes) -> int:
+    """
+    Extract byte length from a DRDA descriptor field, masking out the high
+    flag bit (0x8000) that indicates nullable or inline column attributes.
+    """
+    return int.from_bytes(ps, byteorder='big') & 0x7FFF
+
+
 def read_from_stream(stream, nbytes):
     return stream.read(nbytes)
 
 def read_field(t, ps, stream, endian):
     """
-    read one field value from bytes.
-    return value, rest bytes
-    t: type
-    ps:  precision and scale or length
-    stream: input bytes stream
+    Read one column field value from a DRDA QRYDTA stream.
+
+    DRDA Protocol & Optimization Context:
+    - In DRDA, QRYDTA transmits row data sequentially according to QRYDSC.
+    - Nullable types carry a 1-byte null indicator flag (0xFF indicates NULL).
+      Using an O(1) frozenset for `_NULLABLE_TYPES` avoids linear tuple scans
+      across 44 types on every single column.
+    - Caching `stream.read` directly removes intermediate Python function call
+      overhead on the hot path.
+    - High-frequency data types (integers and strings) are fast-pathed to minimize
+      branching and comparisons on each row.
+    - Struct instances for floats are precompiled to eliminate repetitive format
+      parsing.
+
+    t: DRDA type code
+    ps: precision and scale or length bytes
+    stream: input bytes stream (e.g. io.BytesIO)
+    endian: 'big' or 'little'
     """
-    if t in (
-        DRDA_TYPE_NINTEGER, DRDA_TYPE_NSMALL, DRDA_TYPE_N1BYTE_INT, DRDA_TYPE_NFLOAT16,
-        DRDA_TYPE_NFLOAT8, DRDA_TYPE_NFLOAT4, DRDA_TYPE_NDECIMAL, DRDA_TYPE_NNUMERIC_CHAR,
-        DRDA_TYPE_NRSET_LOC, DRDA_TYPE_NINTEGER8, DRDA_TYPE_NLOBLOC, DRDA_TYPE_NCLOBLOC,
-        DRDA_TYPE_NDBCSCLOBLOC, DRDA_TYPE_NROWID, DRDA_TYPE_NDATE, DRDA_TYPE_NTIME,
-        DRDA_TYPE_NTIMESTAMP, DRDA_TYPE_NFIXBYTE, DRDA_TYPE_NVARBYTE, DRDA_TYPE_NLONGVARBYTE,
-        DRDA_TYPE_NTERMBYTE, DRDA_TYPE_NNTERMBYTE, DRDA_TYPE_NCSTR, DRDA_TYPE_NCHAR,
-        DRDA_TYPE_NVARCHAR, DRDA_TYPE_NLONG, DRDA_TYPE_NGRAPHIC, DRDA_TYPE_NVARGRAPH,
-        DRDA_TYPE_NLONGRAPH, DRDA_TYPE_NMIX, DRDA_TYPE_NVARMIX, DRDA_TYPE_NLONGMIX,
-        DRDA_TYPE_NCSTRMIX, DRDA_TYPE_NPSCLBYTE, DRDA_TYPE_NLSTR, DRDA_TYPE_NLSTRMIX,
-        DRDA_TYPE_NSDATALINK, DRDA_TYPE_NMDATALINK, DRDA_TYPE_NBOOLEAN, DRDA_TYPE_NDECFLOAT,
-        DRDA_TYPE_NLOBBYTES, DRDA_TYPE_NLOBCSBCS, DRDA_TYPE_NVARBINARY, DRDA_TYPE_NFIXBYTES,
-    ):
-        if read_from_stream(stream, 1) == b'\xFF':
+    read = stream.read
+    if t in _NULLABLE_TYPES:
+        if read(1) == b'\xFF':
             return None
 
-    if t in (DRDA_TYPE_MIX, DRDA_TYPE_NMIX):
+    # Check high-frequency types first (integers, strings) to minimize branch checks
+    if t in (
+        DRDA_TYPE_SMALL, DRDA_TYPE_NSMALL, DRDA_TYPE_NINTEGER8,
+        DRDA_TYPE_INTEGER8, DRDA_TYPE_INTEGER, DRDA_TYPE_NINTEGER,
+    ):
         ln = int.from_bytes(ps, byteorder='big')
-        v = read_from_stream(stream, ln).decode('utf-8').rstrip(' ')
-    elif t in (DRDA_TYPE_CHAR, DRDA_TYPE_NCHAR):
-        ln = int.from_bytes(ps, byteorder='big')
-        v = read_from_stream(stream, ln).decode('utf-8').rstrip(' ')
-    elif t in (DRDA_TYPE_ROWID, DRDA_TYPE_NROWID):
-        ln = int.from_bytes(ps, byteorder='big')
-        v = bytes(read_from_stream(stream, ln))
-    elif t in (DRDA_TYPE_FIXBYTE, DRDA_TYPE_NFIXBYTE, DRDA_TYPE_FIXBYTES, DRDA_TYPE_NFIXBYTES):
-        ln = int.from_bytes(ps, byteorder='big') & 0x7FFF
-        v = bytes(read_from_stream(stream, ln))
-    elif t in (DRDA_TYPE_VARBINARY, DRDA_TYPE_NVARBINARY):
-        ln = int.from_bytes(read_from_stream(stream, 2), byteorder='big')
-        v = bytes(read_from_stream(stream, ln))
-    elif t in (DRDA_TYPE_VARBYTE, DRDA_TYPE_NVARBYTE):
-        ln = int.from_bytes(read_from_stream(stream, 2), byteorder='big')
-        v = bytes(read_from_stream(stream, ln))
-    elif t in (DRDA_TYPE_LONGVARBYTE, DRDA_TYPE_NLONGVARBYTE):
-        ln = int.from_bytes(read_from_stream(stream, 4), byteorder='big')
-        v = bytes(read_from_stream(stream, ln))
-    elif t in (DRDA_TYPE_LOBLOC, DRDA_TYPE_NLOBLOC, DRDA_TYPE_CLOBLOC, DRDA_TYPE_NCLOBLOC,
-               DRDA_TYPE_DBCSCLOBLOC, DRDA_TYPE_NDBCSCLOBLOC):
-        ln = int.from_bytes(ps, byteorder='big')
-        v = bytes(read_from_stream(stream, ln))
-    elif t in (DRDA_TYPE_DECFLOAT, DRDA_TYPE_NDECFLOAT):
-        ln = int.from_bytes(ps, byteorder='big')
-        v = _decode_dfp(read_from_stream(stream, ln))
+        return int.from_bytes(read(ln), byteorder=endian, signed=True)
     elif t in (
         DRDA_TYPE_VARMIX, DRDA_TYPE_NVARMIX,
         DRDA_TYPE_LONGMIX, DRDA_TYPE_NLONGMIX,
         DRDA_TYPE_VARCHAR, DRDA_TYPE_NVARCHAR, DRDA_TYPE_LONG, DRDA_TYPE_NLONG,
     ):
-        ln = int.from_bytes(read_from_stream(stream, 2), byteorder='big')
-        v = read_from_stream(stream, ln).decode('utf-8')
-    elif t in (
-            DRDA_TYPE_SMALL, DRDA_TYPE_NSMALL, DRDA_TYPE_NINTEGER8,
-            DRDA_TYPE_INTEGER8, DRDA_TYPE_INTEGER, DRDA_TYPE_NINTEGER):
+        ln = int.from_bytes(read(2), byteorder='big')
+        return read(ln).decode('utf-8')
+    elif t in (DRDA_TYPE_CHAR, DRDA_TYPE_NCHAR, DRDA_TYPE_MIX, DRDA_TYPE_NMIX):
         ln = int.from_bytes(ps, byteorder='big')
-        v = int.from_bytes(read_from_stream(stream, ln), byteorder=endian, signed=True)
+        return read(ln).decode('utf-8').rstrip(' ')
+    elif t in (DRDA_TYPE_NFLOAT8, DRDA_TYPE_FLOAT8):
+        ln = int.from_bytes(ps, byteorder='big')
+        s = _STRUCT_FLOAT8_BE if endian == 'big' else _STRUCT_FLOAT8_LE
+        return s.unpack(read(ln))[0]
+    elif t in (DRDA_TYPE_NFLOAT4, DRDA_TYPE_FLOAT4):
+        ln = int.from_bytes(ps, byteorder='big')
+        s = _STRUCT_FLOAT4_BE if endian == 'big' else _STRUCT_FLOAT4_LE
+        return s.unpack(read(ln))[0]
+    elif t in (DRDA_TYPE_ROWID, DRDA_TYPE_NROWID):
+        ln = int.from_bytes(ps, byteorder='big')
+        return bytes(read(ln))
+    elif t in (DRDA_TYPE_FIXBYTE, DRDA_TYPE_NFIXBYTE, DRDA_TYPE_FIXBYTES, DRDA_TYPE_NFIXBYTES):
+        ln = _extract_length(ps)
+        return bytes(read(ln))
+    elif t in (DRDA_TYPE_VARBINARY, DRDA_TYPE_NVARBINARY, DRDA_TYPE_VARBYTE, DRDA_TYPE_NVARBYTE):
+        ln = int.from_bytes(read(2), byteorder='big')
+        return bytes(read(ln))
+    elif t in (DRDA_TYPE_LONGVARBYTE, DRDA_TYPE_NLONGVARBYTE):
+        ln = int.from_bytes(read(4), byteorder='big')
+        return bytes(read(ln))
+    elif t in (DRDA_TYPE_LOBLOC, DRDA_TYPE_NLOBLOC, DRDA_TYPE_CLOBLOC, DRDA_TYPE_NCLOBLOC,
+               DRDA_TYPE_DBCSCLOBLOC, DRDA_TYPE_NDBCSCLOBLOC):
+        ln = int.from_bytes(ps, byteorder='big')
+        return bytes(read(ln))
+    elif t in (DRDA_TYPE_DECFLOAT, DRDA_TYPE_NDECFLOAT):
+        ln = int.from_bytes(ps, byteorder='big')
+        return _decode_dfp(read(ln))
     elif t == DRDA_TYPE_NDECIMAL:
         (p, s) = (ps[0], ps[1])
         ln = p + 1
         if ln % 2:
             ln += 1
         ln //= 2
-        digits_sign = binascii.b2a_hex(read_from_stream(stream, ln)).decode('ascii')
+        digits_sign = binascii.b2a_hex(read(ln)).decode('ascii')
         sign = 0 if digits_sign[-1] == 'c' else 1
         v = decimal.Decimal(digits_sign[:-1])
-        v = decimal.Decimal((sign, v.as_tuple()[1], -s))
+        return decimal.Decimal((sign, v.as_tuple()[1], -s))
     elif t in (DRDA_TYPE_TIMESTAMP, DRDA_TYPE_NTIMESTAMP):
         ln = int.from_bytes(ps, byteorder='big')
-        v = read_from_stream(stream, ln).decode('utf-8').rstrip()
+        v = read(ln).decode('utf-8').rstrip()
         # Format: YYYY-MM-DD-HH.MM.SS[.FFFFFFFFFFFF] (19 chars base + optional fractional)
         if len(v) > 19:
             date_part = v[:19]
@@ -320,51 +376,41 @@ def read_field(t, ps, stream, endian):
             # Truncate or pad fractional seconds to 6 digits (microseconds)
             frac6 = frac[:6].ljust(6, '0')
             dt = datetime.datetime.strptime(date_part, "%Y-%m-%d-%H.%M.%S")
-            v = dt.replace(microsecond=int(frac6))
+            return dt.replace(microsecond=int(frac6))
         else:
-            v = datetime.datetime.strptime(v, "%Y-%m-%d-%H.%M.%S")
+            return datetime.datetime.strptime(v, "%Y-%m-%d-%H.%M.%S")
     elif t in (DRDA_TYPE_DATE, DRDA_TYPE_NDATE):
         ln = int.from_bytes(ps, byteorder='big')
-        v = read_from_stream(stream, ln).decode('utf-8')
+        v = read(ln).decode('utf-8')
         v = datetime.datetime.strptime(v, "%Y-%m-%d")
-        v = datetime.date(v.year, v.month, v.day)
+        return datetime.date(v.year, v.month, v.day)
     elif t in (DRDA_TYPE_TIME, DRDA_TYPE_NTIME):
         ln = int.from_bytes(ps, byteorder='big')
-        v = read_from_stream(stream, ln).decode('utf-8')
+        v = read(ln).decode('utf-8')
         try:
             v = datetime.datetime.strptime(v, "%H:%M:%S")
         except ValueError:
             v = datetime.datetime.strptime(v, "%H.%M.%S")
-        v = datetime.time(v.hour, v.minute, v.second)
-    elif t in (DRDA_TYPE_VARGRAPH, DRDA_TYPE_NVARGRAPH):
+        return datetime.time(v.hour, v.minute, v.second)
+    elif t in (DRDA_TYPE_VARGRAPH, DRDA_TYPE_NVARGRAPH, DRDA_TYPE_GRAPHIC, DRDA_TYPE_NGRAPHIC):
         ln = int.from_bytes(ps, byteorder='big')
-        v = read_from_stream(stream, ln).decode('utf-8').rstrip(' ')
-    elif t in (DRDA_TYPE_GRAPHIC, DRDA_TYPE_NGRAPHIC):
-        ln = int.from_bytes(ps, byteorder='big')
-        v = read_from_stream(stream, ln).decode('utf-8').rstrip(' ')
-    elif t in (DRDA_TYPE_NFLOAT4, DRDA_TYPE_FLOAT4):
-        ln = int.from_bytes(ps, byteorder='big')
-        v = struct.unpack(">f" if endian == 'big' else "<f", read_from_stream(stream, ln))[0]
-    elif t in (DRDA_TYPE_NFLOAT8, DRDA_TYPE_FLOAT8):
-        ln = int.from_bytes(ps, byteorder='big')
-        v = struct.unpack(">d" if endian == 'big' else "<d", read_from_stream(stream, ln))[0]
+        return read(ln).decode('utf-8').rstrip(' ')
     elif t in (DRDA_TYPE_BOOLEAN, DRDA_TYPE_NBOOLEAN):
         ln = int.from_bytes(ps, byteorder='big')
-        v = True if int.from_bytes(read_from_stream(stream, ln), byteorder='big') else False
+        return True if int.from_bytes(read(ln), byteorder='big') else False
     elif t in (DRDA_TYPE_LOBBYTES, DRDA_TYPE_NLOBBYTES):
         # LOB data is delivered via EXTDTA; QRYDTA contains a placeholder.
         # ps encodes the placeholder size (high bit = nullable, already handled above).
-        ln = int.from_bytes(ps, byteorder='big') & 0x7FFF
-        read_from_stream(stream, ln)  # consume placeholder bytes
+        ln = _extract_length(ps)
+        read(ln)  # consume placeholder bytes
         return b''  # sentinel; replaced by EXTDTA data in connection._parse_response
     elif t in (DRDA_TYPE_LOBCSBCS, DRDA_TYPE_NLOBCSBCS):
         # Same as above but for character LOBs (CLOB).
-        ln = int.from_bytes(ps, byteorder='big') & 0x7FFF
-        read_from_stream(stream, ln)  # consume placeholder bytes
+        ln = _extract_length(ps)
+        read(ln)  # consume placeholder bytes
         return ''   # sentinel; replaced by EXTDTA data in connection._parse_response
     else:
         raise ValueError("UnknownType(%s)" % hex(t))
-    return v
 
 
 def escape_parameter(v):
